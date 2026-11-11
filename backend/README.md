@@ -1,6 +1,6 @@
 # Notice Helper backend
 
-Upload one notice and choose a language. The API returns a plain-English summary, deadlines with quotes from the original, an action checklist, translated instructions, and any unclear details. The backend sends the notice to Google's Gemini Developer API. Use fictional or redacted notices for practice because Google may use free-tier content to improve its products. [Gemini pricing and data use](https://ai.google.dev/gemini-api/docs/pricing)
+Choose a language and upload one notice. The API returns a headline, sender (if stated), summary, deadlines with source quotes and optional calendar dates, checklist, translations of the summary, checklist and instructions, and any unclear details. The backend sends the notice to Google's Gemini Developer API. Use fictional or redacted notices for practice because Google may use free-tier content to improve its products. [Gemini pricing and data use](https://ai.google.dev/gemini-api/docs/pricing)
 
 ## Run locally on Windows
 
@@ -32,18 +32,4 @@ const result = await response.json();
 if (!response.ok) throw new Error(JSON.stringify(result.detail));
 ```
 
-For a text file containing “The trip is May 10. Return the signed slip by May 3.”, an example response is:
-
-```json
-{
-  "summary": "The trip is May 10. Return your signed slip by May 3.",
-  "deadlines": [{
-    "action": "Return the signed slip",
-    "when": "May 3",
-    "source_quote": "Return the signed slip by May 3."
-  }],
-  "checklist": ["Return the signed slip by May 3."],
-  "translated_instructions": "Devuelve el permiso firmado antes de que termine el 3 de mayo.",
-  "uncertainties": []
-}
-```
+See the [frontend handoff](../api/frontend-handoff.md) and [sample JSON](../api/sample-response.json) for the response fields, date handling, language selection, and demo setup.
