@@ -3,13 +3,14 @@
 React + TypeScript (Vite). Two screens:
 
 - **Investigation**: case list and case detail, backed by `GET /cases`, `GET /cases/{observation_id}` and `POST /demo/run`.
-- **Detection lab**: upload a PNG or JPEG radar image and draw the boxes from `POST /detections`.
+- **Detection lab** displays the bundled example boxes in **Sample data** mode. Live image uploads require a detector serving `POST /detections`. The included case service provides investigation routes.
 
 ## Run it
 
-Start the FastAPI backend first (from the repo root, on a branch that has `backend/`):
+Start the FastAPI backend from the repository root:
 
 ```
+python -m pip install -r backend/requirements.txt
 python -m uvicorn backend.main:app --reload
 ```
 
@@ -17,7 +18,7 @@ Then, in a second terminal:
 
 ```
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
