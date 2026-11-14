@@ -1,5 +1,16 @@
 # OCSEF-hacks
 
+## Run GhostFleet
+
+From the repository root, install the backend dependencies and start the API.
+
+```sh
+python -m pip install -r backend/requirements.txt
+python -m uvicorn backend.main:app --reload
+```
+
+In a second terminal, run `cd frontend`, `npm ci`, then `npm run dev`. Open the URL printed by Vite. Select **Live API** to browse case evidence and **Run fictional demo** to regenerate the six fictional cases. The Detection Lab includes fixed examples under **Sample data**. Live image inference requires a backend that implements `POST /detections`.
+
 ## GhostFleet — Backend 2
 
 Create a local environment and start the case API from the repository root:
@@ -60,4 +71,4 @@ Area use adds context but cannot establish fishing or vessel type. The included
 annotations are fictional; real satellite image classification and geospatial
 area membership must be supplied by Backend 1 or a separate analysis component.
 
-Next: step 4 connects `POST /demo/run` to Backend 1's matcher and upserts cases.
+`POST /demo/run` rebuilds the fictional fixture cases and returns their observation IDs. Repeated runs replace the same six records. Connecting an external matcher is a separate backend feature.
