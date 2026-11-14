@@ -41,6 +41,18 @@ class CaseTests(unittest.TestCase):
         client = TestClient(create_app(seed_fixtures=False))
         self.assertEqual(client.get("/cases").json(), {"cases": []})
 
+    def test_demo_returns_retrievable_cases_without_duplicates(self):
+        client = TestClient(create_app(seed_fixtures=False))
+        first = client.post("/demo/run")
+        self.assertEqual(first.status_code, 200)
+        ids = first.json()["case_ids"]
+        self.assertEqual(len(set(ids)), 6)
+        self.assertEqual(client.post("/demo/run").json(), {"case_ids": ids})
+        cases = client.get("/cases?data_mode=synthetic").json()["cases"]
+        self.assertEqual([case["observation"]["observation_id"] for case in cases], ids)
+        for case in cases:
+            self.assertEqual(client.get("/cases/" + case["observation"]["observation_id"]).json(), case)
+
 
 if __name__ == "__main__":
     unittest.main()
