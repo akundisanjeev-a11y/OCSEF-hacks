@@ -1,0 +1,1 @@
+"""GhostFleet backend."""

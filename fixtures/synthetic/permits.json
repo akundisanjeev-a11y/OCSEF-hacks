@@ -1,0 +1,30 @@
+{
+  "data_mode": "synthetic",
+  "description": "Entirely fictional demo permits and identifiers. No real Ghana licensing records or legal authority. Validity intervals include the start and exclude the end.",
+  "complete": false,
+  "sources": ["GhostFleet fictional permit register v1"],
+  "by_mmsi": {
+    "000000001": [
+      {
+        "permit_id": "DEMO-PERMIT-001",
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_until": "2027-01-01T00:00:00Z",
+        "zone_id": "DEMO-OFFSHORE-A",
+        "activity": "fishing",
+        "sources": ["GhostFleet fictional permit register v1 / DEMO-PERMIT-001"]
+      }
+    ]
+  },
+  "by_imo": {
+    "DEMO-IMO-002": [
+      {
+        "permit_id": "DEMO-PERMIT-002",
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_until": "2027-01-01T00:00:00Z",
+        "zone_id": "DEMO-OFFSHORE-B",
+        "activity": "transit",
+        "sources": ["GhostFleet fictional permit register v1 / DEMO-PERMIT-002"]
+      }
+    ]
+  }
+}
