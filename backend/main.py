@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 from backend.schemas import Case, CaseListResponse, DataMode
 from backend.services.cases import CaseService
@@ -13,16 +14,30 @@ from backend.services.permit_evidence import load_investigation_inputs, load_per
 FIXTURE_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic" / "static_cases.json"
 
 
+class DemoRunResponse(BaseModel):
+    case_ids: list[str]
+
+
+def load_demo_cases(store: CaseService) -> list[str]:
+    static_cases = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))["cases"]
+    cases = [Case.model_validate(payload) for payload in static_cases]
+    registry = load_permits()
+    cases.extend(build_case(evidence, registry) for evidence in load_investigation_inputs().cases)
+    for case in cases:
+        store.upsert(case)
+    return sorted(case.observation.observation_id for case in cases)
+
+
 def create_app(*, seed_fixtures: bool = True) -> FastAPI:
     app = FastAPI(title="GhostFleet")
     store = CaseService()
     if seed_fixtures:
-        for payload in json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))["cases"]:
-            store.upsert(Case.model_validate(payload))
-        registry = load_permits()
-        for evidence in load_investigation_inputs().cases:
-            store.upsert(build_case(evidence, registry))
+        load_demo_cases(store)
     app.state.case_service = store
+
+    @app.post("/demo/run", response_model=DemoRunResponse)
+    def run_demo() -> DemoRunResponse:
+        return DemoRunResponse(case_ids=load_demo_cases(store))
 
     @app.get("/cases", response_model=CaseListResponse)
     def list_cases(data_mode: DataMode | None = None) -> CaseListResponse:
