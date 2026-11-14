@@ -1,0 +1,404 @@
+{
+  "cases": [
+    {
+      "observation": {
+        "observation_id": "ambiguous-identity-0",
+        "scene_id": "ambiguous-identity",
+        "data_mode": "synthetic",
+        "captured_at": "2026-01-01T10:00:00Z",
+        "position": {
+          "lat": 4.8,
+          "lon": -1.5
+        },
+        "bbox_px": null,
+        "detection_confidence": 0.87,
+        "identity_status": "ambiguous",
+        "mmsi": null,
+        "imo": null,
+        "match_evidence": null,
+        "sources": [
+          "fictional ambiguous radar scene",
+          "fictional equally plausible AIS candidates"
+        ]
+      },
+      "authorization": {
+        "status": "unknown",
+        "reason_codes": [
+          "unresolved_identity",
+          "missing_activity_evidence",
+          "missing_permit_evidence"
+        ],
+        "explanation": "Authorization unresolved: unresolved identity; missing activity evidence; missing permit evidence.",
+        "sources": [
+          "fictional ambiguous radar scene",
+          "fictional equally plausible AIS candidates",
+          "fictional ambiguous-scene activity report awaiting confirmation",
+          "fictional ambiguous-scene zone membership assertion",
+          "GhostFleet fictional permit register v1",
+          "fictional demo rulebook / DEMO-RULE-A"
+        ]
+      },
+      "vessel_assessment": {
+        "vessel_type": "possible_fishing_vessel",
+        "activity": "possible_fishing",
+        "zone_id": "DEMO-OFFSHORE-A",
+        "explanation": "Sourced imagery suggests a fishing vessel; this is a tentative vessel-type assessment, not confirmed activity.",
+        "sources": [
+          "fictional ambiguous-scene activity report awaiting confirmation",
+          "fictional analyst fishing-pattern annotation of ambiguous satellite scene",
+          "fictional fishing-area overlay for ambiguous scene"
+        ]
+      },
+      "alerts": [
+        {
+          "code": "possible_fishing_vessel",
+          "severity": "info",
+          "message": "Sourced imagery suggests a fishing vessel; this is a tentative vessel-type assessment, not confirmed activity.",
+          "sources": [
+            "fictional analyst fishing-pattern annotation of ambiguous satellite scene"
+          ]
+        },
+        {
+          "code": "possible_fishing",
+          "severity": "review",
+          "message": "Imagery contains a sourced fishing-activity hint. Activity remains unverified and requires review.",
+          "sources": [
+            "fictional analyst fishing-pattern annotation of ambiguous satellite scene"
+          ]
+        },
+        {
+          "code": "area_context",
+          "severity": "info",
+          "message": "Observation lies in a sourced fishing area. Area use alone does not establish vessel type or fishing activity.",
+          "sources": [
+            "fictional fishing-area overlay for ambiguous scene"
+          ]
+        },
+        {
+          "code": "authorization_unresolved",
+          "severity": "review",
+          "message": "Authorization unresolved: unresolved identity; missing activity evidence; missing permit evidence.",
+          "sources": [
+            "fictional ambiguous radar scene",
+            "fictional equally plausible AIS candidates",
+            "fictional ambiguous-scene activity report awaiting confirmation",
+            "fictional ambiguous-scene zone membership assertion",
+            "GhostFleet fictional permit register v1",
+            "fictional demo rulebook / DEMO-RULE-A"
+          ]
+        }
+      ],
+      "review_priority": {
+        "level": "review",
+        "explanation": "Imagery contains a sourced fishing-activity hint. Activity remains unverified and requires review.; Authorization unresolved: unresolved identity; missing activity evidence; missing permit evidence."
+      }
+    },
+    {
+      "observation": {
+        "observation_id": "documented-conflict-0",
+        "scene_id": "documented-conflict",
+        "data_mode": "synthetic",
+        "captured_at": "2026-01-01T10:00:00Z",
+        "position": {
+          "lat": 4.9,
+          "lon": -1.4
+        },
+        "bbox_px": null,
+        "detection_confidence": 0.9,
+        "identity_status": "matched",
+        "mmsi": "000000002",
+        "imo": "DEMO-IMO-002",
+        "match_evidence": null,
+        "sources": [
+          "fictional conflict radar scene",
+          "fictional AIS identity assertion"
+        ]
+      },
+      "authorization": {
+        "status": "potential_violation",
+        "reason_codes": [
+          "activity_prohibited"
+        ],
+        "explanation": "Confirmed fishing in DEMO-OFFSHORE-B at 2026-01-01T10:00:00+00:00 conflicts with DEMO-RULE-B, which prohibits that activity. Human review is required.",
+        "sources": [
+          "fictional conflict radar scene",
+          "fictional AIS identity assertion",
+          "fictional conflict activity report",
+          "fictional conflict zone membership assertion",
+          "GhostFleet fictional permit register v1",
+          "fictional vessel register linking 000000002 to DEMO-IMO-002",
+          "fictional demo rulebook / DEMO-RULE-B",
+          "GhostFleet fictional permit register v1 / DEMO-PERMIT-002"
+        ]
+      },
+      "vessel_assessment": {
+        "vessel_type": "unknown",
+        "activity": "confirmed_fishing",
+        "zone_id": "DEMO-OFFSHORE-B",
+        "explanation": "No vessel-type classification is available. Detection boxes and confidence alone do not identify vessel type.",
+        "sources": [
+          "fictional conflict activity report"
+        ]
+      },
+      "alerts": [
+        {
+          "code": "potential_authorization_conflict",
+          "severity": "high",
+          "message": "Confirmed fishing in DEMO-OFFSHORE-B at 2026-01-01T10:00:00+00:00 conflicts with DEMO-RULE-B, which prohibits that activity. Human review is required.",
+          "sources": [
+            "fictional conflict radar scene",
+            "fictional AIS identity assertion",
+            "fictional conflict activity report",
+            "fictional conflict zone membership assertion",
+            "GhostFleet fictional permit register v1",
+            "fictional vessel register linking 000000002 to DEMO-IMO-002",
+            "fictional demo rulebook / DEMO-RULE-B",
+            "GhostFleet fictional permit register v1 / DEMO-PERMIT-002"
+          ]
+        }
+      ],
+      "review_priority": {
+        "level": "high",
+        "explanation": "Confirmed fishing in DEMO-OFFSHORE-B at 2026-01-01T10:00:00+00:00 conflicts with DEMO-RULE-B, which prohibits that activity. Human review is required."
+      }
+    },
+    {
+      "observation": {
+        "observation_id": "missing-evidence-0",
+        "scene_id": "missing-evidence",
+        "data_mode": "synthetic",
+        "captured_at": "2026-01-01T10:00:00Z",
+        "position": {
+          "lat": 4.8,
+          "lon": -1.5
+        },
+        "bbox_px": null,
+        "detection_confidence": 0.89,
+        "identity_status": "matched",
+        "mmsi": "000000003",
+        "imo": null,
+        "match_evidence": null,
+        "sources": [
+          "fictional missing-evidence radar scene",
+          "fictional AIS identity assertion"
+        ]
+      },
+      "authorization": {
+        "status": "unknown",
+        "reason_codes": [
+          "missing_activity_evidence",
+          "unresolved_zone_membership",
+          "missing_permit_evidence",
+          "missing_applicable_rule_evidence"
+        ],
+        "explanation": "Authorization unresolved: missing activity evidence; unresolved zone membership; missing permit evidence; missing applicable rule evidence.",
+        "sources": [
+          "fictional missing-evidence radar scene",
+          "fictional AIS identity assertion",
+          "GhostFleet fictional permit register v1"
+        ]
+      },
+      "vessel_assessment": {
+        "vessel_type": "possible_cargo_carrier",
+        "activity": "unknown",
+        "zone_id": null,
+        "explanation": "Sourced imagery suggests a cargo carrier; this is a tentative vessel-type assessment, not confirmed activity.",
+        "sources": [
+          "fictional analyst annotation of missing-evidence satellite scene",
+          "fictional shipping-lane overlay for missing-evidence scene"
+        ]
+      },
+      "alerts": [
+        {
+          "code": "possible_cargo_carrier",
+          "severity": "info",
+          "message": "Sourced imagery suggests a cargo carrier; this is a tentative vessel-type assessment, not confirmed activity.",
+          "sources": [
+            "fictional analyst annotation of missing-evidence satellite scene"
+          ]
+        },
+        {
+          "code": "area_context",
+          "severity": "info",
+          "message": "Observation lies in a sourced shipping lane. Area use alone does not establish vessel type or fishing activity.",
+          "sources": [
+            "fictional shipping-lane overlay for missing-evidence scene"
+          ]
+        },
+        {
+          "code": "authorization_unresolved",
+          "severity": "review",
+          "message": "Authorization unresolved: missing activity evidence; unresolved zone membership; missing permit evidence; missing applicable rule evidence.",
+          "sources": [
+            "fictional missing-evidence radar scene",
+            "fictional AIS identity assertion",
+            "GhostFleet fictional permit register v1"
+          ]
+        }
+      ],
+      "review_priority": {
+        "level": "review",
+        "explanation": "Authorization unresolved: missing activity evidence; unresolved zone membership; missing permit evidence; missing applicable rule evidence."
+      }
+    },
+    {
+      "observation": {
+        "observation_id": "permit-valid-0",
+        "scene_id": "permit-valid",
+        "data_mode": "synthetic",
+        "captured_at": "2026-01-01T10:00:00Z",
+        "position": {
+          "lat": 4.8,
+          "lon": -1.5
+        },
+        "bbox_px": null,
+        "detection_confidence": 0.91,
+        "identity_status": "matched",
+        "mmsi": "000000001",
+        "imo": null,
+        "match_evidence": null,
+        "sources": [
+          "fictional permit-valid radar scene",
+          "fictional AIS identity assertion"
+        ]
+      },
+      "authorization": {
+        "status": "authorized",
+        "reason_codes": [
+          "permit_covers_activity_place_time"
+        ],
+        "explanation": "DEMO-PERMIT-001 covers confirmed fishing in DEMO-OFFSHORE-A at 2026-01-01T10:00:00+00:00; validity is 2026-01-01T00:00:00+00:00 to 2027-01-01T00:00:00+00:00 (end exclusive).",
+        "sources": [
+          "fictional permit-valid radar scene",
+          "fictional AIS identity assertion",
+          "fictional permit-valid activity report",
+          "fictional permit-valid zone membership assertion",
+          "GhostFleet fictional permit register v1",
+          "fictional demo rulebook / DEMO-RULE-A",
+          "GhostFleet fictional permit register v1 / DEMO-PERMIT-001"
+        ]
+      },
+      "vessel_assessment": {
+        "vessel_type": "possible_fishing_vessel",
+        "activity": "confirmed_fishing",
+        "zone_id": "DEMO-OFFSHORE-A",
+        "explanation": "Sourced imagery suggests a fishing vessel; this is a tentative vessel-type assessment, not confirmed activity.",
+        "sources": [
+          "fictional permit-valid activity report",
+          "fictional analyst annotation of permit-valid satellite scene",
+          "fictional fishing-area overlay for permit-valid scene"
+        ]
+      },
+      "alerts": [
+        {
+          "code": "possible_fishing_vessel",
+          "severity": "info",
+          "message": "Sourced imagery suggests a fishing vessel; this is a tentative vessel-type assessment, not confirmed activity.",
+          "sources": [
+            "fictional analyst annotation of permit-valid satellite scene"
+          ]
+        },
+        {
+          "code": "area_context",
+          "severity": "info",
+          "message": "Observation lies in a sourced fishing area. Area use alone does not establish vessel type or fishing activity.",
+          "sources": [
+            "fictional fishing-area overlay for permit-valid scene"
+          ]
+        }
+      ],
+      "review_priority": {
+        "level": "routine",
+        "explanation": "No conflict or unresolved-evidence alert; routine review."
+      }
+    },
+    {
+      "observation": {
+        "observation_id": "synthetic-01-0",
+        "scene_id": "synthetic-01",
+        "data_mode": "synthetic",
+        "captured_at": "2026-01-01T10:00:00Z",
+        "position": {
+          "lat": 4.8,
+          "lon": -1.5
+        },
+        "bbox_px": [
+          241.0,
+          106.0,
+          272.0,
+          121.0
+        ],
+        "detection_confidence": 0.91,
+        "identity_status": "matched",
+        "mmsi": "000000001",
+        "imo": null,
+        "match_evidence": {
+          "candidate_distance_m": 85.0,
+          "time_gap_seconds": 30.0,
+          "matching_method": "static fictional fixture"
+        },
+        "sources": [
+          "fictional radar observation",
+          "fictional AIS track"
+        ]
+      },
+      "authorization": {
+        "status": "unknown",
+        "reason_codes": [
+          "missing_activity_evidence",
+          "missing_permit_evidence",
+          "missing_rule_evidence"
+        ],
+        "explanation": "Fictional identity is supplied, but observed activity and applicable permit and rule evidence are missing. Vessel presence alone does not establish fishing.",
+        "sources": [
+          "fictional radar observation",
+          "fictional AIS track"
+        ]
+      },
+      "vessel_assessment": null,
+      "alerts": [],
+      "review_priority": null
+    },
+    {
+      "observation": {
+        "observation_id": "synthetic-02-0",
+        "scene_id": "synthetic-02",
+        "data_mode": "synthetic",
+        "captured_at": null,
+        "position": null,
+        "bbox_px": [
+          10.0,
+          20.0,
+          40.0,
+          50.0
+        ],
+        "detection_confidence": 0.8,
+        "identity_status": "insufficient_data",
+        "mmsi": null,
+        "imo": null,
+        "match_evidence": null,
+        "sources": [
+          "fictional radar observation"
+        ]
+      },
+      "authorization": {
+        "status": "unknown",
+        "reason_codes": [
+          "unresolved_identity",
+          "missing_activity_evidence",
+          "missing_position",
+          "missing_capture_time",
+          "missing_permit_evidence",
+          "missing_rule_evidence"
+        ],
+        "explanation": "Identity, activity, place, time, permits and rules are unresolved. Authorization cannot be determined.",
+        "sources": [
+          "fictional radar observation"
+        ]
+      },
+      "vessel_assessment": null,
+      "alerts": [],
+      "review_priority": null
+    }
+  ]
+}
