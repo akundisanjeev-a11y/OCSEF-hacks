@@ -23,6 +23,23 @@ refused, check the terminal is still running and use its printed port.
 
 ## Repeat the two-window check
 
+For the spoken countdown, open `/alerts-demo/check-in` on the running app.
+Click **Open contact window** and choose the same sample contact in both
+windows. Click **Simulate possible fall**. You should hear “Are you OK?”
+and the countdown. After 15 seconds of silence, the contact receives one
+**No response** message. Refresh the contact window, then click
+**Acknowledge**. Watch the sender confirm receipt.
+Start another simulation and choose **I need help** for immediate delivery,
+or **I’m OK** to cancel. This demo uses buttons for replies.
+
+Run the alert and countdown regression tests from `fall-check` with Node 24:
+
+```powershell
+node --test lib/alerts.test.mjs app/alerts-demo/check-in/spokenCheckIn.test.mjs
+```
+
+For quick tests of contact delivery alone, use the original sample buttons:
+
 1. Open `/alerts-demo` and choose Alex. Click **Open contact window**.
    Move the new tab to a second Chrome window if desired. Use the same Chrome
    profile, address, and port for both pages (don't mix localhost and 127.0.0.1).
