@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ContactPicker } from "@/components/ContactPicker";
 import { acknowledgeAlert, SAMPLE_CONTACTS } from "@/lib/alerts";
 import { useAlerts } from "@/lib/useAlerts";
 
 export default function ContactPage() {
-  const [contactName, setContactName] = useState(SAMPLE_CONTACTS[0]);
+  return <Suspense fallback={<p role="status">Opening contact window…</p>}><ContactInbox /></Suspense>;
+}
+
+function ContactInbox() {
+  const params = useSearchParams();
+  const contactName = SAMPLE_CONTACTS.find((name) => name === params.get("contact")) ?? SAMPLE_CONTACTS[0];
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const alerts = useAlerts();
@@ -25,14 +31,22 @@ export default function ContactPage() {
       <p className="font-bold text-amber-700">LOCAL TEST ONLY · No emergency dispatch</p>
       <h1 className="text-4xl font-bold">Fall Check contact window</h1>
       <p>A consenting teammate plays the selected contact. Choose the same sample contact as the sender.</p>
-      <ContactPicker value={contactName} onChange={setContactName} disabled={busy} />
+      <ContactPicker value={contactName} disabled={busy} onChange={(name) => {
+        const url = new URL(window.location.href);
+        url.searchParams.set("contact", name);
+        window.history.replaceState(null, "", url);
+      }} />
       {error && <p role="alert" className="text-red-700">{error}</p>}
       <section aria-label="Addressed test alerts" aria-live="polite" className="grid gap-4">
         {addressed.length === 0 && <p>Waiting for a test alert addressed to {contactName}.</p>}
         {addressed.map((alert) => (
           <article key={alert.id} className="grid gap-3 rounded-xl border-2 border-slate-400 p-5">
             <h2 className="text-2xl font-bold">{alert.reason === "help_requested" ? "Help requested" : "No response"} — test alert</h2>
-            <p>To: {alert.contactName}</p>
+            <p>Fall Check demo message for {alert.contactName}. {alert.reason === "help_requested"
+              ? "The person requested help during their check-in."
+              : "The check-in ended without a response."}
+              {!alert.acknowledgedAt && " Please acknowledge that you received this alert."}
+            </p>
             <p>Trigger: {alert.trigger}{alert.trigger === "simulation" ? " (simulated event)" : ""}</p>
             <p>Created: {new Date(alert.createdAt).toLocaleString()}</p>
             <p className="break-all text-sm">Alert ID: {alert.id}</p>
