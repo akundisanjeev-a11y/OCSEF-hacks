@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Api } from "../api/client";
+import { ApiError, sampleApi, type Api } from "../api/client";
 import type { DetectionsResponse } from "../api/types";
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -12,6 +12,7 @@ type Result =
   | { state: "ok"; data: DetectionsResponse };
 
 export function DetectionLab({ api }: { api: Api }) {
+  const sampleMode = api === sampleApi;
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pickError, setPickError] = useState<string | null>(null);
@@ -43,12 +44,18 @@ export function DetectionLab({ api }: { api: Api }) {
   }
 
   async function detect() {
-    if (!file) return;
     setResult({ state: "loading" });
     try {
-      setResult({ state: "ok", data: await api.detect(file) });
+      if (sampleMode) {
+        setResult({ state: "ok", data: await sampleApi.detect() });
+      } else if (file) {
+        setResult({ state: "ok", data: await api.detect(file) });
+      }
     } catch (e) {
-      setResult({ state: "error", message: e instanceof Error ? e.message : String(e) });
+      const message = e instanceof ApiError && (e.status === 404 || e.status === 501)
+        ? "Live image detection is unavailable on this backend. Select Sample data to explore an example result."
+        : e instanceof Error ? e.message : String(e);
+      setResult({ state: "error", message });
     }
   }
 
@@ -57,13 +64,17 @@ export function DetectionLab({ api }: { api: Api }) {
   return (
     <div className="lab">
       <div className="toolbar">
-        <label className="file-pick">
-          <input type="file" accept="image/png,image/jpeg" onChange={(e) => pick(e.target.files?.[0])} />
-        </label>
-        <button type="button" className="primary" onClick={detect} disabled={!file || result.state === "loading"}>
-          {result.state === "loading" ? "Detecting…" : "Detect ships"}
+        {!sampleMode && (
+          <label className="file-pick">
+            <input type="file" accept="image/png,image/jpeg" onChange={(e) => pick(e.target.files?.[0])} />
+          </label>
+        )}
+        <button type="button" className="primary" onClick={detect} disabled={(!sampleMode && !file) || result.state === "loading"}>
+          {result.state === "loading" ? "Loading…" : sampleMode ? "Show example detections" : "Detect ships"}
         </button>
-        <div className="toolbar-note muted">Radar image, PNG or JPEG, up to 10 MB.</div>
+        <div className="toolbar-note muted">
+          {sampleMode ? "Fixed example detections from the sample fixture." : "Live detection requires a connected image detector. PNG or JPEG, up to 10 MB."}
+        </div>
       </div>
 
       {pickError && <div className="notice error">{pickError}</div>}
@@ -71,15 +82,20 @@ export function DetectionLab({ api }: { api: Api }) {
       <div className="split">
         <section className="panel">
           <div className="panel-head">
-            <h2>Image</h2>
+            <h2>{sampleMode ? "Example bounding boxes" : "Image"}</h2>
             {data && <span className="muted">{data.image_width} × {data.image_height} px</span>}
           </div>
-          {previewUrl ? (
-            <div className="preview">
-              <img src={previewUrl} alt="Uploaded radar image" />
+          {previewUrl || (sampleMode && data) ? (
+            <div className="preview" style={sampleMode && data ? {
+              aspectRatio: `${data.image_width} / ${data.image_height}`,
+              background: "var(--text)",
+            } : undefined}>
+              {previewUrl && <img src={previewUrl} alt="Uploaded radar image" />}
               {data && (
                 <svg
                   className="overlay"
+                  role="img"
+                  aria-label="Detection bounding boxes"
                   viewBox={`0 0 ${data.image_width} ${data.image_height}`}
                   preserveAspectRatio="none"
                 >
@@ -103,7 +119,7 @@ export function DetectionLab({ api }: { api: Api }) {
               )}
             </div>
           ) : (
-            <p className="empty">Choose an image to preview it here.</p>
+            <p className="empty">{sampleMode ? "Show example detections to view the bounding boxes." : "Choose an image to preview it here."}</p>
           )}
         </section>
 
@@ -111,8 +127,8 @@ export function DetectionLab({ api }: { api: Api }) {
           <div className="panel-head">
             <h2>Detections</h2>
           </div>
-          {result.state === "idle" && <p className="empty">Run detection to see boxes and scores.</p>}
-          {result.state === "loading" && <p className="empty">Running the detector…</p>}
+          {result.state === "idle" && <p className="empty">{sampleMode ? "Show the example to see its scores." : "Run detection to see boxes and scores."}</p>}
+          {result.state === "loading" && <p className="empty">{sampleMode ? "Loading example…" : "Running the detector…"}</p>}
           {result.state === "error" && (
             <div className="notice error">
               <strong>Detection failed.</strong> {result.message}
