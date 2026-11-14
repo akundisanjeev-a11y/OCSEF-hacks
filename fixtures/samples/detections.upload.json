@@ -1,0 +1,20 @@
+{
+  "image_width": 640,
+  "image_height": 480,
+  "observations": [
+    {
+      "observation_id": "upload-01-0",
+      "scene_id": "upload-01",
+      "data_mode": "model_upload",
+      "captured_at": null,
+      "position": null,
+      "bbox_px": [241, 106, 272, 121],
+      "detection_confidence": 0.91,
+      "identity_status": "insufficient_data",
+      "mmsi": null,
+      "imo": null,
+      "match_evidence": null,
+      "sources": ["uploaded radar image"]
+    }
+  ]
+}
