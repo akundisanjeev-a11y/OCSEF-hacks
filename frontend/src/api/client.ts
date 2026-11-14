@@ -58,7 +58,7 @@ const samples = {
 
 const delay = <T,>(value: T) => new Promise<T>((r) => setTimeout(() => r(value), 250));
 
-export const sampleApi: Api = {
+export const sampleApi = {
   listCases: (dataMode) =>
     delay({ cases: samples.cases.cases.filter((c) => c.observation.data_mode === dataMode) }),
   getCase: async (id) => {
@@ -68,4 +68,4 @@ export const sampleApi: Api = {
   },
   runDemo: () => delay({ case_ids: samples.cases.cases.map((c) => c.observation.observation_id) }),
   detect: () => delay(samples.detections),
-};
+} satisfies Api;
