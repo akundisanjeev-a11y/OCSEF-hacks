@@ -7,6 +7,7 @@ import "../mapWorker";
 import { request } from "../api/client";
 import { lengthScale, makeMapSymbol, shipKind } from "../vesselSymbols";
 import type { ActivityCell } from "../api/historical";
+import { validSelection, SELECTION_LIMIT_MESSAGE } from "../selection";
 
 
 type Area = { west: number; south: number; east: number; north: number };
@@ -150,8 +151,8 @@ export function HistoricalGlobe() {
     const a = map.current.unproject([start.x, start.y]);
     const b = map.current.unproject([end.x, end.y]);
     const area = { west: Math.min(a.lng, b.lng), east: Math.max(a.lng, b.lng), south: Math.min(a.lat, b.lat), north: Math.max(a.lat, b.lat) };
-    if (!Object.values(area).every(Number.isFinite) || area.east - area.west > 40 || area.north - area.south > 30 || area.south < -85 || area.north > 85) {
-      setError("Zoom in and select a smaller area on the globe surface (maximum 40° × 30°). Date-line crossings must be split."); return;
+    if (!validSelection(area)) {
+      setError(SELECTION_LIMIT_MESSAGE); return;
     }
     void scan({ ...query, ...area });
   }

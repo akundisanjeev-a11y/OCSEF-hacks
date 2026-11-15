@@ -23,3 +23,16 @@ test("empty, invalid and zero activity does not create hotspots; edge squares st
     expect(lat).toBeLessThanOrEqual(90);
   }
 });
+
+test("large-area heatmap and zoomed squares preserve all 40000 activity cells", () => {
+  const cells = Array.from({ length: 40000 }, (_, i) => cell(String(i), i % 100 + .5, { lat: -19 + Math.floor(i / 800), lon: -49 + (i % 800) * .09 }));
+  const result = activityFeatures(cells);
+  expect(result.points.features).toHaveLength(cells.length);
+  expect(result.squares.features).toHaveLength(cells.length);
+  expect(new Set(result.points.features.map(feature => feature.properties?.id)).size).toBe(cells.length);
+  expect(result.points.features.reduce((sum, feature) => sum + Number(feature.properties?.value), 0)).toBe(cells.reduce((sum, item) => sum + item.value, 0));
+  for (const feature of result.points.features) {
+    expect(feature.properties?.intensity).toBeGreaterThan(0);
+    expect(feature.properties?.intensity).toBeLessThanOrEqual(1);
+  }
+});
