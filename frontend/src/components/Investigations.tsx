@@ -44,9 +44,10 @@ export function Investigations({ onOverview }: { onOverview: () => void }) {
   const currentPage = Math.min(page, lastPage);
   const percent = result?.vessels.length ? Math.round((100 * checked) / result.vessels.length) : 0;
   return <div className="real-investigations split">
-    {result && <AreaPriority report={result} />}
     <section className="panel investigation-workspace">
       <div className="panel-head"><h1>Investigation workspace</h1>{result && <span className="head-context mono">{result.start.slice(0, 10)} – {result.end.slice(0, 10)}</span>}<button onClick={onOverview}>Change selected area</button></div>
+
+      {result && <AreaPriority report={result} />}
 
       {/* Screening: what it does, how far it has got, and the controls, in one band. */}
       {!!result?.vessels.length && <section className="investigation-screening" aria-label="Screen selected boats">
