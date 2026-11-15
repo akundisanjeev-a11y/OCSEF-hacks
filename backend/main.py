@@ -10,6 +10,9 @@ from backend.schemas import Case, CaseListResponse, DataMode
 from backend.services.cases import CaseService
 from backend.services.investigation import build_case
 from backend.services.permit_evidence import load_investigation_inputs, load_permits
+from backend.services.vessel_lookup import VesselCheckRequest, VesselCheckResponse, check_vessel, load_lookup_registry
+from backend.services.historical import AreaQuery, VesselEnrichment, query_area, enrich_vessel
+from backend.services.risk_screening import RiskScreenRequest, screen_risks
 
 FIXTURE_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic" / "static_cases.json"
 
@@ -34,6 +37,26 @@ def create_app(*, seed_fixtures: bool = True) -> FastAPI:
     if seed_fixtures:
         load_demo_cases(store)
     app.state.case_service = store
+
+    @app.post("/historical/area")
+    async def historical_area(query: AreaQuery):
+        return await query_area(query)
+
+    @app.post("/historical/vessel")
+    async def historical_vessel(query: VesselEnrichment):
+        return await enrich_vessel(query)
+
+    @app.post("/historical/risks")
+    async def historical_risks(query: RiskScreenRequest):
+        return await screen_risks(query)
+
+    @app.post("/vessels/check", response_model=VesselCheckResponse)
+    def vessel_check(request: VesselCheckRequest) -> VesselCheckResponse:
+        try:
+            registry = load_lookup_registry(request.registry_mode)
+        except (OSError, ValueError):
+            raise HTTPException(status_code=503, detail="The selected registry could not be loaded. Check the server registry configuration.")
+        return check_vessel(request, registry)
 
     @app.post("/demo/run", response_model=DemoRunResponse)
     def run_demo() -> DemoRunResponse:

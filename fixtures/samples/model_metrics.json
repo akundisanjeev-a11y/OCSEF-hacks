@@ -1,0 +1,8 @@
+{
+  "note": "Backend 1 fills these in from the held-out evaluation. Leave a value null until it is measured.",
+  "checkpoint": null,
+  "evaluation_split": null,
+  "precision": null,
+  "recall": null,
+  "map50": null
+}

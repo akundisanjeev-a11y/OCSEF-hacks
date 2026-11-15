@@ -82,3 +82,28 @@ export interface DetectionsResponse {
   image_height: number;
   observations: Observation[];
 }
+
+export interface VesselCheckRequest {
+  registry_mode: "synthetic" | "documented";
+  identifier_type: "mmsi" | "imo" | "registration_id";
+  identifier: string;
+  activity: "fishing" | "transit" | "cargo_transport" | null;
+  captured_at: string | null;
+  zone_id: string | null;
+}
+
+export interface VesselCheckResponse {
+  registry_mode: "synthetic" | "documented";
+  documentation_status: "documented" | "not_found" | "registry_unavailable" | "ambiguous";
+  explanation: string;
+  registry_description: string | null;
+  registry_retrieved_at: string | null;
+  vessel: {
+    record_id: string; name: string; mmsi: string | null; imo: string | null;
+    registration_id: string | null; vessel_type: string | null; sources: string[];
+    permits: { permit_id: string; activity: string; zone_id: string; valid_from: string; valid_until: string; sources: string[] }[];
+  } | null;
+  authorization: Authorization;
+  assumptions: string[];
+  sources: string[];
+}

@@ -1,5 +1,27 @@
 # OCSEF-hacks
 
+## Historical globe
+
+The default screen uses Josh's Overview globe and case dashboard from `joshua`.
+Overview now queries GFW directly when an area is selected, displays activity
+cells and area-associated vessels, and retrieves vessel identity/risk evidence.
+Its data selector keeps fictional cases as a separate option. The **GFW historical**
+tab remains an advanced explorer. **Check vessel ID** retains manual lookup.
+Investigations/Coastal Impact still use the demo-seeded case API.
+No image detector is required.
+The default window ends 100 hours ago; SAR uses at least 124 hours.
+Choose fictional mode for a walkthrough or configure `GFW_API_TOKEN` privately
+on FastAPI to use GFW. See [historical globe setup and data limits](backend/HISTORICAL_GLOBE.md).
+Dots represent activity cells, not exact boat positions. National authorization
+still requires applicable permit/rule evidence.
+
+## Vessel ID lookup
+
+Open **Check vessel ID** in the frontend to enter an MMSI, IMO or registration ID.
+The API route is `POST /vessels/check`. Optional activity, zone and time fields
+allow conditional authorization checks. Fictional tests are built in; real checks
+require a sourced server registry. See [setup and result meanings](backend/VESSEL_LOOKUP.md).
+
 ## Run GhostFleet
 
 From the repository root, install the backend dependencies and start the API.
