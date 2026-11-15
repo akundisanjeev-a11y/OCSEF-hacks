@@ -10,9 +10,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image, UnidentifiedImageError
 
 from backend.config import ROOT, Settings, load_settings
+from backend.forecast_api import router as forecast_router
 from backend.ml.detector import ShipDetector
 from backend.schemas import DetectionResponse, MatchRequest, MatchResponse, Observation
 from backend.services.ais_matching import match_scene
+from backend.services.activity_forecast import ActivityForecaster
 
 
 logger = logging.getLogger(__name__)
@@ -40,26 +42,38 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        app.state.detector = None
-        app.state.detector_error = None
+        app.state.forecaster = None
+        app.state.forecast_error = None
         try:
-            app.state.detector = await run_in_threadpool(
-                ShipDetector, settings.model_path,
-                settings.detection_confidence, settings.inference_device,
+            app.state.forecaster = await run_in_threadpool(
+                ActivityForecaster, settings.forecast_model_path, settings.forecast_processed_dir,
             )
-        except Exception as exc:
-            logger.warning("Ship detector unavailable: %s", exc)
-            app.state.detector_error = (
-                "Trained single-class ship weights are missing or could not load. "
-                "Check MODEL_PATH and the server log, then restart."
-            )
+        except Exception:
+            logger.exception("Activity forecast unavailable")
+            app.state.forecast_error = "Saved forecast model or history could not load. Check the server log and restart."
+        app.state.detector = None
+        app.state.detector_error = "Image-based ship detection is disabled; activity forecasting is a separate service."
+        if settings.enable_ship_detector:
+            app.state.detector_error = None
+            try:
+                app.state.detector = await run_in_threadpool(
+                    ShipDetector, settings.model_path,
+                    settings.detection_confidence, settings.inference_device,
+                )
+            except Exception as exc:
+                logger.warning("Ship detector unavailable: %s", exc)
+                app.state.detector_error = (
+                    "Trained single-class ship weights are missing or could not load. "
+                    "Check MODEL_PATH and the server log, then restart."
+                )
         yield
         app.state.detector = None
+        app.state.forecaster = None
 
     app = FastAPI(
-        title="GhostFleet Detection & AIS Matching", version="0.1.0",
-        description=("12-hour team starter. Synthetic examples are fictional. "
-                     "AIS association is separate from authorization."),
+        title="GhostFleet Activity Forecast & Detection", version="0.2.0",
+        description=("Historical worldwide apparent-fishing activity forecasts. "
+                     "Earlier detection/AIS routes remain available. Forecasts do not determine authorization."),
         lifespan=lifespan,
     )
     app.add_middleware(
@@ -67,6 +81,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_credentials=False, allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
     )
+    app.include_router(forecast_router)
 
     @app.get("/health", tags=["Status"])
     def health():
@@ -74,6 +89,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "status": "ok", "detector_ready": app.state.detector is not None,
             "detector_message": app.state.detector_error,
             "matching_ready": True,
+            "detector_enabled": settings.enable_ship_detector,
+            "forecast_ready": app.state.forecaster is not None,
+            "forecast_message": app.state.forecast_error,
         }
 
     @app.post("/detections", response_model=DetectionResponse, tags=["Detection"])

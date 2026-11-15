@@ -1,0 +1,42 @@
+{
+  "data_mode": "historical_demo",
+  "observation_cutoff": "2025-07-31",
+  "simulated_issue_date": "2025-08-03",
+  "target_start": "2025-08-04",
+  "target_end": "2025-08-10",
+  "status": "scored",
+  "cell_id": "lat23_lon60",
+  "bounds": {
+    "south": 25.0,
+    "north": 30.0,
+    "west": 120.0,
+    "east": 125.0
+  },
+  "selected_method": "seasonal_correction_tree",
+  "model_version": "world-seasonal-20261115T013747Z",
+  "source_dataset": "public-global-fishing-effort:v5.0",
+  "predicted_week_hours": 34722.984290720226,
+  "repeat_last_week_hours": 30003.75,
+  "seasonal_estimate_hours": 315707.933280559,
+  "seasonal_reference_available": true,
+  "data_quality_notes": [],
+  "decision_path": [
+    {
+      "feature": "seasonal_change_fraction",
+      "observed": 9.285287358473031,
+      "comparison": ">",
+      "threshold": -0.2802339345216751
+    },
+    {
+      "feature": "seasonal_change_fraction",
+      "observed": 9.285287358473031,
+      "comparison": ">",
+      "threshold": 0.24741465598344803
+    }
+  ],
+  "decision_path_applies_to": "seasonal_correction_tree",
+  "learned_leaf_correction_fraction": 0.15337348581370477,
+  "correction_scale_hours": 30769.5575,
+  "selected_explanation": "Start with 30003.75 last-week hours. The learned tree correction is 0.153373 times a local scale of 30769.56 hours, producing 34722.98 hours.",
+  "interpretation": "Forecast of reported apparent fishing vessel-hours; not proof of activity, harm or authorization."
+}

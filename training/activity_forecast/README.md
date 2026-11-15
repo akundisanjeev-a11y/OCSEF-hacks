@@ -129,6 +129,12 @@ Backend use retains the existing `predict_location(lat, lon, bundle, daily)`
 interface. Pass the desired complete current history; annual reference is loaded
 locally, or can be supplied to `predict_improved_location` explicitly.
 
+The website can now call `POST /api/activity-forecast` and
+`GET /api/activity-forecast/info` through the existing FastAPI server. It loads
+the saved `best_model.joblib` and local data at startup. See the
+[frontend handoff](../../docs/frontend-activity-forecast-guide.md) for the
+implemented request/response contract, UI states and map integration.
+
 ## Reproduce downloads
 
 Your existing local token is read from `.env` or `backend/.env`; never commit it.

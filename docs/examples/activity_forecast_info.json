@@ -1,0 +1,26 @@
+{
+  "data_mode": "historical_demo",
+  "observation_cutoff": "2025-07-31",
+  "simulated_issue_date": "2025-08-03",
+  "target_start": "2025-08-04",
+  "target_end": "2025-08-10",
+  "status": "ready",
+  "model_version": "world-seasonal-20261115T013747Z",
+  "model_sha256": "a85e3e788c8d5d61d8a738a85e3ca4e274e62e027b11d39ec4c8c622e45cb424",
+  "selected_method": "seasonal_correction_tree",
+  "source_dataset": "public-global-fishing-effort:v5.0",
+  "grid_degrees": 5,
+  "minimum_history_days": 28,
+  "availability_lag_days": 3,
+  "evaluation": {
+    "issue_start": "2025-07-05",
+    "issue_end": "2025-07-24",
+    "rows": 20487,
+    "cells": 1100,
+    "mae_hours": 418.25554455437236,
+    "baseline_mae_hours": 448.6778430224045,
+    "rmse_hours": 1821.985075389087,
+    "baseline_rmse_hours": 2140.828733772868,
+    "mae_reduction_percent": 6.7804325399935115
+  }
+}

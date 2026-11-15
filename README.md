@@ -8,6 +8,13 @@ for the prepared dataset and the one-command training instructions. The image
 detector and AIS fixtures below are retained as earlier experiments; they are
 not required for the forecasting model.
 
+**Frontend handoff:** [Activity forecast integration guide](docs/frontend-activity-forecast-guide.md).
+The saved best model is exposed through `POST /api/activity-forecast` and
+`GET /api/activity-forecast/info`. Start the backend using the command below;
+`GET /health` reports `forecast_ready` separately from the earlier image detector.
+The earlier image detector is disabled by default. Enable it only for the old
+image-upload experiment with `ENABLE_SHIP_DETECTOR=true` and trained YOLO weights.
+
 For a team of four high school students with roughly **12 working hours**.
 This repository implements the detection and AIS-association part. The other
 backend member owns authorization/permit decisions and case storage. Two frontend

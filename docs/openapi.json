@@ -1,11 +1,88 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "GhostFleet Detection & AIS Matching",
-    "description": "12-hour team starter. Synthetic examples are fictional. AIS association is separate from authorization.",
-    "version": "0.1.0"
+    "title": "GhostFleet Activity Forecast & Detection",
+    "description": "Historical worldwide apparent-fishing activity forecasts. Earlier detection/AIS routes remain available. Forecasts do not determine authorization.",
+    "version": "0.2.0"
   },
   "paths": {
+    "/api/activity-forecast/info": {
+      "get": {
+        "tags": [
+          "Activity forecast"
+        ],
+        "summary": "Forecast Info",
+        "operationId": "forecast_info_api_activity_forecast_info_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForecastInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/activity-forecast": {
+      "post": {
+        "tags": [
+          "Activity forecast"
+        ],
+        "summary": "Forecast",
+        "operationId": "forecast_api_activity_forecast_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForecastRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ScoredForecast"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InsufficientForecast"
+                    }
+                  ],
+                  "title": "Response Forecast Api Activity Forecast Post",
+                  "discriminator": {
+                    "propertyName": "status",
+                    "mapping": {
+                      "scored": "#/components/schemas/ScoredForecast",
+                      "insufficient_data": "#/components/schemas/InsufficientForecast"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -156,7 +233,7 @@
             "title": "End"
           },
           "bounds": {
-            "$ref": "#/components/schemas/Bounds"
+            "$ref": "#/components/schemas/Bounds-Input"
           },
           "adequate_for_search": {
             "type": "boolean",
@@ -214,7 +291,7 @@
         ],
         "title": "Body_detect_detections_post"
       },
-      "Bounds": {
+      "Bounds-Input": {
         "properties": {
           "south": {
             "type": "number",
@@ -242,6 +319,34 @@
           }
         },
         "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "south",
+          "north",
+          "west",
+          "east"
+        ],
+        "title": "Bounds"
+      },
+      "Bounds-Output": {
+        "properties": {
+          "south": {
+            "type": "number",
+            "title": "South"
+          },
+          "north": {
+            "type": "number",
+            "title": "North"
+          },
+          "west": {
+            "type": "number",
+            "title": "West"
+          },
+          "east": {
+            "type": "number",
+            "title": "East"
+          }
+        },
         "type": "object",
         "required": [
           "south",
@@ -291,6 +396,38 @@
         ],
         "title": "Candidate"
       },
+      "DecisionStep": {
+        "properties": {
+          "feature": {
+            "type": "string",
+            "title": "Feature"
+          },
+          "observed": {
+            "type": "number",
+            "title": "Observed"
+          },
+          "comparison": {
+            "type": "string",
+            "enum": [
+              "<=",
+              ">"
+            ],
+            "title": "Comparison"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feature",
+          "observed",
+          "comparison",
+          "threshold"
+        ],
+        "title": "DecisionStep"
+      },
       "DetectionResponse": {
         "properties": {
           "image_width": {
@@ -318,6 +455,180 @@
         ],
         "title": "DetectionResponse"
       },
+      "EvaluationSummary": {
+        "properties": {
+          "issue_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Issue Start"
+          },
+          "issue_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Issue End"
+          },
+          "rows": {
+            "type": "integer",
+            "title": "Rows"
+          },
+          "cells": {
+            "type": "integer",
+            "title": "Cells"
+          },
+          "mae_hours": {
+            "type": "number",
+            "title": "Mae Hours"
+          },
+          "baseline_mae_hours": {
+            "type": "number",
+            "title": "Baseline Mae Hours"
+          },
+          "rmse_hours": {
+            "type": "number",
+            "title": "Rmse Hours"
+          },
+          "baseline_rmse_hours": {
+            "type": "number",
+            "title": "Baseline Rmse Hours"
+          },
+          "mae_reduction_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mae Reduction Percent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "issue_start",
+          "issue_end",
+          "rows",
+          "cells",
+          "mae_hours",
+          "baseline_mae_hours",
+          "rmse_hours",
+          "baseline_rmse_hours",
+          "mae_reduction_percent"
+        ],
+        "title": "EvaluationSummary"
+      },
+      "ForecastInfo": {
+        "properties": {
+          "data_mode": {
+            "type": "string",
+            "const": "historical_demo",
+            "title": "Data Mode",
+            "default": "historical_demo"
+          },
+          "observation_cutoff": {
+            "type": "string",
+            "format": "date",
+            "title": "Observation Cutoff"
+          },
+          "simulated_issue_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Simulated Issue Date"
+          },
+          "target_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Target Start"
+          },
+          "target_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Target End"
+          },
+          "status": {
+            "type": "string",
+            "const": "ready",
+            "title": "Status",
+            "default": "ready"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "model_sha256": {
+            "type": "string",
+            "title": "Model Sha256"
+          },
+          "selected_method": {
+            "type": "string",
+            "title": "Selected Method"
+          },
+          "source_dataset": {
+            "type": "string",
+            "title": "Source Dataset"
+          },
+          "grid_degrees": {
+            "type": "integer",
+            "title": "Grid Degrees"
+          },
+          "minimum_history_days": {
+            "type": "integer",
+            "title": "Minimum History Days",
+            "default": 28
+          },
+          "availability_lag_days": {
+            "type": "integer",
+            "title": "Availability Lag Days"
+          },
+          "evaluation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvaluationSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "observation_cutoff",
+          "simulated_issue_date",
+          "target_start",
+          "target_end",
+          "model_version",
+          "model_sha256",
+          "selected_method",
+          "source_dataset",
+          "grid_degrees",
+          "availability_lag_days"
+        ],
+        "title": "ForecastInfo"
+      },
+      "ForecastRequest": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "ForecastRequest"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -330,6 +641,64 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "InsufficientForecast": {
+        "properties": {
+          "data_mode": {
+            "type": "string",
+            "const": "historical_demo",
+            "title": "Data Mode",
+            "default": "historical_demo"
+          },
+          "observation_cutoff": {
+            "type": "string",
+            "format": "date",
+            "title": "Observation Cutoff"
+          },
+          "simulated_issue_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Simulated Issue Date"
+          },
+          "target_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Target Start"
+          },
+          "target_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Target End"
+          },
+          "status": {
+            "type": "string",
+            "const": "insufficient_data",
+            "title": "Status"
+          },
+          "cell_id": {
+            "type": "string",
+            "title": "Cell Id"
+          },
+          "bounds": {
+            "$ref": "#/components/schemas/Bounds-Output"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observation_cutoff",
+          "simulated_issue_date",
+          "target_start",
+          "target_end",
+          "status",
+          "cell_id",
+          "bounds",
+          "reason"
+        ],
+        "title": "InsufficientForecast"
       },
       "MatchEvidence": {
         "properties": {
@@ -601,6 +970,139 @@
           "lon"
         ],
         "title": "Position"
+      },
+      "ScoredForecast": {
+        "properties": {
+          "data_mode": {
+            "type": "string",
+            "const": "historical_demo",
+            "title": "Data Mode",
+            "default": "historical_demo"
+          },
+          "observation_cutoff": {
+            "type": "string",
+            "format": "date",
+            "title": "Observation Cutoff"
+          },
+          "simulated_issue_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Simulated Issue Date"
+          },
+          "target_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Target Start"
+          },
+          "target_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Target End"
+          },
+          "status": {
+            "type": "string",
+            "const": "scored",
+            "title": "Status"
+          },
+          "cell_id": {
+            "type": "string",
+            "title": "Cell Id"
+          },
+          "bounds": {
+            "$ref": "#/components/schemas/Bounds-Output"
+          },
+          "selected_method": {
+            "type": "string",
+            "title": "Selected Method"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "source_dataset": {
+            "type": "string",
+            "title": "Source Dataset"
+          },
+          "predicted_week_hours": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Predicted Week Hours"
+          },
+          "repeat_last_week_hours": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Repeat Last Week Hours"
+          },
+          "seasonal_estimate_hours": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Seasonal Estimate Hours"
+          },
+          "seasonal_reference_available": {
+            "type": "boolean",
+            "title": "Seasonal Reference Available"
+          },
+          "data_quality_notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Data Quality Notes"
+          },
+          "decision_path": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionStep"
+            },
+            "type": "array",
+            "title": "Decision Path"
+          },
+          "decision_path_applies_to": {
+            "type": "string",
+            "title": "Decision Path Applies To"
+          },
+          "learned_leaf_correction_fraction": {
+            "type": "number",
+            "title": "Learned Leaf Correction Fraction"
+          },
+          "correction_scale_hours": {
+            "type": "number",
+            "minimum": 1.0,
+            "title": "Correction Scale Hours"
+          },
+          "selected_explanation": {
+            "type": "string",
+            "title": "Selected Explanation"
+          },
+          "interpretation": {
+            "type": "string",
+            "title": "Interpretation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observation_cutoff",
+          "simulated_issue_date",
+          "target_start",
+          "target_end",
+          "status",
+          "cell_id",
+          "bounds",
+          "selected_method",
+          "model_version",
+          "source_dataset",
+          "predicted_week_hours",
+          "repeat_last_week_hours",
+          "seasonal_estimate_hours",
+          "seasonal_reference_available",
+          "data_quality_notes",
+          "decision_path",
+          "decision_path_applies_to",
+          "learned_leaf_correction_fraction",
+          "correction_scale_hours",
+          "selected_explanation",
+          "interpretation"
+        ],
+        "title": "ScoredForecast"
       },
       "ValidationError": {
         "properties": {

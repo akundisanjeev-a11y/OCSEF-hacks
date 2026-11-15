@@ -11,6 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 @dataclass(frozen=True)
 class Settings:
     model_path: Path = ROOT / "weights" / "best.pt"
+    enable_ship_detector: bool = False
+    forecast_model_path: Path = ROOT / "weights/activity_forecast/best_model.joblib"
+    forecast_processed_dir: Path = ROOT / "datasets/activity_forecast/processed"
     detection_confidence: float = 0.25
     inference_device: str = "cpu"
     max_upload_bytes: int = 10 * 1024 * 1024
@@ -32,11 +35,23 @@ class Settings:
 
 def load_settings() -> Settings:
     load_dotenv(ROOT / ".env", override=False)
+    enable_ship_detector = os.getenv("ENABLE_SHIP_DETECTOR", "false").strip().lower()
+    if enable_ship_detector not in {"true", "false", "1", "0"}:
+        raise ValueError("ENABLE_SHIP_DETECTOR must be true, false, 1 or 0")
     model_path = Path(os.getenv("MODEL_PATH", "weights/best.pt"))
     if not model_path.is_absolute():
         model_path = ROOT / model_path
+    forecast_model_path = Path(os.getenv("ACTIVITY_FORECAST_MODEL_PATH", "weights/activity_forecast/best_model.joblib"))
+    forecast_processed_dir = Path(os.getenv("ACTIVITY_FORECAST_DATA_DIR", "datasets/activity_forecast/processed"))
+    if not forecast_model_path.is_absolute():
+        forecast_model_path = ROOT / forecast_model_path
+    if not forecast_processed_dir.is_absolute():
+        forecast_processed_dir = ROOT / forecast_processed_dir
     return Settings(
         model_path=model_path,
+        enable_ship_detector=enable_ship_detector in {"true", "1"},
+        forecast_model_path=forecast_model_path,
+        forecast_processed_dir=forecast_processed_dir,
         detection_confidence=float(os.getenv("DETECTION_CONFIDENCE", "0.25")),
         inference_device=os.getenv("INFERENCE_DEVICE", "cpu"),
         max_upload_bytes=int(os.getenv("MAX_UPLOAD_MB", "10")) * 1024 * 1024,
