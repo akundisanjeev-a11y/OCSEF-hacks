@@ -25,11 +25,25 @@ def test_bundled_files_work_in_an_empty_data_directory(tmp_path):
             assert response.status_code == 200
             assert response.json()['predicted_week_hours'] == pytest.approx(34722.984290720226)
             assert response.json()['data_mode'] == 'historical_demo'
+            evidence = response.json()['reasoning_evidence']
+            cell_history = service.daily.loc[service.daily.cell_id == response.json()['cell_id']].sort_values('date').tail(28)
+            assert evidence['last_week_daily_mean'] == pytest.approx(cell_history.fishing_hours.tail(7).mean())
+            assert evidence['recent_three_day_daily_mean'] == pytest.approx(cell_history.fishing_hours.tail(3).mean())
+            assert evidence['month_daily_mean'] == pytest.approx(cell_history.fishing_hours.mean())
+            assert evidence['seasonal_reference_start'] == '2024-08-04'
+            assert evidence['prediction_change_hours'] == pytest.approx(response.json()['predicted_week_hours']-response.json()['repeat_last_week_hours'])
+            assert 'recent_three_day_change_fraction' not in evidence['used_signals']  # This returned tree path uses seasonality, not that signal.
         assert client.get('/activity-forecast/info').json()['evaluation']['mae_reduction_percent'] == pytest.approx(6.78043254)
         empty = client.post('/activity-forecast',json={'latitude':89,'longitude':0})
         assert empty.json()['status'] == 'insufficient_data'
         assert client.get('/cases').json() == {'cases': []}
         assert client.get('/health').json() == {'status':'ok'}
+        selected_method = service.bundle['default_method']
+        service.bundle['default_method'] = 'repeat_last_week'
+        repeated = service.predict(27.5, 122.5)
+        assert repeated['reasoning_evidence']['used_signals'] == ['last_week']
+        assert repeated['reasoning_evidence']['prediction_change_hours'] == pytest.approx(0)
+        service.bundle['default_method'] = selected_method
     (processed/'metadata.json').write_text('changed')
     with pytest.raises(ValueError,match='Local history differs'):
         setup(destination=processed)

@@ -1,13 +1,30 @@
 # Frontend handoff: trained fishing-activity forecast
 
-Frontend integration is now implemented in Overview. Use **Open ML fishing
-forecast** in the left sidebar to reach the panel, then forecast the selected
+Frontend integration is now implemented in Overview. The **ML fishing-activity
+forecast** occupies the left sliding drawer. Filters and **Area controls** are
+below the map and boat list, in the forecast panel's former location. Forecast the selected
 area's center or enter a point. **Try verified historical example** runs the
 documented example without needing a GFW token. A scored result draws its model
 cell in purple, separately from the GFW area selection, and shows the model's
 own historical dates. Insufficient data, failed requests and changed selections
 clear the old result. GFW area requests also perform a short backend readiness
 check so an unresponsive server produces an actionable message.
+
+A scored forecast opens **Forecast reasoning** in the right Evidence drawer.
+It shows the selected explanation, dates, baseline, data-quality notes and
+applicable decision steps. Boat reports and activity-square details remain
+separate views in that drawer.
+
+The frontend also queries up to eight neighboring model cells, with at most
+three comparison requests in flight. Gold arrows point from each usable cell
+toward the adjacent cell with the highest strictly greater predicted activity.
+Equal values, insufficient history, failed requests or mismatched forecast
+dates/model versions do not produce arrows. These are spatial comparisons of
+forecast totals, **not predicted boat routes, migration or measured flow**.
+Clicking an arrow highlights its destination and shows both values plus the
+destination cell's actual model explanation in Evidence. Changing the point,
+clearing the forecast or selecting a new area removes old arrows and reasoning.
+The forecast's historical dates remain distinct from the GFW observation window.
 
 The backend route, trained best model and required historical inference data
 are included on main. Your teammate only needs to build the frontend.

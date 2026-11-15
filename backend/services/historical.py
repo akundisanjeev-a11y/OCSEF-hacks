@@ -7,6 +7,7 @@ import math
 import re
 import time
 import zipfile
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Literal
 from urllib.parse import quote
@@ -130,12 +131,21 @@ def decode_response(content: bytes) -> dict:
     return result
 
 
-async def gfw_request(path: str, *, params=None, body=None) -> dict:
+@asynccontextmanager
+async def gfw_client_scope(client=None):
+    if client is not None:
+        yield client
+    else:
+        async with httpx.AsyncClient(timeout=110, follow_redirects=False) as owned:
+            yield owned
+
+
+async def gfw_request(path: str, *, params=None, body=None, client=None) -> dict:
     token = get_gfw_token()
     if not token:
         raise HTTPException(503, "Set GFW_API_TOKEN in the backend environment or .env to enable GFW historical data. Fictional mode is available separately.")
     try:
-        async with httpx.AsyncClient(timeout=110, follow_redirects=False) as client:
+        async with gfw_client_scope(client) as client:
             async with client.stream("POST" if body is not None else "GET", "https://gateway.api.globalfishingwatch.org/v3/" + path,
                                      params=params, json=body, headers={"Authorization": f"Bearer {token}"}) as response:
                 if not 200 <= response.status_code < 300:
@@ -310,6 +320,7 @@ async def query_area(query: AreaQuery):
     if land_check and land_check["skip"] and not query.allow_land:
         return {"mode": query.mode, "layer": query.layer, "start": start, "end": end, "dataset": DATASETS[query.layer],
                 "cells": [], "vessels": [], "cell_resolution_degrees": .1, "land_check": land_check,
+                "bounds": {key: getattr(query, key) for key in ("west", "south", "east", "north")},
                 "skipped": True, "notes": ["Skipped before calling GFW: conservative land coverage exceeds 75%. Select a water-focused area or explicitly override the estimate."]}
     if query.mode == "synthetic":
         data = sample_area(query, start, end)
@@ -334,6 +345,7 @@ async def query_area(query: AreaQuery):
             vessel["hours"] += numeric(row.get("hours")) or 0
         data = {"cells": cells, "vessels": list(vessels.values())}
     result = {**data, "mode": query.mode, "layer": query.layer, "start": start, "end": end, "land_check": land_check, "skipped": False,
+              "bounds": {key: getattr(query, key) for key in ("west", "south", "east", "north")},
               "dataset": DATASETS[query.layer], "cell_resolution_degrees": .1,
               "notes": ["Dots represent 0.1° activity cells, not exact boat positions.",
                         "Vessels are associated with the selected area and period, not assigned to individual cells.",

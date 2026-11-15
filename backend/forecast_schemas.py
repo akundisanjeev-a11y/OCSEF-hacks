@@ -34,6 +34,21 @@ class DecisionStep(BaseModel):
     threshold: float
 
 
+class ForecastReasoningEvidence(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
+    history_start: date
+    history_end: date
+    last_week_daily_mean: float = Field(ge=0)
+    previous_week_daily_mean: float = Field(ge=0)
+    recent_three_day_daily_mean: float = Field(ge=0)
+    month_daily_mean: float = Field(ge=0)
+    seasonal_estimate_hours: float = Field(ge=0)
+    seasonal_reference_start: date | None = None
+    seasonal_reference_end: date | None = None
+    prediction_change_hours: float
+    used_signals: list[str]
+
+
 class ScoredForecast(ForecastPeriod):
     model_config = ConfigDict(allow_inf_nan=False)
     status: Literal["scored"]
@@ -53,6 +68,7 @@ class ScoredForecast(ForecastPeriod):
     correction_scale_hours: float = Field(ge=1)
     selected_explanation: str
     interpretation: str
+    reasoning_evidence: ForecastReasoningEvidence | None = None
 
 
 class InsufficientForecast(ForecastPeriod):

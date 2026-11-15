@@ -1,116 +1,61 @@
-import { useState, type FormEvent } from "react";
-import { checkVessel } from "../api/client";
-import type { VesselCheckRequest, VesselCheckResponse } from "../api/types";
-import { StatusLabel } from "./StatusLabel";
-
-const initial: VesselCheckRequest = {
-  registry_mode: "documented", identifier_type: "mmsi", identifier: "",
-  activity: null, captured_at: null, zone_id: null,
-};
-const documentationLabels = {
-  documented: "Documented in this registry", not_found: "Not found in this registry",
-  registry_unavailable: "Registry not configured", ambiguous: "Ambiguous identity",
-};
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { fetchHistoricalVessel, searchVessels, type HistoricalEvidence, type VesselSearchMatch } from "../api/historical";
+import { useHistoricalWorkspace } from "../HistoricalWorkspace";
+import { VesselEvidence } from "./VesselEvidence";
+import { Info } from "./Info";
+import { LoadingStatus, Skeleton } from "./Loading";
 
 export function VesselCheck() {
-  const [input, setInput] = useState(initial);
-  const [result, setResult] = useState<VesselCheckResponse | null>(null);
-  const [error, setError] = useState("");
+  const workspace = useHistoricalWorkspace()!;
+  const [query, setQuery] = useState("");
+  const [matches, setMatches] = useState<VesselSearchMatch[] | null>(null);
+  const [since, setSince] = useState<string | null>(null);
+  const [report, setReport] = useState<HistoricalEvidence | null>(null);
   const [loading, setLoading] = useState(false);
-
-  function update(values: Partial<VesselCheckRequest>) {
-    setInput((previous) => ({ ...previous, ...values }));
-    setResult(null);
-    setError("");
-  }
-
-  function example(kind: "authorized" | "conflict" | "missing") {
-    update({ registry_mode: "synthetic", identifier_type: "mmsi",
-      identifier: kind === "missing" ? "000000099" : "000000001", activity: "fishing",
-      captured_at: "2026-01-01T10:00:00Z", zone_id: kind === "conflict" ? "DEMO-OFFSHORE-B" : "DEMO-OFFSHORE-A" });
-  }
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setLoading(true); setResult(null); setError("");
+  const [error, setError] = useState("");
+  const version = useRef(0);
+  const active = useRef<AbortController | null>(null);
+  function clear() { version.current++; active.current?.abort(); setMatches(null); setSince(null); setReport(null); setError(""); setLoading(false); }
+  useEffect(() => () => { version.current++; active.current?.abort(); }, []);
+  async function search(event?: FormEvent, more = false) {
+    event?.preventDefault();
+    active.current?.abort();
+    const controller = new AbortController(); active.current = controller;
+    const request = ++version.current;
+    setLoading(true); setError(""); setReport(null);
+    if (!more) { setMatches(null); setSince(null); }
     try {
-      setResult(await checkVessel({ ...input, identifier: input.identifier.trim(), zone_id: input.zone_id?.trim() || null }));
-    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
-    finally { setLoading(false); }
+      const response = await searchVessels(query.trim(), more ? since ?? undefined : undefined, controller.signal);
+      if (request !== version.current) return;
+      setMatches(previous => more ? [...new Map([...(previous ?? []), ...response.results].map(row => [row.vessel_id, row])).values()] : response.results);
+      setSince(response.since);
+    } catch (e) { if (request === version.current) setError(e instanceof Error ? e.message : String(e)); }
+    finally { if (request === version.current) setLoading(false); }
   }
-
-  return (
-    <div className="split vessel-check">
-      <section className="panel">
-        <div className="panel-head"><h2>Check a vessel ID</h2></div>
-        <p className="notice">Look up a vessel record, then check permission for an entered activity, area and time. A missing record does not establish that a vessel is unauthorized.</p>
-        <form onSubmit={submit}>
-          <fieldset disabled={loading} className="lookup-fields">
-            <label>Registry
-              <select value={input.registry_mode} onChange={(e) => update({ registry_mode: e.target.value as VesselCheckRequest["registry_mode"] })}>
-                <option value="documented">Sourced records (server configured)</option>
-                <option value="synthetic">Fictional test registry</option>
-              </select>
-            </label>
-            <p className="muted">{input.registry_mode === "synthetic" ? "Fictional identifiers, permits and rules only." : "Checks only the sourced records loaded by your server. There is no global registry connection yet."}</p>
-            <label>Identifier type
-              <select value={input.identifier_type} onChange={(e) => update({ identifier_type: e.target.value as VesselCheckRequest["identifier_type"], identifier: "" })}>
-                <option value="mmsi">MMSI (9 digits)</option><option value="imo">IMO (7 digits)</option><option value="registration_id">Registration / boat ID</option>
-              </select>
-            </label>
-            <label>Vessel identifier
-              <input required maxLength={100} value={input.identifier} onChange={(e) => update({ identifier: e.target.value })} placeholder={input.identifier_type === "mmsi" ? "Enter MMSI" : "Enter vessel ID"} />
-            </label>
-            <h3>Optional authorization context</h3>
-            <p className="muted">An ID alone checks documentation. Authorization also needs activity, a registry zone ID and capture time. These are entered claims, not verified satellite observations.</p>
-            <label>Activity
-              <select value={input.activity ?? ""} onChange={(e) => update({ activity: (e.target.value || null) as VesselCheckRequest["activity"] })}>
-                <option value="">Not supplied</option><option value="fishing">Fishing</option><option value="transit">Transit</option><option value="cargo_transport">Cargo transport</option>
-              </select>
-            </label>
-            <label>Zone ID from the sourced registry
-              <input maxLength={100} value={input.zone_id ?? ""} onChange={(e) => update({ zone_id: e.target.value || null })} placeholder="For example: DEMO-OFFSHORE-A in fictional mode" />
-            </label>
-            <label>Capture time (UTC, ISO 8601)
-              <input value={input.captured_at ?? ""} onChange={(e) => update({ captured_at: e.target.value || null })} placeholder="2026-01-01T10:00:00Z" />
-            </label>
-            <button className="primary" type="submit">{loading ? "Checking…" : "Check vessel"}</button>
-            <div className="toolbar">
-              <span className="muted">Fill a fictional test:</span>
-              <button type="button" onClick={() => example("authorized")}>Valid permit</button>
-              <button type="button" onClick={() => example("conflict")}>Rule conflict</button>
-              <button type="button" onClick={() => example("missing")}>ID not found</button>
-            </div>
-          </fieldset>
-        </form>
-      </section>
-      <section className="panel" aria-live="polite" aria-busy={loading}>
-        <div className="panel-head"><h2>Vessel check result</h2></div>
-        {loading && <p className="empty">Checking the selected registry…</p>}
-        {error && <div className="notice error" role="alert">{error}</div>}
-        {!result && !loading && !error && <p className="empty">Enter a vessel ID or fill a fictional test, then select Check vessel.</p>}
-        {result && <>
-          <div className="block">
-            <div className="eyebrow">{result.registry_mode === "synthetic" ? "Fictional test result" : "Sourced registry result"}</div>
-            <h2>{documentationLabels[result.documentation_status]}</h2><p>{result.explanation}</p>
-            {result.vessel && <dl>
-              <div className="field"><dt>Vessel</dt><dd>{result.vessel.name}</dd></div>
-              <div className="field"><dt>Type in record</dt><dd>{result.vessel.vessel_type ?? "Unknown"}</dd></div>
-              <div className="field"><dt>MMSI / IMO</dt><dd>{result.vessel.mmsi ?? "—"} / {result.vessel.imo ?? "—"}</dd></div>
-              <div className="field"><dt>Registration</dt><dd>{result.vessel.registration_id ?? "—"}</dd></div>
-            </dl>}
-          </div>
-          <div className="block"><h3>Authorization for entered context</h3>
-            <StatusLabel status={result.authorization.status} /><p>{result.authorization.explanation}</p>
-            {result.vessel?.permits.map((p) => <p key={p.permit_id}><strong>{p.permit_id}</strong>: {p.activity}, {p.zone_id}, {p.valid_from} to {p.valid_until} (end exclusive).</p>)}
-          </div>
-          <div className="block"><h3>Evidence scope</h3><p>{result.registry_description}</p>
-            {result.registry_retrieved_at && <p>Registry retrieved: {result.registry_retrieved_at}</p>}
-            <ul>{result.assumptions.map((a) => <li key={a}>{a}</li>)}</ul>
-            <h3>Sources</h3><ul>{result.sources.map((s) => <li key={s}>{s}</li>)}</ul>
-          </div>
-        </>}
-      </section>
-    </div>
-  );
+  async function inspect(id: string) {
+    const request = ++version.current;
+    setLoading(true); setError(""); setReport(null);
+    const area = workspace.result;
+    try {
+      const data = await fetchHistoricalVessel(id, { mode: "gfw", hours_ago: 100, window_hours: 24, ...(area ? { start: area.start, end: area.end } : {}) });
+      if (request !== version.current) return;
+      setReport(data); workspace.saveReport(data);
+    } catch (e) { if (request === version.current) setError(e instanceof Error ? e.message : String(e)); }
+    finally { if (request === version.current) setLoading(false); }
+  }
+  return <div className="split vessel-check">
+    <section className="panel"><div className="panel-head"><h1>Check vessel ID</h1></div><form className="block lookup-fields" onSubmit={event => void search(event)}>
+      <label>MMSI, IMO, call sign or vessel name<input required minLength={3} maxLength={100} value={query} onChange={event => { clear(); setQuery(event.target.value); }} placeholder="Enter at least 3 characters" /></label>
+      <button className="primary" disabled={loading || query.trim().length < 3}>{loading ? "Loading…" : "Search Global Fishing Watch"}</button>
+      <Info label="Identity search"><p>Searches GFW public vessel identity records. Names and identifiers can match multiple historical identities; choose the correct record before opening a report. A missing result does not establish that a vessel is undocumented or unauthorized.</p></Info>
+      <Info label="Risk window"><p>{workspace.result ? `Uses Overview's selected period: ${workspace.result.start} to ${workspace.result.end}.` : "Uses a 24-hour historical window ending 100 hours ago until you select an area in Overview."} Public identity and authorization records have their own validity periods.</p></Info>
+    </form>
+    {loading && !matches && <><LoadingStatus label="Searching GFW vessel identities…" /><Skeleton variant="table" label="Loading vessel matches" /></>}
+    {error && <div className="notice error" role="alert">{error}</div>}
+    {matches?.length === 0 && <p className="empty">No matching records returned by GFW. Try another identifier.</p>}
+    {matches && <div className="investigation-vessels">{matches.map(match => <div className="investigation-row" key={match.vessel_id}><span><strong>{match.name}</strong><br />MMSI {match.mmsi ?? "Unavailable"} · IMO {match.imo ?? "Unavailable"}<br />{match.flag ?? "Unknown flag"} · {match.vessel_id}</span><button disabled={loading} onClick={() => void inspect(match.vessel_id)}>Open report</button></div>)}</div>}
+    {since && <div className="block"><button disabled={loading} onClick={() => void search(undefined, true)}>Load more matches</button></div>}
+    </section>
+    <section className="panel" aria-live="polite" aria-busy={loading}><div className="panel-head"><h2>Vessel evidence</h2></div>{report ? <VesselEvidence report={report} /> : loading ? <><LoadingStatus label="Retrieving GFW records…" /><Skeleton /></> : <p className="empty">Search an identifier and choose a matching vessel.</p>}</section>
+  </div>;
 }

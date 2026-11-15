@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ForecastComparison } from "../forecastMap";
 import { fetchForecast, fetchForecastInfo, type ForecastInfo, type ForecastResult } from "../api/forecast";
 import { ForecastPanel } from "./ForecastPanel";
 
@@ -55,5 +56,31 @@ describe("historical model globe panel", () => {
     resolve(prediction);
     await waitFor(() => expect(screen.queryByText("34,723")).toBeNull());
     expect(callback).not.toHaveBeenCalledWith(prediction.bounds);
+  });
+
+  it("compares actual neighboring forecasts using the same dates and model", async () => {
+    vi.mocked(fetchForecast).mockImplementation(async (lat, lon) => ({ ...prediction, status: "scored", cell_id: `${lat}-${lon}`, bounds: { west: lon - 2.5, east: lon + 2.5, south: lat - 2.5, north: lat + 2.5 }, predicted_week_hours: lat * 10 + lon }));
+    const onComparison = vi.fn();
+    render(<ForecastPanel area={null} onBoundsChange={vi.fn()} onComparisonChange={onComparison} />);
+    fireEvent.click(screen.getByText("Try verified historical example"));
+    await waitFor(() => expect(onComparison).toHaveBeenLastCalledWith(expect.objectContaining({ attempted: 9, unavailable: 0 })));
+    const comparison = onComparison.mock.calls.at(-1)![0] as ForecastComparison;
+    expect(comparison.cells).toHaveLength(9);
+    expect(new Set(comparison.cells.map(cell => cell.cell_id)).size).toBe(9);
+    expect(fetchForecast).toHaveBeenCalledTimes(9);
+  });
+
+  it("clears pending neighbor arrows when the forecast point changes", async () => {
+    const pending: ((value: ForecastResult) => void)[] = [];
+    vi.mocked(fetchForecast).mockResolvedValueOnce(prediction).mockImplementation(() => new Promise(resolve => pending.push(resolve)));
+    const onComparison = vi.fn();
+    render(<ForecastPanel area={null} onBoundsChange={vi.fn()} onComparisonChange={onComparison} />);
+    fireEvent.click(screen.getByText("Try verified historical example"));
+    await screen.findByText("Comparing nearby areas…");
+    fireEvent.change(screen.getByLabelText("Forecast latitude"), { target: { value: "0" } });
+    await act(async () => pending.forEach(resolve => resolve(prediction)));
+    expect(onComparison).toHaveBeenLastCalledWith(null);
+    expect(onComparison.mock.calls.some(([value]) => value?.cells?.length)).toBe(false);
+    expect(screen.queryByText("34,723")).toBeNull();
   });
 });

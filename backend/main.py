@@ -6,7 +6,9 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse
+import httpx
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
@@ -16,8 +18,10 @@ from backend.services.investigation import build_case
 from backend.services.permit_evidence import load_investigation_inputs, load_permits
 from backend.services.vessel_lookup import VesselCheckRequest, VesselCheckResponse, check_vessel, load_lookup_registry
 from backend.services.historical import AreaQuery, VesselEnrichment, query_area, enrich_vessel
-from backend.services.risk_screening import RiskScreenRequest, screen_risks
+from backend.services.risk_screening import RiskScreenRequest, RiskStreamRequest, screen_risks, iter_risks
 from backend.forecast_api import router as forecast_router
+from backend.services.vessel_search import VesselSearch, search_vessels
+from backend.services.risk_events import RiskEventRequest, load_risk_events
 
 FIXTURE_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic" / "static_cases.json"
 
@@ -57,8 +61,14 @@ def create_app(*, seed_fixtures: bool = True, load_forecast: bool = True) -> Fas
             except Exception:
                 logging.getLogger(__name__).exception('Activity forecast unavailable')
                 app.state.forecast_error = 'Install backend/requirements.txt in the project virtual environment, run python -m training.activity_forecast.setup_inference, then restart FastAPI.'
-        yield
-        app.state.forecaster = None
+        async with httpx.AsyncClient(timeout=110, follow_redirects=False,
+                                     limits=httpx.Limits(max_connections=8, max_keepalive_connections=4, keepalive_expiry=60)) as client:
+            app.state.gfw_client = client
+            try:
+                yield
+            finally:
+                app.state.forecaster = None
+                app.state.gfw_client = None
 
     app = FastAPI(title="GhostFleet", lifespan=lifespan)
     app.include_router(forecast_router)
@@ -87,9 +97,27 @@ def create_app(*, seed_fixtures: bool = True, load_forecast: bool = True) -> Fas
     async def historical_vessel(query: VesselEnrichment):
         return await enrich_vessel(query)
 
+    @app.post("/historical/vessels/search")
+    async def historical_vessel_search(query: VesselSearch):
+        return await search_vessels(query)
+
     @app.post("/historical/risks")
-    async def historical_risks(query: RiskScreenRequest):
-        return await screen_risks(query)
+    async def historical_risks(query: RiskScreenRequest, request: Request):
+        return await screen_risks(query, getattr(request.app.state, "gfw_client", None))
+
+    @app.post("/historical/risk-events")
+    async def historical_risk_events(query: RiskEventRequest, request: Request):
+        return await load_risk_events(query, getattr(request.app.state, "gfw_client", None))
+
+    @app.post("/historical/risks/stream")
+    async def historical_risks_stream(query: RiskStreamRequest, request: Request):
+        async def rows():
+            async for event in iter_risks(query, getattr(request.app.state, "gfw_client", None)):
+                if await request.is_disconnected():
+                    break
+                yield json.dumps(event, allow_nan=False) + "\n"
+        return StreamingResponse(rows(), media_type="application/x-ndjson",
+                                 headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
 
     @app.post("/vessels/check", response_model=VesselCheckResponse)
     def vessel_check(request: VesselCheckRequest) -> VesselCheckResponse:

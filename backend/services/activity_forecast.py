@@ -97,6 +97,33 @@ class ActivityForecaster:
             latitude, longitude, self.bundle, current,
             cutoff=self.period["observation_cutoff"], annual_history=annual,
         )
+        if result.get("status") == "scored":
+            cutoff = pd.Timestamp(self.period["observation_cutoff"])
+            history = current.loc[current.date.between(cutoff-pd.Timedelta(days=27), cutoff)].sort_values("date")
+            hours = history.fishing_hours.to_numpy()
+            method = result["selected_method"]
+            signals = ["last_week"]
+            if method == "seasonal_correction_tree":
+                signals.extend(dict.fromkeys(step["feature"] for step in result["decision_path"]))
+                signals.append("month_scale")
+            elif method == "seasonal_blend":
+                weights = self.bundle["models"]["blend_weights"]
+                signals = (["last_week"] if weights[0] != 0 else []) + (["seasonal_change_fraction"] if weights[1] != 0 else [])
+            elif method == "trained_calibration":
+                signals.append("trained_adjustment")
+            seasonal_available = result["seasonal_reference_available"]
+            result["reasoning_evidence"] = {
+                "history_start": history.date.min().date().isoformat(), "history_end": cutoff.date().isoformat(),
+                "last_week_daily_mean": float(hours[-7:].mean()),
+                "previous_week_daily_mean": float(hours[-14:-7].mean()),
+                "recent_three_day_daily_mean": float(hours[-3:].mean()),
+                "month_daily_mean": float(hours.mean()),
+                "seasonal_estimate_hours": result["seasonal_estimate_hours"],
+                "seasonal_reference_start": (pd.Timestamp(self.period["target_start"])-pd.DateOffset(years=1)).date().isoformat() if seasonal_available else None,
+                "seasonal_reference_end": (pd.Timestamp(self.period["target_end"])-pd.DateOffset(years=1)).date().isoformat() if seasonal_available else None,
+                "prediction_change_hours": result["predicted_week_hours"]-result["repeat_last_week_hours"],
+                "used_signals": signals,
+            }
         row, col = [int(part[3:]) for part in cell.split("_")]
         bounds = {"south": row*self.grid-90, "north": (row+1)*self.grid-90,
                   "west": col*self.grid-180, "east": (col+1)*self.grid-180}
