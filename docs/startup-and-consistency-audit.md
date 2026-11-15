@@ -1,8 +1,8 @@
 # Startup and evidence consistency audit
 
 Completed November 15, 2026, starting from merged main commit
-`a99d8e9` (pull request #17). Fixes are on
-`fix/startup-and-evidence-consistency`; they have not been pushed or merged.
+`a99d8e9` (pull request #17). Fixes were developed on
+`fix/startup-and-evidence-consistency`; see Git history for integration into main.
 
 ## 1. Clean startup
 

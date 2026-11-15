@@ -1,7 +1,7 @@
 # Extensive risk-classification audit
 
 Completed November 15, 2026. These changes extend the startup/consistency audit
-on `fix/startup-and-evidence-consistency`. They are local, not pushed or merged.
+on `fix/startup-and-evidence-consistency`. See Git history for integration into main.
 
 ## What is being classified
 
