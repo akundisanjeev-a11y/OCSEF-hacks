@@ -1,7 +1,7 @@
 import { useHistoricalWorkspace } from "../HistoricalWorkspace";
 import { Info } from "./Info";
 import { warningNames } from "../vesselLanguage";
-import { areaNarrative, validCount } from "../evidenceNarrative";
+import { areaNarrative, hasRiskEvidence, validCount } from "../evidenceNarrative";
 
 export function CoastalImpact({ onOverview, onInvestigations }: { onOverview: () => void; onInvestigations: () => void }) {
   const { result, risks } = useHistoricalWorkspace()!;
@@ -27,7 +27,7 @@ export function CoastalImpact({ onOverview, onInvestigations }: { onOverview: ()
     </div></section>
     <section className="panel"><div className="panel-head"><h2>Observed activity</h2></div><div className="block"><strong>{activity.toLocaleString(undefined, { maximumFractionDigits: 2 })} {result.layer === "sar" ? "reported detections" : result.layer === "fishing" ? "apparent fishing vessel-hours" : "vessel-presence hours"}</strong><Info label="Activity totals"><p>Adds up the activity in all returned map squares during your chosen time. One boat seen for two hours contributes two boat-hours. This is not a count of different boats. Satellite radar may also see boats whose identities are unknown.</p></Info></div></section>
     <section className="panel"><div className="panel-head"><h2>Screening coverage</h2></div><p className="block">{current.length} of {result.vessels.length} vessels checked · {noFlags.length} with no reported flags · {incomplete.length} incomplete or failed checks</p><Info label="Screening limitations"><p>No reported flags does not mean safe or authorized. Unchecked vessels and unavailable indicators remain unknown. Run Screen vessel risks in Investigations to populate these counts.</p></Info>
-      <div className="table-scroll"><table className="case-table"><thead><tr><th>Review indicator</th><th>Vessels with indicator</th><th>Unavailable / unchecked</th></tr></thead><tbody>{codes.map(([code, label]) => <tr key={code}><td>{warningNames[code] ?? label}</td><td>{current.filter(row => !row.error && row.indicators.some(indicator => indicator.code === code && validCount(indicator.count) && indicator.count > 0)).length}</td><td>{result.vessels.length - current.filter(row => !row.error && row.indicators.some(indicator => indicator.code === code && validCount(indicator.count))).length}</td></tr>)}</tbody></table></div>
+      <div className="table-scroll"><table className="case-table"><thead><tr><th>Review indicator</th><th>Vessels with indicator</th><th>Unavailable / unchecked</th></tr></thead><tbody>{codes.map(([code, label]) => <tr key={code}><td>{warningNames[code] ?? label}</td><td>{current.filter(row => !row.error && row.indicators.some(indicator => indicator.code === code && hasRiskEvidence(indicator))).length}</td><td>{result.vessels.length - current.filter(row => !row.error && row.indicators.some(indicator => indicator.code === code && validCount(indicator.count))).length}</td></tr>)}</tbody></table></div>
       <div className="block"><button onClick={onInvestigations}>Investigate vessel reports</button></div>
     </section>
   </div>;

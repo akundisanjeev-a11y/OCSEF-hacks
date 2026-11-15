@@ -38,6 +38,13 @@ def test_missing_coordinates_and_distances_are_not_invented_or_swapped():
     assert result['reported_point_in_selected_area'] is None
     assert result['start_distance_from_port_km'] is None
 
+@pytest.mark.parametrize('event', [None, [], {**EVENT, 'type': 'fishing'}, {**EVENT, 'end': EVENT['start']}])
+def test_unrelated_event_types_and_invalid_event_shapes_cannot_explain_a_gap(event):
+    result = service.summarize_event(event, 'event-1', query())
+    assert result['status'] == 'unverified'
+    assert 'position' not in result
+
+
 def test_cached_source_is_revalidated_for_each_boat_and_area():
     service._cache.clear()
     mock = AsyncMock(return_value=deepcopy(EVENT))

@@ -108,4 +108,19 @@ describe("Overview GFW integration", () => {
     fireEvent.change(screen.getByLabelText("Activity layer"), { target: { value: "sar" } });
     await waitFor(() => expect(fetchHistoricalArea).toHaveBeenLastCalledWith(expect.objectContaining({ layer: "sar", hours_ago: 124, mode: "gfw" })));
   });
+
+  it("keeps the latest area result when an earlier query finishes last", async () => {
+    const pending: ((result: HistoricalAreaResult) => void)[] = [];
+    vi.mocked(fetchHistoricalArea).mockImplementation(() => new Promise(resolve => pending.push(resolve)));
+    render(<GfwOverview />);
+    fireEvent.click(screen.getByText("Draw test area"));
+    await waitFor(() => expect(pending).toHaveLength(1));
+    fireEvent.click(screen.getByText("Draw test area"));
+    await waitFor(() => expect(pending).toHaveLength(2));
+    pending[1]({ ...areaResult, vessels: [{ ...areaResult.vessels[0], name: 'Latest boat' }] });
+    await screen.findByText('Latest boat');
+    pending[0](areaResult);
+    await waitFor(() => expect(screen.queryByText('Test vessel')).toBeNull());
+    expect(screen.getByText('Latest boat')).toBeTruthy();
+  });
 });

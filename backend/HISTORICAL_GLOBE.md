@@ -1,13 +1,12 @@
 # Historical globe workflow
 
-The default screen uses Josh's Overview globe and case dashboard, integrated from
-`origin/joshua` commit `b5e3943`. Overview now defaults to GFW historical mode:
-selecting an area queries `/historical/area`, plots activity cells on Josh's globe,
-and lists associated vessels; selecting a vessel retrieves `/historical/vessel`.
-The Overview data selector retains the offline fictional cases as an explicit
-alternative. The **GFW historical** tab remains an advanced explorer, and manual
-lookup is available in **Check vessel ID**. Investigations and Coastal Impact
-still read the demo-seeded case store; GFW responses are not silently inserted.
+Overview uses GFW historical data: selecting an area queries `/historical/area`,
+plots activity cells and lists associated vessels. Selecting a vessel retrieves
+`/historical/vessel`. The top-right Filters button controls the observation
+window and provider filters. Investigations shares those real area results and
+runs risk screening for their exact dates; Check vessel ID searches GFW identity
+records. The duplicate historical and Coastal impact tabs are removed. No demo
+case store is used by these screens.
 The former Detection Lab is no longer in navigation; its existing source is
 retained for compatibility. No imagery model or inference weights are required.
 
@@ -17,6 +16,7 @@ Use the existing Python virtual environment and npm installation:
 
 ```powershell
 .venv\Scripts\python -m pip install -r backend/requirements.txt
+.venv\Scripts\python -m training.activity_forecast.setup_inference
 $env:GFW_API_TOKEN = 'YOUR_PRIVATE_TOKEN'
 .venv\Scripts\python -m uvicorn backend.main:app --reload
 ```
@@ -56,9 +56,9 @@ because its queried field is text. The UI discloses this limitation and does not
 offer a working-looking neural score filter. Such requests return a clear
 validation error; SAR AIS-match filtering remains available.
 
-The **Your ML: fishing activity forecast** panel uses the existing saved decision
-tree. Select an activity cell, or use the rectangle's centre, and press **Get
-historical fishing forecast**. It scores that point's complete five-degree model
+The **ML fishing-activity forecast** drawer uses the existing saved model.
+Use the rectangle's centre or enter coordinates and press **Get
+fishing forecast**. It scores that point's complete five-degree model
 cell, not the exact rectangle, and shows forecast dates, source cutoff, expected
 hours, last-week baseline and learned explanation. No new model is trained.
 

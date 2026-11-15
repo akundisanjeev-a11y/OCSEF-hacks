@@ -9,6 +9,8 @@ export function IndicatorExplanation({ indicator }: { indicator: Indicator }) {
   const explanation = indicatorNarrative(indicator);
   return <article className={`explanation-card explanation-${explanation.status}`}>
     <h4>{warningNames[indicator.code] ?? indicator.label}</h4><p className="evidence-observation">{explanation.finding}</p>
+    {indicator.quality_notes?.map(note => <p className="evidence-limit" key={note}>{note}</p>)}
+    {indicator.count_is_lower_bound && <p className="small">This counts distinct event IDs supplied by GFW. The total number of events may be larger.</p>}
     {explanation.status === "flagged" && <><h5>Why review it?</h5><p>{explanation.why}</p><h5>What is not established</h5><p>{explanation.limit}</p><h5>What to check next</h5><p>{explanation.next}</p></>}
     <small>Source: GFW Insights summary for the report dates.</small>
   </article>;

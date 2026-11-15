@@ -29,11 +29,12 @@ export function HistoricalWorkspace({ children }: { children: ReactNode }) {
   const currentRisks = useRef<Record<string, VesselRisk>>({});
   const active = useRef<AbortController | null>(null);
   const version = useRef(0);
-  const areaKey = (data: HistoricalAreaResult | null) => data ? JSON.stringify([data.start, data.end, data.dataset, data.vessels.map(vessel => vessel.vessel_id)]) : "";
+  const areaKey = (data: HistoricalAreaResult | null) => data ? JSON.stringify([data.mode, data.layer, data.bounds, data.start, data.end, data.dataset, data.vessels.map(vessel => vessel.vessel_id)]) : "";
   const setResult = useCallback((next: HistoricalAreaResult | null) => {
     if (areaKey(current.current) !== areaKey(next)) {
       version.current++; active.current?.abort(); active.current = null;
       currentRisks.current = {}; setRisks({}); setScreening(false); setScreenError(""); setScreenMessage("");
+      selectReport(null);
     }
     current.current = next; setResultState(next);
   }, []);
@@ -45,7 +46,7 @@ export function HistoricalWorkspace({ children }: { children: ReactNode }) {
   async function startScreening() {
     const area = current.current;
     if (!area || active.current) return;
-    const pending = area.vessels.filter(vessel => !currentRisks.current[vessel.vessel_id] || currentRisks.current[vessel.vessel_id].error || currentRisks.current[vessel.vessel_id].state === "unknown");
+    const pending = area.vessels.filter(vessel => !currentRisks.current[vessel.vessel_id] || currentRisks.current[vessel.vessel_id].error || currentRisks.current[vessel.vessel_id].state === "unknown" || currentRisks.current[vessel.vessel_id].missing_count > 0);
     if (!pending.length) return;
     const controller = new AbortController(); active.current = controller;
     const run = ++version.current;

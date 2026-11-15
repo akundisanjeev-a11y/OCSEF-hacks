@@ -17,6 +17,7 @@ from fastapi import HTTPException
 from pydantic import AwareDatetime, BaseModel, Field, model_validator
 from backend.services.land_coverage import estimate_land
 from backend.services.gfw_credentials import get_gfw_token
+from backend.services.risk_evidence import assess_risk
 
 DATASETS = {"presence": "public-global-presence:latest", "fishing": "public-global-fishing-effort:latest", "sar": "public-global-sar-presence:latest"}
 IDENTITY = "public-global-vessel-identity:latest"
@@ -114,6 +115,26 @@ def period(hours_ago: int, window_hours: int):
     return utc_string(end - timedelta(hours=window_hours)), utc_string(end)
 
 
+def strict_json_float(value):
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError('Non-finite source number')
+    return number
+
+
+def strict_json_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError('Duplicate source JSON field')
+        result[key] = value
+    return result
+
+
+def reject_json_constant(value):
+    raise ValueError('Invalid source JSON number')
+
+
 def decode_response(content: bytes) -> dict:
     if len(content) > 20_000_000:
         raise ValueError("Report too large; choose a smaller area")
@@ -123,7 +144,7 @@ def decode_response(content: bytes) -> dict:
             if len(files) != 1 or files[0].file_size > 20_000_000:
                 raise ValueError("Unsupported report archive")
             content = archive.read(files[0])
-    result = json.loads(content)
+    result = json.loads(content, parse_float=strict_json_float, parse_constant=reject_json_constant, object_pairs_hook=strict_json_object)
     if not isinstance(result, dict):
         raise ValueError("Unexpected GFW response shape")
     return result
@@ -379,10 +400,13 @@ async def enrich_vessel(request: VesselEnrichment):
         except HTTPException as error:
             insights = {}
             warnings.append(f"Identity was retrieved, but risk insights are unavailable: {error.detail}")
-    summary, indicators = summarize_evidence(identity, insights)
+    risk = assess_risk(insights, vessel_id=request.vessel_id, start=start, end=end)
+    summary, _ = summarize_evidence(identity, {})
+    indicators = risk['indicators']
+    warnings.extend(risk['quality_notes'])
     return {"mode": request.mode, "vessel_id": request.vessel_id, "start": start, "end": end,
             "identity": identity, "insights": insights,
-            "summary": summary, "indicators": indicators, "warnings": warnings,
+            "summary": summary, "indicators": indicators, "risk": risk, "warnings": warnings,
             "authorization": {"status": "unknown", "explanation": "GFW public records and risk indicators are evidence for review. National permit coverage and the specific activity must be verified before determining authorization."},
             "sources": ["Global Fishing Watch Vessels API", "Global Fishing Watch Insights API"] if request.mode == "gfw" else ["Fictional demonstration records"]}
 
@@ -403,21 +427,4 @@ def summarize_evidence(identity: dict, insights: dict):
                "documentation": "public_registry_record_found" if records else "ais_identity_only" if reported else "no_identity_record",
                "public_authorization_records": authorizations,
                "identity_note": "AIS identity is self-reported. Registry identity periods and authorization scopes must be checked against the activity date."}
-    def obj(value):
-        return value if isinstance(value, dict) else {}
-    fishing = obj(insights.get("apparentFishing"))
-    counters = obj(fishing.get("periodSelectedCounters"))
-    gaps = obj(insights.get("gap", insights.get("gaps")))
-    iuu = obj(obj(insights.get("vesselIdentity")).get("iuuVesselList"))
-    def count(key, events):
-        value = counters.get(key)
-        if value is not None:
-            return value
-        return len(fishing[events]) if isinstance(fishing.get(events), list) else None
-    indicators = [
-        {"code": "fishing_in_no_take_mpa", "label": "Apparent fishing in no-take protected areas", "count": count("eventsInNoTakeMPAs", "eventsInNoTakeMpas"), "event_ids": fishing.get("eventsInNoTakeMpas", [])},
-        {"code": "no_known_rfmo_authorization", "label": "Apparent fishing with no known RFMO authorization", "count": count("eventsInRFMOWithoutKnownAuthorization", "eventsInRfmoWithoutKnownAuthorization"), "event_ids": fishing.get("eventsInRfmoWithoutKnownAuthorization", [])},
-        {"code": "ais_gap", "label": "AIS-off events reported by GFW", "count": len(gaps["aisOff"]) if isinstance(gaps.get("aisOff"), list) else None, "event_ids": gaps.get("aisOff", [])},
-        {"code": "iuu_listing", "label": "RFMO IUU-list records during selected period", "count": iuu.get("totalTimesListedInThePeriod"), "event_ids": []},
-    ]
-    return summary, indicators
+    return summary, assess_risk(insights)['indicators']

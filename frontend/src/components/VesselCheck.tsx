@@ -15,8 +15,10 @@ export function VesselCheck() {
   const [error, setError] = useState("");
   const version = useRef(0);
   const active = useRef<AbortController | null>(null);
+  const periodKey = JSON.stringify([workspace.result?.start, workspace.result?.end]);
   function clear() { version.current++; active.current?.abort(); setMatches(null); setSince(null); setReport(null); setError(""); setLoading(false); }
   useEffect(() => () => { version.current++; active.current?.abort(); }, []);
+  useEffect(() => { version.current++; active.current?.abort(); setReport(null); setError(""); setLoading(false); }, [periodKey]);
   async function search(event?: FormEvent, more = false) {
     event?.preventDefault();
     active.current?.abort();

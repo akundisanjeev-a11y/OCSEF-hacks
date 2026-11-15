@@ -25,6 +25,18 @@ test("zero and invalid risk counts are distinct from a positive report", () => {
   expect(indicatorNarrative({ ...base, count: 0 }).status).toBe("clear");
   expect(indicatorNarrative({ ...base, count: null }).status).toBe("unavailable");
   expect(indicatorNarrative({ ...base, count: NaN }).status).toBe("unavailable");
+  expect(indicatorNarrative({ ...base, count: .5 }).status).toBe("unavailable");
+  expect(indicatorNarrative({ ...base, count: Number.MAX_SAFE_INTEGER + 1 }).status).toBe("unavailable");
+  expect(indicatorNarrative({ ...base, count: 1, status: "unverified" }).status).toBe("unavailable");
+});
+
+test("contradictory positive evidence stays reviewable without claiming an exact count", () => {
+  const story = indicatorNarrative({ code: "ais_gap", label: "Gaps", count: null, event_ids: ["one"], reported_positive: true, status: "conflicting" });
+  expect(story.status).toBe("flagged");
+  expect(story.finding).toContain("no exact count is asserted");
+  expect(story.limit).toContain("does not establish intentional disabling");
+  expect(story.finding).not.toMatch(/unauthorized|illegal|safe/);
+  expect(indicatorNarrative({ code: "ais_gap", label: "Gaps", count: 2, event_ids: ["one", "two"], count_is_lower_bound: true }).finding).toContain("at least 2");
 });
 test("coastal analysis counts boat records once and retains overlapping missing-information status", () => {
   const result = { vessels: [{ vessel_id: "one" }, { vessel_id: "two" }] } as HistoricalAreaResult;

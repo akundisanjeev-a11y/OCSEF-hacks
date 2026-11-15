@@ -58,10 +58,12 @@ def date_value(value):
 
 
 def summarize_event(event, event_id, query):
+    event = event if isinstance(event, dict) else {}
     start, end = date_value(event.get("start")), date_value(event.get("end"))
     vessel = event.get("vessel")
     linked = isinstance(vessel, dict) and vessel.get("id") == query.vessel_id
-    if event.get("id") != event_id or not linked or start is None or end is None or end < start or end <= query.start or start >= query.end:
+    expected_type = 'gap' if query.code == 'ais_gap' else 'fishing'
+    if event.get("id") != event_id or event.get('type') != expected_type or not linked or start is None or end is None or end <= start or end <= query.start or start >= query.end:
         return {"id": event_id, "status": "unverified", "message": "This source record could not be matched to the boat and report dates. It was not used to explain the flag."}
     position = event.get("position") if isinstance(event.get("position"), dict) else {}
     lat = None if isinstance(position.get("lat"), bool) else numeric(position.get("lat"))

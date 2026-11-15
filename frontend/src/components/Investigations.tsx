@@ -8,7 +8,7 @@ import { ShipSymbol } from "./ShipSymbol";
 import { shipKind, shipNames } from "../vesselSymbols";
 import { warningNames } from "../vesselLanguage";
 import { IndicatorExplanation } from "./RiskExplanation";
-import { indicatorNarrative } from "../evidenceNarrative";
+import { hasRiskEvidence, indicatorNarrative } from "../evidenceNarrative";
 
 export function Investigations({ onOverview }: { onOverview: () => void }) {
   const workspace = useHistoricalWorkspace()!;
@@ -37,7 +37,7 @@ export function Investigations({ onOverview }: { onOverview: () => void }) {
   const checked = checks.length;
   const flagged = checks.filter(row => row.state === "flagged").length;
   const incomplete = checks.filter(row => row.state === "unknown" || row.error || row.missing_count > 0).length;
-  const pending = (result?.vessels ?? []).filter(vessel => !risks[vessel.vessel_id] || risks[vessel.vessel_id].state === "unknown" || risks[vessel.vessel_id].error).length;
+  const pending = (result?.vessels ?? []).filter(vessel => !risks[vessel.vessel_id] || risks[vessel.vessel_id].state === "unknown" || risks[vessel.vessel_id].missing_count > 0 || risks[vessel.vessel_id].error).length;
   const lastPage = Math.max(0, Math.ceil(vessels.length / 50) - 1);
   const currentPage = Math.min(page, lastPage);
   return <div className="real-investigations split">
@@ -63,9 +63,10 @@ export function Investigations({ onOverview }: { onOverview: () => void }) {
           return <div className="investigation-row" key={vessel.vessel_id}>
             <ShipSymbol type={vessel.vessel_type} /><div className="investigation-boat"><strong>{vessel.name}</strong><br />{vessel.mmsi ?? vessel.vessel_id}<br /><small>{shipNames[shipKind(vessel.vessel_type)]}</small><br />
               <strong className={`risk-state-${risk?.state ?? "unchecked"}`}>{!risk ? "Not checked" : risk.error ? "Screening failed" : risk.state === "flagged" ? `Flagged (${risk.flag_count})` : risk.state === "no_flags" ? "No reported flags" : "Incomplete information"}</strong>
-              {risk?.indicators.filter(indicator => (indicator.count ?? 0) > 0).map(indicator => <small className="risk-reason" key={indicator.code}>{warningNames[indicator.code] ?? indicator.label}: {indicator.count}</small>)}
+              {risk?.indicators.filter(hasRiskEvidence).map(indicator => <small className="risk-reason" key={indicator.code}>{warningNames[indicator.code] ?? indicator.label}: {indicator.count_is_lower_bound ? "at least " : ""}{indicator.count ?? "exact count unavailable"}</small>)}
               {risk && !risk.error && risk.indicators.some(indicator => indicatorNarrative(indicator).status === "flagged") && <details className="row-risk-explanation"><summary>Why does this need review?</summary>{risk.indicators.filter(indicator => indicatorNarrative(indicator).status === "flagged").map(indicator => <IndicatorExplanation key={indicator.code} indicator={indicator} />)}<p className="small">The counts cover the report dates and may refer to events outside your selected rectangle. Open the full report to inspect available source events.</p></details>}
               {!!risk?.missing_count && !risk.error && <small className="risk-reason">{risk.missing_count} checks have missing information</small>}
+              {!!risk?.quality_notes?.length && <details><summary>Source data issues</summary>{risk.quality_notes.map(note => <p className="small" key={note}>{note}</p>)}</details>}
               {risk?.error && <small className="risk-reason">{risk.error}</small>}
             </div><button disabled={loading} onClick={() => void inspect(vessel.vessel_id)}>Full report</button>
           </div>;
