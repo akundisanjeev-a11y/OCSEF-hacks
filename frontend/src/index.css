@@ -1556,3 +1556,38 @@ input[type="search"] {
 @media (prefers-reduced-motion: reduce) {
   .loading-spinner, .skeleton, .loading-track::after { animation: none; }
 }
+
+/* Investigations: screening card split into an intro column and a progress column, filling the card's width. */
+.investigation-screening { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.screening-intro .screening-actions { margin: 14px 0 6px; }
+.screening-progress-panel { padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: rgba(7, 15, 28, 0.55); }
+.screening-progress-panel .screening-summary { align-items: baseline; font-size: 13px; }
+.screening-progress-panel .screening-summary strong { font-size: 18px; }
+.screening-percent { font-size: 18px; font-weight: 600; color: #8fbaff; }
+
+/* A thick progress bar with a clearly coloured filled part, so progress is easy to read at a glance. */
+.investigation-screening .screening-progress { appearance: none; -webkit-appearance: none; width: 100%; height: 16px; margin: 10px 0 14px; border: 0; border-radius: 8px; background: #1b2c45; overflow: hidden; }
+.investigation-screening .screening-progress::-webkit-progress-bar { background: #1b2c45; border-radius: 8px; }
+.investigation-screening .screening-progress::-webkit-progress-value { background: #4c8dff; border-radius: 8px; }
+.investigation-screening .screening-progress::-moz-progress-bar { background: #4c8dff; border-radius: 8px; }
+
+/* Flagged / incomplete / not-checked counts under the bar. */
+.screening-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.screening-counts > div { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; }
+.screening-counts strong { font-size: 18px; }
+.screening-counts span { font-size: 12px; color: var(--muted); }
+
+@media (max-width: 900px) { .investigation-screening { grid-template-columns: minmax(0, 1fr); } }
+
+/* Vessel rows: boat identity, screening result, then the button, so the row uses its full width. */
+.investigation-row { display: grid; grid-template-columns: auto minmax(140px, 1fr) minmax(0, 1.4fr) auto; align-items: start; }
+.investigation-row > button { align-self: center; }
+.investigation-boat { display: grid; gap: 2px; }
+.investigation-boat small { color: var(--muted); }
+.investigation-risk { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .investigation-row { grid-template-columns: auto minmax(0, 1fr) auto; } .investigation-risk { grid-column: 2 / 4; } }
+
+/* Boat identity details inside the info label. */
+.identity-details { margin: 4px 0 0; }
+.identity-details dt { color: var(--muted); font-size: 12px; }
+.identity-details dd { margin: 2px 0 8px; color: var(--text); overflow-wrap: anywhere; }
