@@ -9,6 +9,9 @@ Its data selector keeps fictional cases as a separate option. The **GFW historic
 tab remains an advanced explorer. **Check vessel ID** retains manual lookup.
 Investigations/Coastal Impact still use the demo-seeded case API.
 No image detector is required.
+The floating-litter experiment is archived outside this repository; it is not
+part of the ship-monitoring workflow. Local datasets, training runs and model
+weights are excluded from Git. Existing fishing data and model files remain local.
 The default window ends 100 hours ago; SAR uses at least 124 hours.
 Choose fictional mode for a walkthrough or configure `GFW_API_TOKEN` privately
 on FastAPI to use GFW. See [historical globe setup and data limits](backend/HISTORICAL_GLOBE.md).
@@ -44,6 +47,9 @@ python -m venv .venv
 ```
 
 Open http://127.0.0.1:8000/docs to try the routes:
+
+- `GET /health` returns `{"status": "ok"}` when the API is running. This checks
+  the backend process, not GFW credentials or upstream availability.
 
 - `GET /cases?data_mode=synthetic` lists six fictional cases.
 - `GET /cases/synthetic-01-0` returns one case.
