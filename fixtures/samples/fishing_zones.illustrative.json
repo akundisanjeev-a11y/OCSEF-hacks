@@ -1,0 +1,30 @@
+{
+  "type": "FeatureCollection",
+  "description": "Illustrative fishing zones for the GhostFleet demo. Hand-drawn placeholders, not official or legal boundaries.",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Illustrative zone West" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-2.65, 4.3], [-1.95, 4.3], [-1.9, 4.62], [-2.3, 4.68], [-2.65, 4.62], [-2.65, 4.3]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Illustrative zone Central" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-1.65, 4.55], [-0.75, 4.75], [-0.75, 5.05], [-1.2, 5.0], [-1.65, 4.8], [-1.65, 4.55]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Illustrative zone East" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-0.1, 5.15], [0.9, 5.35], [0.9, 5.7], [0.4, 5.6], [-0.1, 5.4], [-0.1, 5.15]]]
+      }
+    }
+  ]
+}

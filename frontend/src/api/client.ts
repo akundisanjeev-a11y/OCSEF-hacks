@@ -34,14 +34,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export interface Api {
-  listCases(dataMode: DataMode): Promise<CasesResponse>;
+  listCases(dataMode?: DataMode): Promise<CasesResponse>;
   getCase(observationId: string): Promise<Case>;
   runDemo(): Promise<DemoRunResponse>;
   detect(image: File): Promise<DetectionsResponse>;
 }
 
 export const liveApi: Api = {
-  listCases: (dataMode) => request(`/cases?data_mode=${encodeURIComponent(dataMode)}`),
+  listCases: (dataMode) => request(dataMode ? `/cases?data_mode=${encodeURIComponent(dataMode)}` : "/cases"),
   getCase: (id) => request(`/cases/${encodeURIComponent(id)}`),
   runDemo: () => request("/demo/run", { method: "POST" }),
   detect: (image) => {
@@ -60,7 +60,7 @@ const delay = <T,>(value: T) => new Promise<T>((r) => setTimeout(() => r(value),
 
 export const sampleApi: Api = {
   listCases: (dataMode) =>
-    delay({ cases: samples.cases.cases.filter((c) => c.observation.data_mode === dataMode) }),
+    delay({ cases: samples.cases.cases.filter((c) => !dataMode || c.observation.data_mode === dataMode) }),
   getCase: async (id) => {
     const found = samples.cases.cases.find((c) => c.observation.observation_id === id);
     if (!found) throw new ApiError("404 Case not found", 404);

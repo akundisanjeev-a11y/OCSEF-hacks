@@ -65,3 +65,15 @@ export function formatPosition(p: Position | null): string {
   const lon = `${Math.abs(p.lon).toFixed(4)}° ${p.lon >= 0 ? "E" : "W"}`;
   return `${lat}, ${lon}`;
 }
+
+export type Registration = "registered" | "unregistered" | "unresolved";
+
+// "Registered" here means the radar detection matched an AIS track.
+export const registration = (s: IdentityStatus): Registration =>
+  s === "matched" ? "registered" : s === "unmatched" ? "unregistered" : "unresolved";
+
+export const registrationLabel: Record<Registration, string> = {
+  registered: "Registered",
+  unregistered: "Unregistered",
+  unresolved: "Unresolved",
+};
