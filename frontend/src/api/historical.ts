@@ -1,7 +1,14 @@
 import { request } from "./client";
 
 export type Area = { west: number; south: number; east: number; north: number };
-export type HistoricalQuery = Area & { mode: "gfw" | "synthetic"; layer: "presence" | "fishing" | "sar"; hours_ago: number; window_hours: number; allow_land?: boolean };
+export type ActivityFilters = {
+  flag?: string[]; geartype?: string[]; vessel_id?: string; vessel_type?: string; shiptype?: string;
+  speed?: "<2" | "2-4" | "4-6" | "6-10" | "10-15" | "15-25" | ">25";
+  distance_from_port_km?: 0 | 1 | 2 | 3 | 4 | 5;
+  sar_matched?: "false" | "true" | "all";
+  neural_vessel_type?: "all" | "likely_fishing" | "likely_non_fishing" | "unknown";
+};
+export type HistoricalQuery = Area & ActivityFilters & { mode: "gfw" | "synthetic"; layer: "presence" | "fishing" | "sar"; hours_ago: number; window_hours: number; allow_land?: boolean };
 export type ActivityCell = { id: string; lat: number; lon: number; value: number; date: string; vessel_type: string; vessel_count_lower_bound?: number | null; mean_length_m?: number | null; source_rows?: number };
 export type HistoricalVessel = { vessel_id: string; name: string; mmsi: string | null; vessel_type: string; hours: number; length_m?: number | null };
 export type HistoricalAreaResult = { cells: ActivityCell[]; vessels: HistoricalVessel[]; mode: HistoricalQuery["mode"]; layer: HistoricalQuery["layer"]; start: string; end: string; dataset: string; notes: string[]; skipped?: boolean; land_check?: { status: string; land_fraction: number | null; skip: boolean; note: string; source: string } | null };
