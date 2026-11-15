@@ -129,7 +129,10 @@ def train_improved(output: Path):
 
 def evaluate_fresh(output: Path):
     output = Path(output)
-    bundle = joblib.load(output/'model.joblib')
+    bundle = joblib.load(output/('best_model.joblib' if (output/'best_model.joblib').exists() else 'model.joblib'))
+    if bundle.get('evaluation_protocol') == 'depth4_holdout_v1':
+        from training.activity_forecast.release_depth4 import recorded_release
+        return recorded_release(output)
     freeze = json.loads((output/'selection_freeze.json').read_text())
     if hashlib.sha256((output/'model.joblib').read_bytes()).hexdigest() != freeze['frozen_model_sha256']:
         raise ValueError('Model changed after selection was frozen')

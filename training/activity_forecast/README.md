@@ -1,6 +1,6 @@
 # Worldwide, explainable activity forecast
 
-The selected model is a **two-level seasonal correction tree**, with at most four
+The permanent model is a **depth-four seasonal correction tree**, with 16 fitted
 leaves. It starts with the last observed week's activity and learns adjustments
 using annual patterns and short-term changes. GFW supplies the upstream apparent
 fishing estimates. This model does not detect ships or establish authorization.
@@ -37,6 +37,16 @@ Training detects the annual history and uses the seasonal version by default.
 apply to that legacy mode; the seasonal tree is fixed at depth two for clarity.
 
 ## Measured results
+
+The table below records the earlier depth-two experiment. The permanent depth-four
+checkpoint was subsequently selected over that frozen checkpoint using the paired
+comparison in [the updated evaluation record](../../docs/depth4-unseen-evaluation.md):
+test MAE 1,296.76 hours versus the previous checkpoint's 1,351.82 (4.07% lower),
+and versus persistence's 1,310.16 (1.02% lower). Its August validation MAE remained
+1.02% worse than persistence. The comparison is retrospective and does not
+establish consistent future or per-area improvement. The bundled inference data
+now supports November 5-11, 2025. Generic training defaults remain separate from
+this frozen permanent release.
 
 | Period | Model MAE | Unchanged baseline MAE | Reduction |
 | --- | ---: | ---: | ---: |

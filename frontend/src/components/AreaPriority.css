@@ -1,0 +1,11 @@
+.area-priority { grid-column: 1 / -1; }
+.area-priority .priority-category { display: inline-block; padding: .2rem .65rem; border: 1px solid currentColor; border-radius: 1rem; font-weight: 650; }
+.area-priority .priority-minimal { color: #28724c; }
+.area-priority .priority-low { color: #446a95; }
+.area-priority .priority-medium { color: #956620; }
+.area-priority .priority-high { color: #bd4c20; }
+.area-priority .priority-critical { color: #ad2347; }
+.area-priority .priority-unknown { color: inherit; }
+.area-priority td { overflow-wrap: anywhere; }
+.area-priority summary { cursor: pointer; padding: .7rem 0; }
+@media print { .area-priority button { display: none; } }

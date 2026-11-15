@@ -1,0 +1,1702 @@
+{
+  "created_at_utc": "2026-11-15T18:42:00.470388+00:00",
+  "main_commit": "84392c58d157fcfe76d4dfa3bf1914762ffe9b77",
+  "working_branch": "akki-folder",
+  "tracked_files": [
+    {
+      "path": ".gitignore",
+      "blob_sha1": "fde9657cf417c89f5f1b968ef93247042f255b47",
+      "bytes": 551,
+      "kind": "blob"
+    },
+    {
+      "path": "README.md",
+      "blob_sha1": "91892da9283530c0491dd4f52df57347dc7b7739",
+      "bytes": 9889,
+      "kind": "blob"
+    },
+    {
+      "path": "TEAM_LAUNCH_PLAN.md",
+      "blob_sha1": "9e476f3d703be581e23e06479dabbb5fd1218bbc",
+      "bytes": 6395,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/HISTORICAL_GLOBE.md",
+      "blob_sha1": "30c6aa56c9cbb0d41573216c1f90bcd89c3d76cf",
+      "bytes": 12014,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/VESSEL_LOOKUP.md",
+      "blob_sha1": "b646b45f534c2956f7c3d289041848b3abf62da5",
+      "bytes": 4516,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/__init__.py",
+      "blob_sha1": "7e0d48f221e572c5588c9f71cce3449becfeb1e6",
+      "bytes": 26,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/forecast_api.py",
+      "blob_sha1": "d159ad31ae330bdf9e7dd62500f509d7218b8886",
+      "bytes": 1284,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/forecast_schemas.py",
+      "blob_sha1": "c4d4e817ab0c7557549793392e06a176cbb0bde6",
+      "bytes": 2913,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/geodata/README.md",
+      "blob_sha1": "4a3b46bbcd3abf18a00fd19bb7df13c3d5cf54d6",
+      "bytes": 1818,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/geodata/watermask.json.gz",
+      "blob_sha1": "77b2f0ed1168ac608b3f409d936ffe91933315f0",
+      "bytes": 3575788,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/main.py",
+      "blob_sha1": "4a48b99f77936c01cd3e384a812bb55c1770149f",
+      "bytes": 6770,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/requirements.txt",
+      "blob_sha1": "15a8b3f9bcb29e8bf3e9a7cefe2b67253ec681bc",
+      "bytes": 134,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/schemas.py",
+      "blob_sha1": "7568b1dddd5bf51231c1e927387840f46804938d",
+      "bytes": 2136,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/__init__.py",
+      "blob_sha1": "c7bdf3298e52b2d7bc2bfcaee02d2c1e0a3279a0",
+      "bytes": 30,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/activity_forecast.py",
+      "blob_sha1": "26a233b63b6cff8c5d8ca1d1fae379c7fbe829ad",
+      "bytes": 7557,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/authorization.py",
+      "blob_sha1": "f8ecdd49d79174d1eebe4e74242245606e031f73",
+      "bytes": 3817,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/cases.py",
+      "blob_sha1": "665a574750873ecd3833266163e9464bd3a55bd5",
+      "bytes": 1074,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/gfw_credentials.py",
+      "blob_sha1": "3f3a62a93205e21a1d4ea2a3b203a63d9d9c62d2",
+      "bytes": 867,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/historical.py",
+      "blob_sha1": "efaaa5454b232d40ebe3d408fd5577871ba9c8f2",
+      "bytes": 25255,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/investigation.py",
+      "blob_sha1": "d5708a12e673ff9e8b9e92a82d3f728f916bc42e",
+      "bytes": 3213,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/land_coverage.py",
+      "blob_sha1": "ab467506c148c929609aa68ff84ba1c2c2853103",
+      "bytes": 2625,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/permit_evidence.py",
+      "blob_sha1": "8e0787623bd7a7c34e6598111a70a6ba337d1037",
+      "bytes": 5783,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/risk_events.py",
+      "blob_sha1": "7ee4fe2b983968713875d8dcf10276dea8577d1e",
+      "bytes": 5513,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/risk_screening.py",
+      "blob_sha1": "a5c0a1d9330463d69cdae98c09c5f244caf828c4",
+      "bytes": 6441,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/vessel_lookup.py",
+      "blob_sha1": "03c8a9ac9d12db235d2b63b85b0ab26a4b54f11e",
+      "bytes": 7705,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/services/vessel_search.py",
+      "blob_sha1": "07b894edd92324c636bc370c8385eef56286fc98",
+      "bytes": 2127,
+      "kind": "blob"
+    },
+    {
+      "path": "backend/vessel-registry.template.json",
+      "blob_sha1": "647881fd09396424e59065efeddd3d59377c557d",
+      "bytes": 308,
+      "kind": "blob"
+    },
+    {
+      "path": "datasets/activity_forecast/README.md",
+      "blob_sha1": "08591af17f45c1652abccce3d7d5c3deb6302a72",
+      "bytes": 1250,
+      "kind": "blob"
+    },
+    {
+      "path": "datasets/activity_forecast/inference_history.zip",
+      "blob_sha1": "ef648e76578511b528eb12e7538bd550b155c6bb",
+      "bytes": 4155406,
+      "kind": "blob"
+    },
+    {
+      "path": "docs/examples/activity_forecast_info.json",
+      "blob_sha1": "9fbab4d1980f20d8814df7a3287153e43e2787b8",
+      "bytes": 863,
+      "kind": "blob"
+    },
+    {
+      "path": "docs/examples/activity_forecast_insufficient.json",
+      "blob_sha1": "2f51c4a22449e193c03b08331175b82a2986f73d",
+      "bytes": 383,
+      "kind": "blob"
+    },
+    {
+      "path": "docs/examples/activity_forecast_scored.json",
+      "blob_sha1": "0c0bfc69a1fc6718168f905cc17553fbad037d52",
+      "bytes": 1472,
+      "kind": "blob"
+    },
+    {
+      "path": "docs/forecast-error-audit.md",
+      "blob_sha1": "3a5b72f31454c0f22c75d2f146743f41e8cf51c6",
+      "bytes": 7117,
+      "kind": "blob"
+    },
+    {
+      "path": "docs/frontend-activity-forecast-guide.md",
+      "blob_sha1": "052401552addf8ca30ed25d9e3683a5b1de8cc5e",
+      "bytes": 9572,
+      "kind": "blob"
+    },
+    {
+      "path": "docs/large-area-validation.md",
+      "blob_sha1": "bfb7ba4c48029e352993580243581f33c775dce8",
+      "bytes": 2596,
+      "kind": "blob"
+    },
+    {
+      "path": "docs/risk-screening.md",
+      "blob_sha1": "f4dc99b222e824a2570aec10ce17e1e5d791ad99",
+      "bytes": 6311,
+      "kind": "blob"
+    },
+    {
+      "path": "fixtures/samples/cases.synthetic.json",
+      "blob_sha1": "f112ee0f57ff67c4d68967c283dcf0adc25a82ee",
+      "bytes": 14893,
+      "kind": "blob"
+    },
+    {
+      "path": "fixtures/samples/detections.upload.json",
+      "blob_sha1": "e07a8367598a64b9fa618009cd389706266389bc",
+      "bytes": 473,
+      "kind": "blob"
+    },
+    {
+      "path": "fixtures/samples/fishing_zones.illustrative.json",
+      "blob_sha1": "a1d38cff8a5f319f732ede188526539f59322753",
+      "bytes": 969,
+      "kind": "blob"
+    },
+    {
+      "path": "fixtures/samples/model_metrics.json",
+      "blob_sha1": "eaa05a3b1cac89cc78778c203f569dca37bf86c9",
+      "bytes": 218,
+      "kind": "blob"
+    },
+    {
+      "path": "fixtures/synthetic/README.md",
+      "blob_sha1": "f852bff071978ecfe507eacaf203d659e8428e74",
+      "bytes": 2589,
+      "kind": "blob"
+    },
+    {
+      "path": "fixtures/synthetic/investigation_inputs.json",
+      "blob_sha1": "ab443ea82508625f64ba92a75202b3287005899d",
+      "bytes": 5946,
+      "kind": "blob"
+    },
+    {
+      "path": "fixtures/synthetic/permits.json",
+      "blob_sha1": "e8dd23c6b07a8591f0afcef4c3a20cf140d33606",
+      "bytes": 979,
+      "kind": "blob"
+    },
+    {
+      "path": "fixtures/synthetic/static_cases.json",
+      "blob_sha1": "892b6ff49f917a20f08692a0b1cc8d56311a5f05",
+      "bytes": 1945,
+      "kind": "blob"
+    },
+    {
+      "path": "fixtures/synthetic/vessel_registry.json",
+      "blob_sha1": "c9f4f76aa494df08d9ecd00f65885d91eae20481",
+      "bytes": 1502,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/.env.example",
+      "blob_sha1": "19d67b4c7bcfe14ec63403d30c7797a3917072e9",
+      "bytes": 124,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/.gitignore",
+      "blob_sha1": "2a8cf33d6ab1934e8bc96a42334f34d32d1947fb",
+      "bytes": 50,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/README.md",
+      "blob_sha1": "c44995cd57b81f026749a972a6854e8ad49e017f",
+      "bytes": 1312,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/index.html",
+      "blob_sha1": "b67bc290550a79a4e3fe6c985d8c12c4306f5383",
+      "bytes": 1280,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "blob_sha1": "2cdca11ec1ba8628fba43c424eb7679c731e4cb9",
+      "bytes": 98404,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/package.json",
+      "blob_sha1": "a87c72fe99c10883022b1e6ccf8ff163ed6f1498",
+      "bytes": 605,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "blob_sha1": "48d91ad6c51931aba23b8f9febb24a0369f8ab16",
+      "bytes": 1626,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/HistoricalWorkspace.tsx",
+      "blob_sha1": "b599968765af547434a35504cd961f882c21c9bc",
+      "bytes": 4792,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/activityMap.test.ts",
+      "blob_sha1": "dd86ec059cb879acf9391293e9a4b7e906dd918a",
+      "bytes": 2312,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/activityMap.ts",
+      "blob_sha1": "26cfd959b4e361f2144ec0c79070cdb7224e9768",
+      "bytes": 1815,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/api/client.ts",
+      "blob_sha1": "0537835c753a2bfa0710838f37c21d5335ba260c",
+      "bytes": 3044,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/api/forecast.ts",
+      "blob_sha1": "daf7d500d319be1c929931dab5d0ac90eb831926",
+      "bytes": 2715,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/api/historical.ts",
+      "blob_sha1": "dea990e5e8595c46f6d4ed797fbf4c03edbdca8e",
+      "bytes": 7193,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/api/riskStream.test.ts",
+      "blob_sha1": "66c5639a657da78f5249ce96d5cb9d48b163f5d6",
+      "bytes": 2293,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/api/types.ts",
+      "blob_sha1": "42cfaee7acddf5cb5fcd295c28c0641805728db2",
+      "bytes": 3058,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/assets/land-outline.geojson",
+      "blob_sha1": "db4f5a3044cae18a33f9ec4ae3f4c3f5bf624a38",
+      "bytes": 1303093,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/ActivityFilterControls.tsx",
+      "blob_sha1": "b395d2615603d634c00c196cbe151e92f28e0c6a",
+      "bytes": 4008,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/CaseDetail.tsx",
+      "blob_sha1": "70dcea54495a85346fe937e45c8971747ec9f05f",
+      "bytes": 6374,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/CaseList.tsx",
+      "blob_sha1": "5d26544d124cc952046843184c6fd04a68fc7816",
+      "bytes": 2103,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/CaseMap.test.tsx",
+      "blob_sha1": "76769c081b2a57ee6e2073d1020b730afd849f91",
+      "bytes": 4720,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/CaseMap.tsx",
+      "blob_sha1": "d1a4c4bcfd728b7b093c5114b77774ead8cd4683",
+      "bytes": 24984,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/CaseTrace.tsx",
+      "blob_sha1": "41d81ac1cab1d24b988d9a03a48760d912d604b7",
+      "bytes": 2007,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/CoastalImpact.tsx",
+      "blob_sha1": "ac690c4cf73f9ef372b01a35f9b7e7e422f4ca80",
+      "bytes": 6963,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/DetectionLab.tsx",
+      "blob_sha1": "1735c884a6c238123b066ae396a921bb92edf106",
+      "bytes": 6283,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/FishingForecast.test.tsx",
+      "blob_sha1": "1c3be6c80fe301cb96bad7aafca4910b53df794e",
+      "bytes": 2125,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/FishingForecast.tsx",
+      "blob_sha1": "dd8d14a4c9e2d785983e5c2926ff73d74bcad534",
+      "bytes": 3413,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/ForecastEvidence.tsx",
+      "blob_sha1": "c72ad827df4a9f5524a9aebc1fc7894ea3124e30",
+      "bytes": 6025,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/ForecastPanel.test.tsx",
+      "blob_sha1": "90dc60590db338c06749c992386f77b7c929f58b",
+      "bytes": 6993,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/ForecastPanel.tsx",
+      "blob_sha1": "053951260b35c9308865d257489247e16eff58f7",
+      "bytes": 9784,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/ForecastPlacement.test.tsx",
+      "blob_sha1": "a9dcbcf50160896c907332d20d132f6b1e894b1c",
+      "bytes": 3155,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/GfwOverview.test.tsx",
+      "blob_sha1": "91692492054d0276345fa0effd7a9210c1e9e9ed",
+      "bytes": 6704,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/GfwOverview.tsx",
+      "blob_sha1": "a3571e1de5eb066eea1a11925f9f461240c4f779",
+      "bytes": 18844,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/HistoricalGlobe.tsx",
+      "blob_sha1": "d25a59c7e7c4edf203185c43699386d6d9c7fd3e",
+      "bytes": 17971,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/Info.tsx",
+      "blob_sha1": "d5055e1e1006789ab787fc961578d491ac2c15cf",
+      "bytes": 323,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/InvestigationDashboard.tsx",
+      "blob_sha1": "11d81d4e4c6e11768640c9b9aba1eb26b255f567",
+      "bytes": 4887,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/Investigations.tsx",
+      "blob_sha1": "f5ca01c82d3c3ab2d6a454e7ceae21f0884de211",
+      "bytes": 10712,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/Loading.tsx",
+      "blob_sha1": "83cbdf2d015c955aea768c2146c4fad8d5cb263e",
+      "bytes": 1370,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/Overview.tsx",
+      "blob_sha1": "7fc6f2e4e0fa54393d5cfe527d6029502776cabd",
+      "bytes": 12423,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/RiskExplanation.tsx",
+      "blob_sha1": "e5357fc38cf96c9b6f8468d9f4281fec58b58978",
+      "bytes": 5920,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/ShipSymbol.tsx",
+      "blob_sha1": "6642ccce34013bd07c87054b0bde3c3925d28771",
+      "bytes": 745,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/StatusLabel.tsx",
+      "blob_sha1": "ad3a3ed1f93fa5e623402c36dfafcddf8a2a1630",
+      "bytes": 353,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/VesselCheck.tsx",
+      "blob_sha1": "cd4f5c401b6c2337ed624fdd2d5ba6cd406dbfcc",
+      "bytes": 5103,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/VesselEvidence.tsx",
+      "blob_sha1": "136e8226f7b55ceee75b95b3a6ea9457c5ed522a",
+      "bytes": 4775,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/components/Workspace.test.tsx",
+      "blob_sha1": "6d460c2002c1780eee0b3240353e20a58433a1f9",
+      "bytes": 10547,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/evidenceNarrative.test.ts",
+      "blob_sha1": "03a95bf8cf0851fa9ff638ff9a3e08665a8a1152",
+      "bytes": 3528,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/evidenceNarrative.ts",
+      "blob_sha1": "653cde9dcb5faec50628f2ab11869ab76a403154",
+      "bytes": 8041,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/forecastMap.test.ts",
+      "blob_sha1": "1da9ed674defeae41a132eba84a1ce2f1714c145",
+      "bytes": 2356,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/forecastMap.ts",
+      "blob_sha1": "3cc7af09f70383ba7481fc3a99697a79f5a9a8f2",
+      "bytes": 3449,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/format.ts",
+      "blob_sha1": "49b80086f1604267503b8486c8882ae563ec3b0b",
+      "bytes": 2261,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/globe.css",
+      "blob_sha1": "8beabf73a6a8179f9f28c713bee548642d732339",
+      "bytes": 4855,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/index.css",
+      "blob_sha1": "ed504424d4008edbf860dc0087888a032aa41b98",
+      "bytes": 40252,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/main.tsx",
+      "blob_sha1": "a7d9543d18c1297bfbebbb32da2012d077683167",
+      "bytes": 257,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/mapBasemap.test.ts",
+      "blob_sha1": "2a1619b9b09f0d249f6e3a55cb62297e45a7603a",
+      "bytes": 1446,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/mapBasemap.ts",
+      "blob_sha1": "04151e0edabbb52c848b4c720315db223eb15489",
+      "bytes": 679,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/mapWorker.ts",
+      "blob_sha1": "baa0b95bf1e0e74d72426096e43e67173ae3c317",
+      "bytes": 227,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/report.ts",
+      "blob_sha1": "7443541511ae1a078a0db35e56c8edab7b73cb75",
+      "bytes": 6278,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/selection.test.ts",
+      "blob_sha1": "4d7c5ac7900cf15944483ceced55598b4118134d",
+      "bytes": 672,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/selection.ts",
+      "blob_sha1": "264d3c8a44089e3d0a94b5b3f3dd4673698acaa1",
+      "bytes": 401,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/useCases.ts",
+      "blob_sha1": "f1f51af1a5223150ab3d6578dbb93bf62a6f5013",
+      "bytes": 1669,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/vesselLanguage.ts",
+      "blob_sha1": "5727df5822f11afa30cf17ef05571398dc82bbe0",
+      "bytes": 315,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/vesselSymbols.test.ts",
+      "blob_sha1": "1ebf3010b42fcf0bd2f3c95d185e8ce771df2158",
+      "bytes": 1179,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/vesselSymbols.ts",
+      "blob_sha1": "04a5c13b19f1cfda6516079d0f3089916ff8117e",
+      "bytes": 3963,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/src/zones.ts",
+      "blob_sha1": "ff43063901f906767b9f2a4858a44be4e3eea463",
+      "bytes": 2012,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/tsconfig.json",
+      "blob_sha1": "cbccb2833414a675160d6668970495ce22f44d34",
+      "bytes": 547,
+      "kind": "blob"
+    },
+    {
+      "path": "frontend/vite.config.ts",
+      "blob_sha1": "dd3e219478b481e777bc5c079bd0c3d618c20a1b",
+      "bytes": 1166,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_activity_forecast.py",
+      "blob_sha1": "3336a57c01b4ffd4f193b350aeec4d99a106da53",
+      "bytes": 7084,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_authorization.py",
+      "blob_sha1": "ddcb8b639bb694473871ea390323a703533b45d1",
+      "bytes": 5334,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_cases.py",
+      "blob_sha1": "29e726b000eb7b43b53aa34d9e46c0127643e1ff",
+      "bytes": 2496,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_forecast_integration.py",
+      "blob_sha1": "7887c0a96e0b7a811ee46d5383d7a7f875ad06de",
+      "bytes": 4235,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_gfw_filters.py",
+      "blob_sha1": "473f36f8ce64a8d460b205aef15617bbb9a1073e",
+      "bytes": 2718,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_health.py",
+      "blob_sha1": "822c21010aca724c65d7b42da74f155945267fe5",
+      "bytes": 352,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_historical.py",
+      "blob_sha1": "8b5ff16ca601acfd7432dd394bf8f1dd40747f32",
+      "bytes": 13333,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_land_coverage.py",
+      "blob_sha1": "1c739cefdcc7e9bb012125116234799c6c56b954",
+      "bytes": 1606,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_permit_evidence.py",
+      "blob_sha1": "cd4af96c16f2a2bff9f4a70093454b43f3e8e98b",
+      "bytes": 2589,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_risk_events.py",
+      "blob_sha1": "d6b8954c04aec77c85af8d2e0c72ec5b39686ca2",
+      "bytes": 3445,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_risk_screening.py",
+      "blob_sha1": "adda89fb8e7127bc5452c883668e5516eded1e1b",
+      "bytes": 8964,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_seasonal_forecast.py",
+      "blob_sha1": "5bfd35eed9438aaf31823acbeadc1bd7cb9fa9b9",
+      "bytes": 6304,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_vessel_lookup.py",
+      "blob_sha1": "837f1683a1326f7f1e7bfb89d51d1fab43f45a8c",
+      "bytes": 5939,
+      "kind": "blob"
+    },
+    {
+      "path": "tests/test_vessel_search.py",
+      "blob_sha1": "7b6ee9d2fe28d11463b1f0069964f62bc07c0883",
+      "bytes": 2572,
+      "kind": "blob"
+    },
+    {
+      "path": "training/AREA_REVIEW_TASK.md",
+      "blob_sha1": "f32c0d84a1398ca8327092711407423d17772dc5",
+      "bytes": 7733,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/README.md",
+      "blob_sha1": "8363420867e703bd85f11adb727d5d6cf4c6c165",
+      "bytes": 10017,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/__init__.py",
+      "blob_sha1": "c07a3c964888ca9dbbcb78eefafe16737bd8e4c0",
+      "bytes": 82,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/calibration.py",
+      "blob_sha1": "f508c0ddd84c736c0c65744412c1b9b7a4c84364",
+      "bytes": 894,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/collect.py",
+      "blob_sha1": "d65d8f1cc4a2d915b7059e131a7f309eda7498a2",
+      "bytes": 6843,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/common.py",
+      "blob_sha1": "94341be3fe81ae74d4f5296ffc5dfd0901c78972",
+      "bytes": 1021,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/evaluate.py",
+      "blob_sha1": "b2153b0be81535c22a7f483377f1fc4ce85fc9bc",
+      "bytes": 1522,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/improve.py",
+      "blob_sha1": "5f877e8f46aca2de9a522303450dca29be153f67",
+      "bytes": 18434,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/predict.py",
+      "blob_sha1": "5db18c4eff9efae5afc149a4d4aed4f4b561b54e",
+      "bytes": 6432,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/prepare.py",
+      "blob_sha1": "1ce13660d4de842935774cf34a55a4775942927d",
+      "bytes": 8550,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/requirements.txt",
+      "blob_sha1": "0ca9691e9c39a05e432a194e71c1005c8a3a4597",
+      "bytes": 99,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/seasonal.py",
+      "blob_sha1": "77f562a233bde12af04e0b032a5420113f942f6e",
+      "bytes": 5893,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/setup_inference.py",
+      "blob_sha1": "a154497a38712dbb24ed8200ac3253e451d4b981",
+      "bytes": 1963,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/test_model.py",
+      "blob_sha1": "c5d93aba9e2217b8039827cdc41f34a9ff3a9a3f",
+      "bytes": 2984,
+      "kind": "blob"
+    },
+    {
+      "path": "training/activity_forecast/train.py",
+      "blob_sha1": "c170dd77b65d025e319dd3c8bcd292830b2f10b8",
+      "bytes": 7857,
+      "kind": "blob"
+    },
+    {
+      "path": "training/prepare_globe_outline.py",
+      "blob_sha1": "3a17e907f4d5ef618a42904e6c04e22b5c928580",
+      "bytes": 805,
+      "kind": "blob"
+    },
+    {
+      "path": "training/prepare_watermask.py",
+      "blob_sha1": "d4f3106a764464058aaa65ae74d87ae2c1518754",
+      "bytes": 1421,
+      "kind": "blob"
+    },
+    {
+      "path": "weights/activity_forecast/best_model.joblib",
+      "blob_sha1": "88449c625f1e0ce54d9c4a1cb4e7d56ebf1858b0",
+      "bytes": 4979,
+      "kind": "blob"
+    },
+    {
+      "path": "weights/activity_forecast/best_model_metadata.json",
+      "blob_sha1": "223889180417963d3dea1f71058edfb90ec8f1ed",
+      "bytes": 4747,
+      "kind": "blob"
+    },
+    {
+      "path": "weights/activity_forecast/rules.txt",
+      "blob_sha1": "4920d92ebd41cfb2601da1022d013724eb261f6f",
+      "bytes": 927,
+      "kind": "blob"
+    }
+  ],
+  "file_counts_by_top_level": {
+    ".gitignore": 1,
+    "README.md": 1,
+    "TEAM_LAUNCH_PLAN.md": 1,
+    "backend": 24,
+    "datasets": 2,
+    "docs": 7,
+    "fixtures": 9,
+    "frontend": 65,
+    "tests": 14,
+    "training": 17,
+    "weights": 3
+  },
+  "permanent_local_model_sha256": "f81b6b381ca2af552be68bc2b2005ee076e3c8a201ad967f53ae9488bdb39d23",
+  "main_model_sha256": "a85e3e788c8d5d61d8a738a85e3ca4e274e62e027b11d39ec4c8c622e45cb424",
+  "paired_comparison": {
+    "validation": {
+      "previous_mae": 1079.4287227486666,
+      "depth4_mae": 1061.0936851361462,
+      "reduction_percent": 1.6985871531963603,
+      "weekly_wins": 4,
+      "weekly_folds": 4
+    },
+    "test": {
+      "previous_mae": 1351.821767448905,
+      "depth4_mae": 1296.7550444223507,
+      "reduction_percent": 4.073519479603703,
+      "weekly_wins": 5,
+      "weekly_folds": 7
+    }
+  },
+  "habitat_archives": [
+    {
+      "archive": "WCMC001_ColdCorals2017_v5_1.zip",
+      "bytes": 3046067,
+      "sha256": "144fb40587cd44fbd082b3977383846347974d851f91135cc5d4dd068b3160e8",
+      "inspection": "Archive directory, CRS and binary headers only; full geometry validity and CRC not checked.",
+      "layers": [
+        {
+          "file": "14_001_WCMC001_ColdCorals2017_v5_1/01_Data/WCMC001_ColdCorals2017_Pt_v5_1.shp",
+          "shape_type": 8,
+          "geometry_type": "MultiPoint",
+          "dbf_records_including_unchecked_deleted_records": 15432,
+          "bounds_west_south_east_north": [
+            -179.99999999990004,
+            -78.91666700018186,
+            180.00000000010004,
+            81.45000000009998
+          ],
+          "crs_wkt": "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]",
+          "fields": [
+            {
+              "name": "METADATA_I",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "NAME",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "ORIG_NAME",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "LOC_DEF",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "FAMILY",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "GENUS",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "SPECIES",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "DATA_TYPE",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "SURVEY_MET",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "START_DATE",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "END_DATE",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "DATE_TYPE",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "VERIF",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "LAYER_NAME",
+              "type": "C",
+              "width": 80
+            },
+            {
+              "name": "REP_AREA_K",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "DEPTH_MIN",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "DEPTH_MAX",
+              "type": "F",
+              "width": 19
+            }
+          ]
+        },
+        {
+          "file": "14_001_WCMC001_ColdCorals2017_v5_1/01_Data/WCMC001_ColdCorals2017_Py_v5_1.shp",
+          "shape_type": 5,
+          "geometry_type": "Polygon",
+          "dbf_records_including_unchecked_deleted_records": 37,
+          "bounds_west_south_east_north": [
+            -17.39551060792815,
+            35.84493219566434,
+            17.184029872280806,
+            72.43329251743579
+          ],
+          "crs_wkt": "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]",
+          "fields": [
+            {
+              "name": "LAYER_NAME",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "NAME",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "ORIG_NAME",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "LOC_DEF",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "FAMILY",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "GENUS",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "SPECIES",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "DATA_TYPE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "START_DATE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "END_DATE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "DATE_TYPE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "VERIF",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "SURVEY_MET",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "METADATA_I",
+              "type": "N",
+              "width": 10
+            },
+            {
+              "name": "GIS_AREA_K",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "Shape_Leng",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "Shape_Area",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "REP_AREA_K",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "DEPTH_MIN",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "DEPTH_MAX",
+              "type": "F",
+              "width": 19
+            }
+          ]
+        }
+      ],
+      "uncompressed_bytes": 40866645,
+      "license_files": [
+        "14_001_WCMC001_ColdCorals2017_v5_1/LICENSE.txt"
+      ]
+    },
+    {
+      "archive": "WCMC008_CoralReefs2018_v4_1.zip",
+      "bytes": 220904276,
+      "sha256": "09c7fe54c85b365c3968b8945034ebc649389c2832b0ab4b91dd2e50ee3a7124",
+      "inspection": "Archive directory, CRS and binary headers only; full geometry validity and CRC not checked.",
+      "layers": [
+        {
+          "file": "14_001_WCMC008_CoralReefs2018_v4_1/01_Data/WCMC008_CoralReef2018_Pt_v4_1.shp",
+          "shape_type": 1,
+          "geometry_type": "Point",
+          "dbf_records_including_unchecked_deleted_records": 925,
+          "bounds_west_south_east_north": [
+            -118.29017600022217,
+            14.708445000436484,
+            -83.88697000026525,
+            32.44238333312438
+          ],
+          "crs_wkt": "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]",
+          "fields": [
+            {
+              "name": "LAYER_NAME",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "METADATA_I",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "ORIG_NAME",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "FAMILY",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "GENUS",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "SPECIES",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "DATA_TYPE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "START_DATE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "END_DATE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "DATE_TYPE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "VERIF",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "NAME",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "LOC_DEF",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "SURVEY_MET",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "GIS_AREA_K",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "REP_AREA_K",
+              "type": "C",
+              "width": 254
+            }
+          ]
+        },
+        {
+          "file": "14_001_WCMC008_CoralReefs2018_v4_1/01_Data/WCMC008_CoralReef2018_Py_v4_1.shp",
+          "shape_type": 5,
+          "geometry_type": "Polygon",
+          "dbf_records_including_unchecked_deleted_records": 17504,
+          "bounds_west_south_east_north": [
+            -179.99993533605377,
+            -34.298229751701626,
+            179.99993558686018,
+            32.514817547391935
+          ],
+          "crs_wkt": "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]",
+          "fields": [
+            {
+              "name": "LAYER_NAME",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "METADATA_I",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "ORIG_NAME",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "FAMILY",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "GENUS",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "SPECIES",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "DATA_TYPE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "START_DATE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "END_DATE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "DATE_TYPE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "VERIF",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "NAME",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "LOC_DEF",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "SURVEY_MET",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "GIS_AREA_K",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "Shape_Leng",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "Shape_Area",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "REP_AREA_K",
+              "type": "C",
+              "width": 254
+            }
+          ]
+        }
+      ],
+      "uncompressed_bytes": 346711206,
+      "license_files": [
+        "14_001_WCMC008_CoralReefs2018_v4_1/LICENSE.txt"
+      ]
+    },
+    {
+      "archive": "WCMC013-014_SeagrassPtPy2021_v7_1.zip",
+      "bytes": 485748212,
+      "sha256": "25b9d1cfecbd0b51af58a3b2b0c11e643074bf02ea084ab634e5d092f5f02d2d",
+      "inspection": "Archive directory, CRS and binary headers only; full geometry validity and CRC not checked.",
+      "layers": [
+        {
+          "file": "014_001_WCMC013-014_SeagrassPtPy2021_v7_1/01_Data/WCMC013_014_Seagrasses_Pt_v7_1.shp",
+          "shape_type": 1,
+          "geometry_type": "Point",
+          "dbf_records_including_unchecked_deleted_records": 17668,
+          "bounds_west_south_east_north": [
+            -176.6402644353554,
+            -46.91668262510302,
+            178.53334634565738,
+            69.99998357618114
+          ],
+          "crs_wkt": "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]",
+          "fields": [
+            {
+              "name": "datasetID",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "FAMILY",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "GENUS",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "scientific",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "VERIF",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "REP_AREA_K",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "eventDate",
+              "type": "C",
+              "width": 254
+            }
+          ]
+        },
+        {
+          "file": "014_001_WCMC013-014_SeagrassPtPy2021_v7_1/01_Data/WCMC013_014_Seagrasses_Py_v7_1.shp",
+          "shape_type": 5,
+          "geometry_type": "Polygon",
+          "dbf_records_including_unchecked_deleted_records": 293147,
+          "bounds_west_south_east_north": [
+            -175.42787941499563,
+            -43.55093395640967,
+            178.61684839541783,
+            70.49427922932506
+          ],
+          "crs_wkt": "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]",
+          "fields": [
+            {
+              "name": "datasetID",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "BIO_CLASS",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "fieldNotes",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "habitat",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "AREA_SQKM",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "vernacular",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "FAMILY",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "GENUS",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "scientific",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "habitatID",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "nameAccord",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "eventDate",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "verif",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "Shape_Leng",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "Shape_Area",
+              "type": "F",
+              "width": 19
+            }
+          ]
+        }
+      ],
+      "uncompressed_bytes": 1350954134,
+      "license_files": [
+        "014_001_WCMC013-014_SeagrassPtPy2021_v7_1/LICENSE.txt"
+      ]
+    },
+    {
+      "archive": "WCMC027_Saltmarsh_v6_1.zip",
+      "bytes": 599175910,
+      "sha256": "73912564e41a07b622b12123c5ab56b1c18c2bab6b382c6da61674f594333c73",
+      "inspection": "Archive directory, CRS and binary headers only; full geometry validity and CRC not checked.",
+      "layers": [
+        {
+          "file": "WCMC027_Saltmarsh_v6_1/01_Data/WCMC027_Saltmarshes_Pt_v6_1.shp",
+          "shape_type": 18,
+          "geometry_type": "MultiPointZ",
+          "dbf_records_including_unchecked_deleted_records": 477,
+          "bounds_west_south_east_north": [
+            -179.08333300021775,
+            -54.75000233124257,
+            178.91670034794276,
+            75.66660269006218
+          ],
+          "crs_wkt": "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]",
+          "fields": [
+            {
+              "name": "METADATA_I",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "NAME",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "ORIG_NAME",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "LOC_DEF",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "FAMILY",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "GENUS",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "SPECIES",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "DATA_TYPE",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "SURVEY_MET",
+              "type": "C",
+              "width": 254
+            },
+            {
+              "name": "START_DATE",
+              "type": "C",
+              "width": 10
+            },
+            {
+              "name": "END_DATE",
+              "type": "C",
+              "width": 10
+            },
+            {
+              "name": "DATE_TYPE",
+              "type": "C",
+              "width": 2
+            },
+            {
+              "name": "VERIF",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "LAYER_NAME",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "REP_AREA_K",
+              "type": "F",
+              "width": 19
+            }
+          ]
+        },
+        {
+          "file": "WCMC027_Saltmarsh_v6_1/01_Data/WCMC027_Saltmarshes_Py_v6_1.shp",
+          "shape_type": 5,
+          "geometry_type": "Polygon",
+          "dbf_records_including_unchecked_deleted_records": 2469,
+          "bounds_west_south_east_north": [
+            -170.715042931586,
+            -46.898880875252125,
+            178.97622822515254,
+            73.30303661504782
+          ],
+          "crs_wkt": "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]",
+          "fields": [
+            {
+              "name": "LAYER_NAME",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "METADATA_I",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "NAME",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "ORIG_NAME",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "LOC_DEF",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "FAMILY",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "GENUS",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "SPECIES",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "DATA_TYPE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "SURVEY_MET",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "START_DATE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "END_DATE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "DATE_TYPE",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "VERIF",
+              "type": "C",
+              "width": 50
+            },
+            {
+              "name": "GIS_AREA_K",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "Shape_Leng",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "Shape_Area",
+              "type": "F",
+              "width": 19
+            },
+            {
+              "name": "REP_AREA_K",
+              "type": "C",
+              "width": 254
+            }
+          ]
+        }
+      ],
+      "uncompressed_bytes": 938391652,
+      "license_files": [
+        "WCMC027_Saltmarsh_v6_1/LICENSE.txt"
+      ]
+    }
+  ]
+}

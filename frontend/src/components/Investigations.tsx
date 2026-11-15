@@ -9,6 +9,7 @@ import { shipKind, shipNames } from "../vesselSymbols";
 import { warningNames } from "../vesselLanguage";
 import { IndicatorExplanation } from "./RiskExplanation";
 import { hasRiskEvidence, indicatorNarrative } from "../evidenceNarrative";
+import { AreaPriority } from './AreaPriority';
 
 export function Investigations({ onOverview }: { onOverview: () => void }) {
   const workspace = useHistoricalWorkspace()!;
@@ -41,6 +42,7 @@ export function Investigations({ onOverview }: { onOverview: () => void }) {
   const lastPage = Math.max(0, Math.ceil(vessels.length / 50) - 1);
   const currentPage = Math.min(page, lastPage);
   return <div className="real-investigations split">
+    {result && <AreaPriority report={result} />}
     <section className="panel"><div className="panel-head"><h2>Investigation workspace</h2><button onClick={onOverview}>Change selected area</button></div>
       {!!result?.vessels.length && <section className="investigation-screening" aria-label="Screen selected boats">
         {/* Left column: what this card does, the start/stop buttons, and the details label. */}

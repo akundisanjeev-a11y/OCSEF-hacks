@@ -1,0 +1,195 @@
+{
+  "policy_version": "review-priority-v1",
+  "status": "partial",
+  "priority_score": 3.72,
+  "priority_category": null,
+  "score_kind": "minimum_supported_review_priority",
+  "score_range": [
+    3.72,
+    63.72
+  ],
+  "coverage_percent": 40,
+  "factors": [
+    {
+      "code": "local_review",
+      "label": "Review-event points in the rectangle",
+      "weight": 35,
+      "available": false,
+      "normalized_value": null,
+      "contribution_points": null,
+      "reason": "vessel_evidence_not_requested",
+      "sources": []
+    },
+    {
+      "code": "fleet_review",
+      "label": "Area-associated fleet review context",
+      "weight": 25,
+      "available": false,
+      "normalized_value": null,
+      "contribution_points": null,
+      "reason": "vessel_evidence_not_requested",
+      "sources": []
+    },
+    {
+      "code": "sar_unmatched",
+      "label": "SAR detections without an AIS match",
+      "weight": 20,
+      "available": true,
+      "normalized_value": 0.181818,
+      "contribution_points": 3.636364,
+      "reason": "2 of 11 reported detections unmatched. These are not necessarily unique ships or illegal vessels; subsets are not added together.",
+      "sources": [
+        "sar_all",
+        "sar_unmatched"
+      ]
+    },
+    {
+      "code": "activity_pressure",
+      "label": "Reported activity intensity",
+      "weight": 10,
+      "available": true,
+      "normalized_value": 0.00873,
+      "contribution_points": 0.087302,
+      "reason": "Log-scaled hours per selection km\u00b2 per day: presence reference 1, fishing reference 0.1. The maximum proxy is used rather than adding overlapping fishing/presence hours. Selection area includes land.",
+      "sources": [
+        "presence",
+        "fishing"
+      ]
+    },
+    {
+      "code": "forecast_change",
+      "label": "Predicted fishing-activity increase",
+      "weight": 10,
+      "available": true,
+      "normalized_value": 0.0,
+      "contribution_points": 0.0,
+      "reason": "Positive change from the last observed week, capped at a 100% increase (one-hour denominator floor). Decreases contribute no increase signal; this is fishing activity only.",
+      "sources": [
+        "forecast"
+      ]
+    }
+  ],
+  "adjustments": [],
+  "review_triggers": [],
+  "area": {
+    "west": -95.0,
+    "south": -5.0,
+    "east": -90.0,
+    "north": 0.0
+  },
+  "start": "2025-11-05T00:00:00Z",
+  "end_exclusive": "2025-11-12T00:00:00Z",
+  "filters": {
+    "flag": [],
+    "geartype": [],
+    "vessel_id": null,
+    "vessel_type": null,
+    "shiptype": null,
+    "speed": null,
+    "distance_from_port_km": null
+  },
+  "selection_key": "8012a2b01a41b6bdf0228018b09b9fe6186b6f17c9e57776e07dc7da48840842",
+  "components": {
+    "presence": {
+      "status": "complete",
+      "eligible_for_scoring": true,
+      "reason": null,
+      "temporal_alignment": "exact_requested_interval",
+      "source_dataset": "public-global-presence:v5.0",
+      "model_version": null,
+      "forecast_start": null,
+      "forecast_end_exclusive": null
+    },
+    "fishing": {
+      "status": "complete",
+      "eligible_for_scoring": true,
+      "reason": null,
+      "temporal_alignment": "exact_requested_interval",
+      "source_dataset": "public-global-fishing-effort:v5.0",
+      "model_version": null,
+      "forecast_start": null,
+      "forecast_end_exclusive": null
+    },
+    "sar_all": {
+      "status": "complete",
+      "eligible_for_scoring": true,
+      "reason": null,
+      "temporal_alignment": "exact_requested_interval",
+      "source_dataset": "public-global-sar-presence:v5.0",
+      "model_version": null,
+      "forecast_start": null,
+      "forecast_end_exclusive": null
+    },
+    "sar_matched": {
+      "status": "complete",
+      "eligible_for_scoring": true,
+      "reason": null,
+      "temporal_alignment": "exact_requested_interval",
+      "source_dataset": "public-global-sar-presence:v5.0",
+      "model_version": null,
+      "forecast_start": null,
+      "forecast_end_exclusive": null
+    },
+    "sar_unmatched": {
+      "status": "complete",
+      "eligible_for_scoring": true,
+      "reason": null,
+      "temporal_alignment": "exact_requested_interval",
+      "source_dataset": "public-global-sar-presence:v5.0",
+      "model_version": null,
+      "forecast_start": null,
+      "forecast_end_exclusive": null
+    },
+    "forecast": {
+      "status": "complete",
+      "eligible_for_scoring": true,
+      "reason": null,
+      "temporal_alignment": "exact_requested_interval",
+      "source_dataset": null,
+      "model_version": "world-seasonal-depth4-lag4-20261115T182002Z",
+      "forecast_start": "2025-11-05T00:00:00.000Z",
+      "forecast_end_exclusive": "2025-11-12T00:00:00.000Z"
+    },
+    "vessel_context": {
+      "status": "unavailable",
+      "eligible_for_scoring": false,
+      "reason": "vessel_evidence_not_requested",
+      "temporal_alignment": null,
+      "source_dataset": null,
+      "model_version": null,
+      "forecast_start": null,
+      "forecast_end_exclusive": null
+    },
+    "local_events": {
+      "status": "unavailable",
+      "eligible_for_scoring": false,
+      "reason": "vessel_evidence_not_requested",
+      "temporal_alignment": null,
+      "source_dataset": null,
+      "model_version": null,
+      "forecast_start": null,
+      "forecast_end_exclusive": null
+    },
+    "habitats": {
+      "status": "reference_only",
+      "eligible_for_scoring": false,
+      "reason": null,
+      "temporal_alignment": "static_reference_not_date_matched",
+      "source_dataset": null,
+      "model_version": null,
+      "forecast_start": null,
+      "forecast_end_exclusive": null
+    }
+  },
+  "excluded_components": {
+    "vessel_context": "vessel_evidence_not_requested",
+    "local_events": "vessel_evidence_not_requested",
+    "habitats": "static_reference_not_date_matched"
+  },
+  "limitations": [
+    "Prototype weights and reference levels are declared heuristics, not learned or calibrated probabilities.",
+    "Missing data widens the score range and is not treated as observed zero. Coverage measures factor availability, not sensor reception or statistical confidence.",
+    "Representative event points are not complete tracks. Vessel-wide flags may refer to events elsewhere.",
+    "Historical habitat maps are excluded by the strict date policy. This score does not measure ecosystem damage."
+  ]
+}

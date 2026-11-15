@@ -1,109 +1,204 @@
 {
-  "checkpoint": "best_model.joblib",
-  "saved_at_utc": "2026-11-15T01:52:26.928660+00:00",
-  "model_sha256": "a85e3e788c8d5d61d8a738a85e3ca4e274e62e027b11d39ec4c8c622e45cb424",
-  "model_version": "world-seasonal-20261115T013747Z",
-  "designation": "User-designated best prototype checkpoint; family originally selected using validation.",
-  "selection_freeze": {
-    "candidate_names": [
-      "repeat_last_week",
-      "trained_calibration",
-      "seasonal_blend",
-      "seasonal_correction_tree"
-    ],
+  "model_sha256": "f81b6b381ca2af552be68bc2b2005ee076e3c8a201ad967f53ae9488bdb39d23",
+  "evaluation": {
+    "model_version": "world-seasonal-depth4-lag4-20261115T182002Z",
+    "model_sha256": "f81b6b381ca2af552be68bc2b2005ee076e3c8a201ad967f53ae9488bdb39d23",
     "selected_method": "seasonal_correction_tree",
-    "selection_scope": "validation only",
     "validation": {
-      "repeat_last_week": {
-        "rows": 19119,
-        "cells": 1077,
-        "issue_start": "2025-04-27",
-        "issue_end": "2025-05-15",
-        "mae_hours": 1169.8600988546295,
-        "rmse_hours": 13739.049247348923,
-        "baseline_mae_hours": 1169.8600988546295,
-        "baseline_rmse_hours": 13739.049247348923,
-        "mae_reduction_percent": 0.0,
-        "beats_baseline": false,
-        "fraction_of_cells_with_lower_mae": 0.0,
-        "note": "Hours are summed across vessels; this is not classification accuracy."
-      },
-      "trained_calibration": {
-        "rows": 19119,
-        "cells": 1077,
-        "issue_start": "2025-04-27",
-        "issue_end": "2025-05-15",
-        "mae_hours": 1129.8781768890422,
-        "rmse_hours": 13157.04353674931,
-        "baseline_mae_hours": 1169.8600988546295,
-        "baseline_rmse_hours": 13739.049247348923,
-        "mae_reduction_percent": 3.4176669504953914,
-        "beats_baseline": true,
-        "fraction_of_cells_with_lower_mae": 0.6638811513463324,
-        "note": "Hours are summed across vessels; this is not classification accuracy."
-      },
-      "seasonal_blend": {
-        "rows": 19119,
-        "cells": 1077,
-        "issue_start": "2025-04-27",
-        "issue_end": "2025-05-15",
-        "mae_hours": 988.814073632395,
-        "rmse_hours": 10915.60135387678,
-        "baseline_mae_hours": 1169.8600988546295,
-        "baseline_rmse_hours": 13739.049247348923,
-        "mae_reduction_percent": 15.475869755664853,
-        "beats_baseline": true,
-        "fraction_of_cells_with_lower_mae": 0.6072423398328691,
-        "note": "Hours are summed across vessels; this is not classification accuracy."
-      },
-      "seasonal_correction_tree": {
-        "rows": 19119,
-        "cells": 1077,
-        "issue_start": "2025-04-27",
-        "issue_end": "2025-05-15",
-        "mae_hours": 936.184175058665,
-        "rmse_hours": 10233.825260851663,
-        "baseline_mae_hours": 1169.8600988546295,
-        "baseline_rmse_hours": 13739.049247348923,
-        "mae_reduction_percent": 19.97468962525936,
-        "beats_baseline": true,
-        "fraction_of_cells_with_lower_mae": 0.5060352831940576,
-        "note": "Hours are summed across vessels; this is not classification accuracy."
+      "rows": 4131,
+      "cells": 1107,
+      "issue_start": "2025-08-03",
+      "issue_end": "2025-08-24",
+      "mae_hours": 1061.0936851361462,
+      "rmse_hours": 12532.923079670594,
+      "baseline_mae_hours": 1050.379043815057,
+      "baseline_rmse_hours": 12491.172270028375,
+      "mae_reduction_percent": -1.0200737899504144,
+      "beats_baseline": false,
+      "fraction_of_cells_with_lower_mae": 0.4878048780487805,
+      "note": "Hours are summed across vessels; this is not classification accuracy.",
+      "weekly_folds": 4,
+      "weeks_beating_baseline": 3,
+      "directional_accuracy": 0.5821834906802227,
+      "mean_spatial_top_decile_precision": 0.36775778832817674,
+      "mean_spatial_top_decile_recall": 0.36775778832817674,
+      "mean_spatial_top_decile_jaccard": 0.22581806725752193
+    },
+    "fresh_test": {
+      "rows": 7217,
+      "cells": 1156,
+      "issue_start": "2025-09-06",
+      "issue_end": "2025-10-18",
+      "mae_hours": 1296.7550444223507,
+      "rmse_hours": 14425.650816481237,
+      "baseline_mae_hours": 1310.1621532492723,
+      "baseline_rmse_hours": 14840.349025053816,
+      "mae_reduction_percent": 1.0233167546224116,
+      "beats_baseline": true,
+      "fraction_of_cells_with_lower_mae": 0.5017301038062284,
+      "note": "Hours are summed across vessels; this is not classification accuracy.",
+      "weekly_folds": 7,
+      "weeks_beating_baseline": 4,
+      "directional_accuracy": 0.5893030345018706,
+      "mean_spatial_top_decile_precision": 0.3378885166412116,
+      "mean_spatial_top_decile_recall": 0.3378885166412116,
+      "mean_spatial_top_decile_jaccard": 0.20619377825557575
+    },
+    "protocol": "One fixed candidate, chosen and saved before collecting these targets. No refitting or hyperparameter selection from this report.",
+    "limitations": [
+      "Revised historical GFW exports, not archived as-published snapshots.",
+      "Four-day availability delay is an assumption; no historical publication timestamps.",
+      "Scores apply to cells with positive trailing 28-day reported activity; no coverage assertion.",
+      "Aggregate global results do not establish improvement in every selected rectangle.",
+      "Only fishing-activity vessel-hours are forecast; not all vessel types or authorization."
+    ],
+    "validation_report_sha256": "77aba2bb49b18144b745f99eecd538164e5410769a4139cab761f6b279ab2d31",
+    "test_report_sha256": "9ed22330d0519875e8b0a6e715165236cfc0af68e7ccf7cc42fadd1b615d190b",
+    "paired_previous_model_comparison": {
+      "previous_model_sha256": "a85e3e788c8d5d61d8a738a85e3ca4e274e62e027b11d39ec4c8c622e45cb424",
+      "depth4_model_sha256": "f81b6b381ca2af552be68bc2b2005ee076e3c8a201ad967f53ae9488bdb39d23",
+      "comparison_scope": "Post-hoc paired comparison; these outcomes were already viewed. No training or tuning.",
+      "common_availability_lag_days": 4,
+      "native_previous_training_lag_days": 3,
+      "promotion_condition": "Depth-four test MAE lower than previous, strict majority of test weeks lower, and validation MAE no higher than previous.",
+      "caveat": "Previous weights were trained with a three-day target gap; both frozen models now receive identical four-day-available inputs and identical targets. This measures operational checkpoint performance, not the causal effect of depth.",
+      "depth4_better_under_comparison_rule": true,
+      "results": {
+        "validation": {
+          "models": {
+            "previous": {
+              "rows": 4131,
+              "cells": 1107,
+              "issue_start": "2025-08-03",
+              "issue_end": "2025-08-24",
+              "mae_hours": 1079.4287227486666,
+              "rmse_hours": 12741.290339810965,
+              "baseline_mae_hours": 1050.379043815057,
+              "baseline_rmse_hours": 12491.172270028375,
+              "mae_reduction_percent": -2.765637709992664,
+              "beats_baseline": false,
+              "fraction_of_cells_with_lower_mae": 0.5645889792231256,
+              "note": "Hours are summed across vessels; this is not classification accuracy."
+            },
+            "depth4": {
+              "rows": 4131,
+              "cells": 1107,
+              "issue_start": "2025-08-03",
+              "issue_end": "2025-08-24",
+              "mae_hours": 1061.0936851361462,
+              "rmse_hours": 12532.923079670594,
+              "baseline_mae_hours": 1050.379043815057,
+              "baseline_rmse_hours": 12491.172270028375,
+              "mae_reduction_percent": -1.0200737899504144,
+              "beats_baseline": false,
+              "fraction_of_cells_with_lower_mae": 0.4878048780487805,
+              "note": "Hours are summed across vessels; this is not classification accuracy."
+            }
+          },
+          "folds": [
+            {
+              "issue_date": "2025-08-03",
+              "previous_mae_hours": 1051.6607192351541,
+              "depth4_mae_hours": 1040.8550066619414
+            },
+            {
+              "issue_date": "2025-08-10",
+              "previous_mae_hours": 1166.823082361641,
+              "depth4_mae_hours": 1160.0016227425383
+            },
+            {
+              "issue_date": "2025-08-17",
+              "previous_mae_hours": 1457.041668931018,
+              "depth4_mae_hours": 1407.878259624641
+            },
+            {
+              "issue_date": "2025-08-24",
+              "previous_mae_hours": 645.8095412156097,
+              "depth4_mae_hours": 639.2014772904317
+            }
+          ],
+          "depth4_weeks_beating_previous": 4,
+          "weekly_folds": 4,
+          "depth4_mae_reduction_vs_previous_percent": 1.6985871531963603
+        },
+        "test": {
+          "models": {
+            "previous": {
+              "rows": 7217,
+              "cells": 1156,
+              "issue_start": "2025-09-06",
+              "issue_end": "2025-10-18",
+              "mae_hours": 1351.821767448905,
+              "rmse_hours": 14444.97598750072,
+              "baseline_mae_hours": 1310.1621532492723,
+              "baseline_rmse_hours": 14840.349025053816,
+              "mae_reduction_percent": -3.1797296308945096,
+              "beats_baseline": false,
+              "fraction_of_cells_with_lower_mae": 0.6072664359861591,
+              "note": "Hours are summed across vessels; this is not classification accuracy."
+            },
+            "depth4": {
+              "rows": 7217,
+              "cells": 1156,
+              "issue_start": "2025-09-06",
+              "issue_end": "2025-10-18",
+              "mae_hours": 1296.7550444223507,
+              "rmse_hours": 14425.650816481237,
+              "baseline_mae_hours": 1310.1621532492723,
+              "baseline_rmse_hours": 14840.349025053816,
+              "mae_reduction_percent": 1.0233167546224116,
+              "beats_baseline": true,
+              "fraction_of_cells_with_lower_mae": 0.5017301038062284,
+              "note": "Hours are summed across vessels; this is not classification accuracy."
+            }
+          },
+          "folds": [
+            {
+              "issue_date": "2025-09-06",
+              "previous_mae_hours": 1124.87319861443,
+              "depth4_mae_hours": 1068.4959809070344
+            },
+            {
+              "issue_date": "2025-09-13",
+              "previous_mae_hours": 1512.4696805371116,
+              "depth4_mae_hours": 1585.593159911805
+            },
+            {
+              "issue_date": "2025-09-20",
+              "previous_mae_hours": 1471.9193872307706,
+              "depth4_mae_hours": 1363.0595671838687
+            },
+            {
+              "issue_date": "2025-09-27",
+              "previous_mae_hours": 1443.268414407926,
+              "depth4_mae_hours": 1394.1814190111154
+            },
+            {
+              "issue_date": "2025-10-04",
+              "previous_mae_hours": 936.7883716640972,
+              "depth4_mae_hours": 939.4510039235067
+            },
+            {
+              "issue_date": "2025-10-11",
+              "previous_mae_hours": 1130.6392551579681,
+              "depth4_mae_hours": 1120.7403205727253
+            },
+            {
+              "issue_date": "2025-10-18",
+              "previous_mae_hours": 1854.5847495457706,
+              "depth4_mae_hours": 1613.153663522957
+            }
+          ],
+          "depth4_weeks_beating_previous": 5,
+          "weekly_folds": 7,
+          "depth4_mae_reduction_vs_previous_percent": 4.073519479603703
+        }
       }
     },
-    "fresh_issue_start": "2025-07-05",
-    "fresh_issue_end": "2025-07-24",
-    "refit_label_cutoff_exclusive": "2025-07-04",
-    "fixed_tree_depth": 2,
-    "fixed_min_samples_leaf": 500,
-    "growth_ratio_cap": 5,
-    "refit_rows": 143588,
-    "test_policy": "No fresh-test values used to choose model, thresholds or examples; report failure as well as success.",
-    "frozen_model_sha256": "a85e3e788c8d5d61d8a738a85e3ca4e274e62e027b11d39ec4c8c622e45cb424",
-    "frozen_at_utc": "2026-11-15T01:37:47.606762+00:00"
+    "release_policy": "User requested permanent replacement if better than the previous model. Paired comparison passed; original baseline validation gate did not pass."
   },
-  "evaluation": {
-    "model_version": "world-seasonal-20261115T013747Z",
-    "model_sha256": "a85e3e788c8d5d61d8a738a85e3ca4e274e62e027b11d39ec4c8c622e45cb424",
-    "selected_method": "seasonal_correction_tree",
-    "fresh_test": {
-      "rows": 20487,
-      "cells": 1100,
-      "issue_start": "2025-07-05",
-      "issue_end": "2025-07-24",
-      "mae_hours": 418.25554455437236,
-      "rmse_hours": 1821.985075389087,
-      "baseline_mae_hours": 448.6778430224045,
-      "baseline_rmse_hours": 2140.828733772868,
-      "mae_reduction_percent": 6.7804325399935115,
-      "beats_baseline": true,
-      "fraction_of_cells_with_lower_mae": 0.5536363636363636,
-      "note": "Hours are summed across vessels; this is not classification accuracy."
-    },
-    "protocol": "July targets were not inspected to choose or change this model; do not tune against this report.",
-    "limitations": "Retrospective revised GFW measurements, assumed 3-day publishing lag, overlapping weekly targets; no guarantee of future or per-area improvement.",
-    "fresh_csv_sha256": "0e058059a6a9a86026d6e8d5626f7fcd850dd6c4fea7c16229153780f7674edb",
-    "source_checksum_recorded_at_utc": "2026-11-15T01:50:02.486925+00:00",
-    "source_checksum_note": "Checksum attached after initial evaluation; model and recorded metrics unchanged."
-  }
+  "max_depth": 4,
+  "grid_degrees": 5,
+  "availability_lag_days": 4,
+  "candidate_directory": "weights\\activity_forecast\\depth4_release"
 }

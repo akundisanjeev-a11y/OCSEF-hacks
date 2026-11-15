@@ -1,42 +1,72 @@
 {
   "data_mode": "historical_demo",
-  "observation_cutoff": "2025-07-31",
-  "simulated_issue_date": "2025-08-03",
-  "target_start": "2025-08-04",
-  "target_end": "2025-08-10",
+  "observation_cutoff": "2025-10-31",
+  "simulated_issue_date": "2025-11-04",
+  "target_start": "2025-11-05",
+  "target_end": "2025-11-11",
+  "bounds": {
+    "south": 25,
+    "north": 30,
+    "west": 120,
+    "east": 125
+  },
   "status": "scored",
   "cell_id": "lat23_lon60",
-  "bounds": {
-    "south": 25.0,
-    "north": 30.0,
-    "west": 120.0,
-    "east": 125.0
-  },
   "selected_method": "seasonal_correction_tree",
-  "model_version": "world-seasonal-20261115T013747Z",
-  "source_dataset": "public-global-fishing-effort:v5.0",
-  "predicted_week_hours": 34722.984290720226,
-  "repeat_last_week_hours": 30003.75,
-  "seasonal_estimate_hours": 315707.933280559,
+  "model_version": "world-seasonal-depth4-lag4-20261115T182002Z",
+  "predicted_week_hours": 386414.9500615278,
+  "repeat_last_week_hours": 375476.37,
+  "seasonal_estimate_hours": 449313.8744556852,
   "seasonal_reference_available": true,
   "data_quality_notes": [],
   "decision_path": [
     {
       "feature": "seasonal_change_fraction",
-      "observed": 9.285287358473031,
+      "observed": 0.19665020319570367,
       "comparison": ">",
-      "threshold": -0.2802339345216751
+      "threshold": -0.27626487612724304
     },
     {
       "feature": "seasonal_change_fraction",
-      "observed": 9.285287358473031,
+      "observed": 0.19665020319570367,
       "comparison": ">",
-      "threshold": 0.24741465598344803
+      "threshold": 0.02050958853214979
+    },
+    {
+      "feature": "recent_three_day_change_fraction",
+      "observed": 0.2110589986439536,
+      "comparison": ">",
+      "threshold": -0.2381467968225479
+    },
+    {
+      "feature": "seasonal_change_fraction",
+      "observed": 0.19665020319570367,
+      "comparison": "<=",
+      "threshold": 0.3949965238571167
     }
   ],
   "decision_path_applies_to": "seasonal_correction_tree",
-  "learned_leaf_correction_fraction": 0.15337348581370477,
-  "correction_scale_hours": 30769.5575,
-  "selected_explanation": "Start with 30003.75 last-week hours. The learned tree correction is 0.153373 times a local scale of 30769.56 hours, producing 34722.98 hours.",
-  "interpretation": "Forecast of reported apparent fishing vessel-hours; not proof of activity, harm or authorization."
+  "learned_leaf_correction_fraction": 0.029132539183565138,
+  "correction_scale_hours": 375476.37,
+  "selected_explanation": "Start with 375476.37 last-week hours. The learned tree correction is 0.029133 times a local scale of 375476.37 hours, producing 386414.95 hours.",
+  "source_dataset": "public-global-fishing-effort:v5.0",
+  "interpretation": "Forecast of reported apparent fishing vessel-hours; not proof of activity, harm or authorization.",
+  "reasoning_evidence": {
+    "history_start": "2025-10-04",
+    "history_end": "2025-10-31",
+    "last_week_daily_mean": 53639.48142857143,
+    "previous_week_daily_mean": 1608.2028571428575,
+    "recent_three_day_daily_mean": 64960.57666666666,
+    "month_daily_mean": 51274.36285714286,
+    "seasonal_estimate_hours": 449313.8744556852,
+    "seasonal_reference_start": "2024-11-05",
+    "seasonal_reference_end": "2024-11-11",
+    "prediction_change_hours": 10938.580061527784,
+    "used_signals": [
+      "last_week",
+      "seasonal_change_fraction",
+      "recent_three_day_change_fraction",
+      "month_scale"
+    ]
+  }
 }
