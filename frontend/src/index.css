@@ -1,24 +1,34 @@
+/* Design tokens. Every colour and font in the app comes from these variables, so changing one value restyles everything. */
 :root {
+  /* Page and panel surfaces: darkest page background, then panels, then raised controls. */
   --bg: #070f1c;
   --panel: #0c1829;
   --panel-2: #101f35;
+  /* Thin lines between panels, and stronger outlines on buttons and inputs. */
   --border: #1c2e4a;
   --border-strong: #2a4063;
+  /* Text colours: main text and quieter secondary text. */
   --text: #e4ebf5;
   --muted: #8a9ab3;
+  /* Blue used for primary buttons, selected tabs and focus highlights. */
   --accent: #2f7bff;
   --accent-text: #ffffff;
+  /* Table row colours when hovered and when selected. */
   --row-hover: #12233c;
   --row-selected: #16305a;
 
+  /* Permit decision colours: green authorized, red potential violation, grey unknown, amber needs review. */
   --authorized: #3fcf80;
   --violation: #ff6a55;
   --unknown: #9aa8bd;
   --review: #f0a63a;
+  /* Vessel registration colours on the globe: blue = matched an AIS signal, orange = no AIS match. */
   --registered: #4c9bff;
   --unregistered: #ff8a3d;
+  /* Background of error messages. */
   --error-bg: #2a1518;
 
+  /* Monospace font for IDs and codes, then the page's base font, size, text colour and dark colour scheme. */
   --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 14px;
@@ -28,31 +38,37 @@
   color-scheme: dark;
 }
 
+/* Make width and height include padding and borders, which keeps layout sizes predictable. */
 * {
   box-sizing: border-box;
 }
 
+/* Remove the browser's default page margin and paint the dark background. */
 body {
   margin: 0;
   background: var(--bg);
 }
 
+/* Panel titles (h2) and small section headings (h3) share weight and no default margins. */
 h2,
 h3 {
   margin: 0;
   font-weight: 600;
 }
 
+/* Panel titles are slightly larger than the base text. */
 h2 {
   font-size: 15px;
 }
 
+/* Section headings inside a case are small and muted so the content below stands out. */
 h3 {
   font-size: 12px;
   color: var(--muted);
   margin-bottom: 8px;
 }
 
+/* Form controls do not inherit fonts by default, so make them match the rest of the page. */
 button,
 select,
 input {
@@ -60,6 +76,7 @@ input {
   color: inherit;
 }
 
+/* Default button look: dark, outlined, with a pointer cursor. */
 button {
   height: 32px;
   padding: 0 12px;
@@ -69,27 +86,32 @@ button {
   cursor: pointer;
 }
 
+/* Hover highlight, skipped for disabled buttons. */
 button:hover:not(:disabled) {
   background: var(--row-hover);
   border-color: #3a5684;
 }
 
+/* Disabled buttons are dimmed and lose the pointer cursor. */
 button:disabled {
   opacity: 0.5;
   cursor: default;
 }
 
+/* Primary action buttons (Detect ships, Run fictional demo, Select area) are filled blue. */
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-text);
 }
 
+/* Slightly darker blue when hovering a primary button. */
 button.primary:hover:not(:disabled) {
   background: #2568de;
   border-color: #2568de;
 }
 
+/* Drop-down menus match the buttons' dark outlined style. */
 select {
   height: 34px;
   padding: 0 8px;
@@ -98,11 +120,13 @@ select {
   background: var(--panel-2);
 }
 
+/* Visible blue outline when navigating with the keyboard, for accessibility. */
 :focus-visible {
   outline: 2px solid #7fb0ff;
   outline-offset: 1px;
 }
 
+/* Utility classes: monospace text for IDs and codes, muted grey text, small text, and red error text. */
 .mono {
   font-family: var(--mono);
   font-size: 13px;
@@ -122,12 +146,14 @@ select {
 
 /* App frame */
 
+/* Whole app: a full-height column so the footer stays at the bottom of short pages. */
 .app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
+/* Top bar holding the logo, the four page tabs and the backend menu. */
 .topbar {
   display: flex;
   align-items: center;
@@ -138,17 +164,20 @@ select {
   border-bottom: 1px solid var(--border);
 }
 
+/* GHOSTFLEET wordmark with wide letter spacing. */
 .brand {
   font-weight: 700;
   font-size: 17px;
   letter-spacing: 0.22em;
 }
 
+/* Row of page tabs (Overview, Detection lab, Investigations, Coastal impact), stretched to the bar's height. */
 .tabs {
   display: flex;
   height: 100%;
 }
 
+/* Each tab is a flat button with a transparent underline until it is active. */
 .tabs button {
   height: 100%;
   border: 0;
@@ -159,11 +188,13 @@ select {
   padding: 0 18px;
 }
 
+/* Tab hover: brighten the text only. */
 .tabs button:hover {
   background: none;
   color: var(--text);
 }
 
+/* The current tab gets a raised background and a blue underline. */
 .tabs button.active {
   color: var(--text);
   background: var(--panel-2);
@@ -171,10 +202,12 @@ select {
   font-weight: 600;
 }
 
+/* Pushes the Backend menu to the far right of the top bar. */
 .source {
   margin-left: auto;
 }
 
+/* A label and its control side by side, used for the Backend menu and the report's data source menu. */
 .inline-field {
   display: flex;
   align-items: center;
@@ -185,11 +218,13 @@ select {
   color: var(--muted);
 }
 
+/* Main page area; it grows to fill the space between the top bar and the footer. */
 .content {
   flex: 1;
   padding: 14px;
 }
 
+/* Footer strip with the disclaimer that vessel presence alone does not prove illegal fishing. */
 .footnote {
   padding: 10px 20px;
   border-top: 1px solid var(--border);
@@ -200,6 +235,7 @@ select {
 
 /* Panels */
 
+/* The basic card every section of the app sits in. min-width 0 lets it shrink inside grids. */
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -208,6 +244,7 @@ select {
   min-width: 0;
 }
 
+/* Title row at the top of a panel, with the title on the left and any actions on the right. */
 .panel-head {
   display: flex;
   align-items: center;
@@ -218,6 +255,7 @@ select {
   border-bottom: 1px solid var(--border);
 }
 
+/* Group of buttons and notes on the right side of a panel title. */
 .head-actions {
   display: flex;
   align-items: center;
@@ -225,18 +263,21 @@ select {
   min-width: 0;
 }
 
+/* Small status message next to the buttons, such as the demo run result. */
 .head-note {
   font-size: 13px;
   color: var(--muted);
   text-align: right;
 }
 
+/* Placeholder text shown when a panel has nothing to display yet. */
 .empty {
   margin: 0;
   padding: 20px 14px;
   color: var(--muted);
 }
 
+/* Inline message box, used mainly for errors. */
 .notice {
   margin: 12px 14px;
   padding: 10px 12px;
@@ -244,10 +285,12 @@ select {
   border-radius: 4px;
 }
 
+/* A notice directly under a toolbar sits flush with the page instead of inside a panel. */
 .toolbar + .notice {
   margin: 0 0 14px;
 }
 
+/* Error notices get a dark red background and border. */
 .notice.error {
   background: var(--error-bg);
   border-color: #5c2a2a;
@@ -255,6 +298,7 @@ select {
 
 /* Investigation layout */
 
+/* Overview page grid: filters on the left, the globe in the middle, the case panel on the right, then counts and the vessel list across the bottom. */
 .dash {
   display: grid;
   grid-template-columns: 236px minmax(0, 1fr) 380px;
@@ -266,6 +310,7 @@ select {
   gap: 14px;
 }
 
+/* Each panel is placed into its named grid area; the filter and case panels scroll if their content is tall. */
 .dash > .filters {
   grid-area: filters;
   overflow-y: auto;
@@ -288,6 +333,7 @@ select {
   grid-area: list;
 }
 
+/* Medium screens: the case panel moves under the globe and the filter column narrows. */
 @media (max-width: 1100px) {
   .dash {
     grid-template-columns: 220px minmax(0, 1fr);
@@ -304,6 +350,7 @@ select {
   }
 }
 
+/* Phones: everything stacks into a single column. */
 @media (max-width: 700px) {
   .dash {
     grid-template-columns: minmax(0, 1fr);
@@ -314,17 +361,20 @@ select {
 
 /* Filters */
 
+/* Stack of filter controls inside the filter panel. */
 .filter-body {
   display: grid;
   gap: 14px;
   padding: 14px;
 }
 
+/* One filter: a small label above its control. */
 .filter {
   display: grid;
   gap: 6px;
 }
 
+/* The label row; the bold value on the right shows the slider's current setting. */
 .filter > span {
   display: flex;
   justify-content: space-between;
@@ -337,6 +387,7 @@ select {
   font-weight: 600;
 }
 
+/* Drop-downs and sliders fill the filter column; the slider uses the blue accent colour. */
 .filter select {
   width: 100%;
 }
@@ -346,6 +397,7 @@ select {
   accent-color: var(--accent);
 }
 
+/* Text under the Area filter that shows the latitude and longitude of the dragged box. */
 .area-text {
   font-size: 12px;
   line-height: 1.5;
@@ -357,16 +409,19 @@ select {
 
 /* Map */
 
+/* The map panel is the positioning anchor for the globe and the buttons floating over it. */
 .map-panel {
   position: relative;
 }
 
+/* The globe canvas fills the whole map panel. */
 .map-wrap,
 .map {
   position: absolute;
   inset: 0;
 }
 
+/* Dashed blue rectangle shown while the user drags to select an area; it ignores the mouse so dragging keeps working. */
 .drag-box {
   position: absolute;
   border: 1.5px dashed #7fb0ff;
@@ -374,6 +429,7 @@ select {
   pointer-events: none;
 }
 
+/* Button group floating at the top right of the globe (3D/2D, Select area, Clear area). */
 .map-tools {
   position: absolute;
   top: 10px;
@@ -382,15 +438,18 @@ select {
   gap: 6px;
 }
 
+/* Buttons on the globe use the panel colour so they stand out from the imagery. */
 .map-tools button {
   background: var(--panel);
 }
 
+/* Highlighted state while area selection is turned on. */
 .map-tools button.is-on {
   background: var(--accent);
   border-color: var(--accent);
 }
 
+/* Legend box at the bottom left of the globe explaining marker colours. */
 .map-legend {
   position: absolute;
   left: 10px;
@@ -406,12 +465,14 @@ select {
   font-size: 12px;
 }
 
+/* Each legend entry lines up its symbol and text. */
 .map-legend span {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
+/* Triangle symbol in the legend, drawn with CSS borders; its colour comes from the marker-* class. */
 .legend-mark {
   width: 0;
   height: 0;
@@ -420,6 +481,7 @@ select {
   border-bottom: 11px solid currentColor;
 }
 
+/* White circle in the legend showing the number badge used when several vessels share one spot. */
 .legend-count {
   display: inline-grid;
   place-items: center;
@@ -434,6 +496,7 @@ select {
 }
 
 /* MapLibre positions markers absolutely; do not set position here. */
+/* Triangle marker for one vessel on the globe; its colour comes from the marker-registered/unregistered/unresolved class. */
 .marker {
   width: 26px;
   height: 24px;
@@ -443,10 +506,12 @@ select {
   cursor: pointer;
 }
 
+/* Cancel the generic button hover background so the triangle does not get a box behind it. */
 .marker:hover:not(:disabled) {
   background: none;
 }
 
+/* The triangle shape itself: filled with the marker's colour and outlined dark so it reads on any imagery. */
 .marker svg {
   display: block;
   width: 100%;
@@ -457,6 +522,7 @@ select {
   stroke-linejoin: round;
 }
 
+/* The selected marker sits above the others and gets a white outline. */
 .marker.is-selected {
   z-index: 2;
 }
@@ -466,6 +532,7 @@ select {
   stroke-width: 2;
 }
 
+/* Marker and label colours by registration: blue registered, orange unregistered, grey unresolved. The strong variants colour bold text in tables and tags. */
 .marker-registered,
 .marker-registered strong {
   color: var(--registered);
@@ -481,6 +548,7 @@ select {
   color: var(--unknown);
 }
 
+/* White number badge at a marker's corner showing how many vessels are stacked at that location. */
 .marker-count {
   position: absolute;
   top: -7px;
@@ -497,6 +565,7 @@ select {
   text-align: center;
 }
 
+/* Small label box beside the selected marker showing its case ID and registration. */
 .marker-tag {
   position: absolute;
   left: 34px;
@@ -514,22 +583,12 @@ select {
   white-space: nowrap;
 }
 
+/* The case ID in the label uses the monospace font. */
 .marker-tag strong {
   font-family: var(--mono);
 }
 
-.tag-authorized {
-  color: var(--authorized);
-}
-
-.tag-potential_violation {
-  color: var(--violation);
-}
-
-.tag-unknown {
-  color: var(--unknown);
-}
-
+/* Restyle MapLibre's built-in zoom buttons to fit the dark theme; !important is needed to beat the library's own CSS. */
 .maplibregl-ctrl-group {
   background: var(--panel) !important;
   border: 1px solid var(--border-strong);
@@ -547,10 +606,12 @@ select {
   border-top: 1px solid var(--border-strong) !important;
 }
 
+/* The library's icons are dark, so invert them to white on the dark buttons. */
 .maplibregl-ctrl-group .maplibregl-ctrl-icon {
   filter: invert(1);
 }
 
+/* The distance scale bar in the corner of the globe, restyled for the dark theme. */
 .maplibregl-ctrl-scale {
   background: rgba(12, 24, 41, 0.85) !important;
   border-color: var(--text) !important;
@@ -559,11 +620,13 @@ select {
 
 /* Counts */
 
+/* Row of five count boxes under the globe (detected, registered, unregistered, unresolved, potential violation). */
 .stat-row {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
+/* One count box, with a divider line on its right except for the last box. */
 .stat {
   display: grid;
   gap: 2px;
@@ -575,6 +638,7 @@ select {
   border-right: 1px solid var(--border);
 }
 
+/* The big number and its small description underneath. */
 .stat strong {
   font-size: 26px;
   line-height: 1.1;
@@ -586,6 +650,7 @@ select {
   color: var(--muted);
 }
 
+/* Explanatory note under the counts, such as what Registered means. */
 .stat-note {
   margin: 0;
   padding: 12px 14px;
@@ -594,16 +659,19 @@ select {
 
 /* Table */
 
+/* Scrollable box around the vessel table so a long list does not push the page down. */
 .table-scroll {
   max-height: 300px;
   overflow: auto;
 }
 
+/* Shared table style used for the vessel list, detections and report tables. */
 .case-table {
   width: 100%;
   border-collapse: collapse;
 }
 
+/* Column headers stay visible (sticky) when the table scrolls. */
 .case-table th {
   position: sticky;
   top: 0;
@@ -617,21 +685,25 @@ select {
   white-space: nowrap;
 }
 
+/* The first column gets slightly more left padding to line up with the panel title. */
 .case-table th:first-child,
 .case-table td:first-child {
   padding-left: 14px;
 }
 
+/* Table cells never wrap, with a thin line under each row. */
 .case-table td {
   padding: 9px 12px;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
+/* No line under the final row. */
 .case-table tbody tr:last-child td {
   border-bottom: 0;
 }
 
+/* Clickable rows (vessel list and review table) show a pointer and highlight on hover. */
 .list-panel .case-table tbody tr,
 .review-table tbody tr {
   cursor: pointer;
@@ -642,6 +714,7 @@ select {
   background: var(--row-hover);
 }
 
+/* The selected row is tinted and gets a blue bar on its left edge. */
 .case-table tbody tr.selected {
   background: var(--row-selected);
   box-shadow: inset 3px 0 0 var(--accent);
@@ -649,6 +722,7 @@ select {
 
 /* Status */
 
+/* Authorization label: a coloured square followed by the status text. */
 .status {
   display: inline-flex;
   align-items: center;
@@ -656,6 +730,7 @@ select {
   font-weight: 600;
 }
 
+/* The small square takes the same colour as the text so status is readable without relying on colour alone. */
 .status-mark {
   width: 8px;
   height: 8px;
@@ -663,6 +738,7 @@ select {
   background: currentColor;
 }
 
+/* Colour by permit decision: green authorized, red potential violation, grey unknown. */
 .status-authorized,
 .status-authorized strong {
   color: var(--authorized);
@@ -680,6 +756,7 @@ select {
 
 /* Case detail */
 
+/* Top of the case panel: record type and case ID on the left, close button on the right. */
 .detail-head {
   display: flex;
   align-items: flex-start;
@@ -688,11 +765,13 @@ select {
   padding: 12px 14px;
 }
 
+/* Long case IDs are allowed to break across lines instead of overflowing. */
 .detail-head h2 {
   font-size: 16px;
   word-break: break-all;
 }
 
+/* The round-ish close (x) button: no outline or background until hovered. */
 .close {
   width: 30px;
   height: 30px;
@@ -704,12 +783,14 @@ select {
   color: var(--muted);
 }
 
+/* Small grey line above the case ID, such as "Fictional record". */
 .eyebrow {
   font-size: 12px;
   color: var(--muted);
   margin-bottom: 2px;
 }
 
+/* Wide status bar at the top of a case showing the permit decision in capital letters. */
 .banner {
   margin: 0 14px;
   padding: 8px 12px;
@@ -721,6 +802,7 @@ select {
   font-size: 13px;
 }
 
+/* Banner tint by decision: dark green, dark red or dark blue-grey. */
 .banner-authorized {
   background: #0f2b1f;
   border-color: #1f5a3c;
@@ -736,19 +818,23 @@ select {
   border-color: #2e4263;
 }
 
+/* One section of a case (Authorization, Alerts, Observation and so on), separated by a thin line. */
 .block {
   padding: 14px;
   border-bottom: 1px solid var(--border);
 }
 
+/* The sentence explaining the backend's decision. */
 .explanation {
   margin: 0 0 10px;
 }
 
+/* Definition lists hold label and value pairs; remove the browser's default margin. */
 dl {
   margin: 0;
 }
 
+/* One label and value row: a fixed-width label column and a flexible value column. */
 .field {
   display: grid;
   grid-template-columns: 112px minmax(0, 1fr);
@@ -765,12 +851,14 @@ dl {
   word-break: break-word;
 }
 
+/* Lists with no bullets or indent, used for evidence sources and reason codes. */
 .plain-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* Spaced stack of alert cards. */
 .alert-list {
   margin: 0;
   padding: 0;
@@ -779,6 +867,7 @@ dl {
   gap: 8px;
 }
 
+/* One alert card with a thick coloured bar on its left edge that shows severity. */
 .alert {
   padding: 8px 10px;
   background: var(--panel-2);
@@ -791,6 +880,7 @@ dl {
   margin: 4px 0;
 }
 
+/* Alert header row: severity word and the alert code. */
 .alert-head {
   display: flex;
   flex-wrap: wrap;
@@ -802,6 +892,7 @@ dl {
   font-weight: 600;
 }
 
+/* Severity colours: grey for info, amber for review, red for high. */
 .alert-info {
   border-left-color: var(--unknown);
 }
@@ -822,6 +913,7 @@ dl {
   color: var(--violation);
 }
 
+/* The collapsible "Raw response" section that shows the exact JSON the backend sent. */
 .raw summary {
   padding: 12px 14px;
   cursor: pointer;
@@ -841,6 +933,7 @@ dl {
 
 /* Detection lab */
 
+/* Control row at the top of the Detection lab (file pickers, Detect ships button, score slider). */
 .toolbar {
   display: flex;
   align-items: center;
@@ -849,10 +942,7 @@ dl {
   margin-bottom: 14px;
 }
 
-.toolbar-note {
-  margin-left: 8px;
-}
-
+/* Two-column layout: the image panel is wider than the side panel. */
 .split {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
@@ -860,28 +950,33 @@ dl {
   align-items: start;
 }
 
+/* On narrower screens the two columns stack. */
 @media (max-width: 960px) {
   .split {
     grid-template-columns: 1fr;
   }
 }
 
+/* Smaller text on the native file chooser. */
 .file-pick input {
   font-size: 13px;
 }
 
+/* Wrapper around the uploaded image. position: relative lets the box overlay sit exactly on top; line-height 0 removes a stray gap under the image. */
 .preview {
   position: relative;
   margin: 14px;
   line-height: 0;
 }
 
+/* The uploaded image scales to the panel width while keeping its proportions. */
 .preview img {
   display: block;
   width: 100%;
   height: auto;
 }
 
+/* Transparent drawing layer stretched over the image. Its coordinates match the image's original pixels, so boxes line up at any size. */
 .overlay {
   position: absolute;
   inset: 0;
@@ -890,12 +985,14 @@ dl {
   overflow: visible;
 }
 
+/* Yellow outline for each detected ship. */
 .overlay rect {
   fill: none;
   stroke: #ffd400;
   stroke-width: 2;
 }
 
+/* Yellow number above each box; the dark outline keeps it readable over bright radar noise. */
 .overlay text {
   fill: #ffd400;
   font-family: var(--mono);
@@ -908,12 +1005,14 @@ dl {
 
 /* Shared additions */
 
+/* Page title used on the Coastal impact report. */
 h1 {
   margin: 0;
   font-size: 20px;
   font-weight: 600;
 }
 
+/* Date and search inputs match the drop-down style. */
 input[type="date"],
 input[type="search"] {
   height: 34px;
@@ -924,11 +1023,13 @@ input[type="search"] {
   min-width: 0;
 }
 
+/* The From and To date boxes stacked in the filter panel. */
 .date-range {
   display: grid;
   gap: 6px;
 }
 
+/* Review priority label (High, Review, Routine) with its colours. */
 .priority {
   font-size: 12px;
   font-weight: 600;
@@ -948,6 +1049,7 @@ input[type="search"] {
   color: var(--muted);
 }
 
+/* Teal rectangle in the globe legend that matches the fishing zone outlines on the map. */
 .legend-zone {
   width: 14px;
   height: 10px;
@@ -955,6 +1057,7 @@ input[type="search"] {
   background: rgba(47, 211, 192, 0.15);
 }
 
+/* Row of buttons under a case's status banner (Open investigation, Export report). */
 .detail-actions {
   display: flex;
   flex-wrap: wrap;
@@ -964,6 +1067,7 @@ input[type="search"] {
 
 /* Investigations */
 
+/* Investigations page: narrow case queue on the left, selected case on the right. */
 .invest {
   display: grid;
   grid-template-columns: 340px minmax(0, 1fr);
@@ -971,6 +1075,7 @@ input[type="search"] {
   align-items: start;
 }
 
+/* The queue stays in view while you scroll the case on the right. */
 .queue {
   position: sticky;
   top: 14px;
@@ -979,6 +1084,7 @@ input[type="search"] {
   flex-direction: column;
 }
 
+/* Search box and sort menu above the queue list. */
 .queue-tools {
   display: grid;
   gap: 8px;
@@ -986,6 +1092,7 @@ input[type="search"] {
   border-bottom: 1px solid var(--border);
 }
 
+/* The scrollable list of cases. */
 .queue-list {
   margin: 0;
   padding: 0;
@@ -993,6 +1100,7 @@ input[type="search"] {
   overflow-y: auto;
 }
 
+/* One case in the queue, shown as a full-width button with several lines of text. */
 .queue-item {
   display: grid;
   gap: 4px;
@@ -1006,17 +1114,20 @@ input[type="search"] {
   text-align: left;
 }
 
+/* The open case is tinted and marked with a blue bar on its left edge. */
 .queue-item.selected {
   background: var(--row-selected);
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
+/* First line of a queue item: case ID on the left, priority on the right. */
 .queue-top {
   display: flex;
   justify-content: space-between;
   gap: 8px;
 }
 
+/* Evidence trail: five equal steps in a row, from radar detection to review priority. */
 .trace {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1026,6 +1137,7 @@ input[type="search"] {
   border-bottom: 1px solid var(--border);
 }
 
+/* Each step is divided from the next by a thin line. */
 .trace-step {
   padding: 12px 14px;
   border-right: 1px solid var(--border);
@@ -1035,6 +1147,7 @@ input[type="search"] {
   border-right: 0;
 }
 
+/* Step name (small, muted) and its result (larger, bold). */
 .trace-title {
   font-size: 12px;
   color: var(--muted);
@@ -1046,6 +1159,7 @@ input[type="search"] {
   font-weight: 600;
 }
 
+/* On the Investigations page the case sections flow into two columns, and a section is never split across columns. */
 .detail-wide .detail-sections {
   columns: 2;
   column-gap: 0;
@@ -1055,6 +1169,7 @@ input[type="search"] {
   break-inside: avoid;
 }
 
+/* On narrow screens the queue moves above the case, the trace becomes a vertical list and the case uses one column. */
 @media (max-width: 1000px) {
   .invest {
     grid-template-columns: minmax(0, 1fr);
@@ -1081,6 +1196,7 @@ input[type="search"] {
 
 /* Coastal impact report */
 
+/* The report page is a centred column of sections with a maximum width so it reads like a document. */
 .report {
   display: grid;
   gap: 14px;
@@ -1088,6 +1204,7 @@ input[type="search"] {
   margin: 0 auto;
 }
 
+/* Report title on the left, data source menu and download buttons on the right. */
 .report-head {
   display: flex;
   flex-wrap: wrap;
@@ -1100,6 +1217,7 @@ input[type="search"] {
   margin: 2px 0 0;
 }
 
+/* Amber-edged reminder that cases are leads for human review, not findings of illegal activity. */
 .report-disclaimer {
   margin: 0;
   padding: 10px 14px;
@@ -1110,6 +1228,7 @@ input[type="search"] {
   font-size: 13px;
 }
 
+/* Row of five headline numbers at the top of the report. */
 .report-stats {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1124,12 +1243,14 @@ input[type="search"] {
   border-right: 0;
 }
 
+/* Two-column grid of the bar chart panels. */
 .report-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
+/* Bar chart: a list where each row is a label, a bar and a count. */
 .bars {
   display: grid;
   gap: 10px;
@@ -1145,10 +1266,12 @@ input[type="search"] {
   gap: 10px;
 }
 
+/* Capitalise the first letter of labels such as "missing permit evidence". */
 .bar-label::first-letter {
   text-transform: uppercase;
 }
 
+/* Grey track behind each bar. */
 .bar-track {
   height: 10px;
   background: var(--panel-2);
@@ -1156,12 +1279,14 @@ input[type="search"] {
   overflow: hidden;
 }
 
+/* The filled part of a bar; its width is set in the component from the count. Default blue, with colour variants below. */
 .bar-fill {
   display: block;
   height: 100%;
   background: #5b8fd9;
 }
 
+/* Authorization bars use the same colours as the status labels. */
 .fill-authorized {
   background: var(--authorized);
 }
@@ -1174,16 +1299,19 @@ input[type="search"] {
   background: var(--unknown);
 }
 
+/* Right-aligned count with equal-width digits so numbers line up. */
 .bar-count {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
+/* In the "Why it was flagged" column, long explanations are allowed to wrap onto several lines. */
 .case-table.wrap td.why {
   white-space: normal;
   min-width: 260px;
 }
 
+/* On narrow screens the report sections stack and the bar labels get narrower. */
 @media (max-width: 800px) {
   .report-stats,
   .report-grid {
@@ -1197,12 +1325,14 @@ input[type="search"] {
 
 /* Detection lab additions */
 
+/* A file chooser with a small caption above it. */
 .file-pick {
   display: grid;
   gap: 4px;
   font-size: 12px;
 }
 
+/* The score threshold slider sits at the far right of the toolbar. */
 .threshold {
   margin-left: auto;
 }
@@ -1215,11 +1345,13 @@ input[type="search"] {
   accent-color: var(--accent);
 }
 
+/* Right-hand column of the Detection lab: detections table and model evaluation panel. */
 .lab-side {
   display: grid;
   gap: 14px;
 }
 
+/* Legend in the image panel header showing what the yellow and green boxes mean. */
 .lab-legend {
   display: flex;
   align-items: center;
@@ -1227,6 +1359,7 @@ input[type="search"] {
   font-size: 12px;
 }
 
+/* Small box drawn before each legend label: solid yellow for detected, dashed green for ground truth. */
 .key::before {
   content: "";
   display: inline-block;
@@ -1241,6 +1374,7 @@ input[type="search"] {
   border: 2px dashed #3fcf80;
 }
 
+/* Ground-truth boxes from an uploaded label file are dashed green so they differ from the model's yellow boxes. */
 .overlay rect.truth {
   stroke: #3fcf80;
   stroke-dasharray: 6 4;
@@ -1248,6 +1382,7 @@ input[type="search"] {
 
 /* Print: the report on white paper */
 
+/* When printing or saving as PDF, swap the dark theme for light colours that use less ink and read well on paper, and hide the app chrome. */
 @media print {
   :root {
     --bg: #fff;
@@ -1263,6 +1398,7 @@ input[type="search"] {
     color-scheme: light;
   }
 
+  /* Hide the top bar, footer and any element marked no-print (such as the download buttons). */
   .topbar,
   .footnote,
   .no-print {
@@ -1273,33 +1409,39 @@ input[type="search"] {
     padding: 0;
   }
 
+  /* Avoid splitting a panel or a bar row across two printed pages. */
   .panel,
   .bars li {
     break-inside: avoid;
   }
 
+  /* Browsers drop background colours when printing by default; this keeps the bar colours. */
   .bar-fill {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
 }
 
+/* On phones the five counts wrap into two columns. */
 @media (max-width: 700px) {
   .stat-row {
     grid-template-columns: 1fr 1fr;
   }
 }
 
+/* The review table in the report scrolls sideways on small screens instead of overflowing. */
 .review-panel {
   overflow-x: auto;
 }
 
 /* Globe */
 
+/* Dark space-black behind the globe. */
 .map {
   background: #04070d;
 }
 
+/* Hint box over the globe (for example "No area selected"); it ignores the mouse so it never blocks dragging. */
 .map-prompt {
   position: absolute;
   left: 50%;
@@ -1321,6 +1463,7 @@ input[type="search"] {
   color: var(--muted);
 }
 
+/* The joined 3D and 2D buttons: square inner corners, rounded outer corners. */
 .segmented {
   display: flex;
 }
@@ -1339,14 +1482,17 @@ input[type="search"] {
   border-left: 0;
 }
 
+/* Keep the Select area button blue even though the other globe buttons use the panel colour. */
 .map-tools button.primary {
   background: var(--accent);
 }
 
+/* Bold the Registered/Unregistered word in the vessel table's first column. */
 .case-table td.reg {
   font-weight: 600;
 }
 
+/* Bold the registration word inside the selected marker's label. */
 .marker-tag span {
   font-weight: 600;
 }

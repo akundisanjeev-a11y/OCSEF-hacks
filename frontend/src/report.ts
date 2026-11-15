@@ -12,13 +12,18 @@ import {
 import { priorityRank } from "./useCases";
 import { formatProximity, nearestZone, zoneNames } from "./zones";
 
+// A vessel counts as "nearby" a fishing zone when it is inside the zone or within this many kilometres of it.
 export const NEAR_KM = 25;
 
+// The warning printed on every report: these are leads for a human to check, not accusations.
 export const DISCLAIMER =
   "These are investigation leads for human review, not findings of illegal activity. Vessel presence alone does not establish fishing, and an unmatched AIS observation is not proof of illegal fishing. Fishing zones are illustrative placeholders.";
 
+// Turns a code like "missing_permit_evidence" into plain words: "missing permit evidence".
 export const humanize = (code: string) => code.replace(/_/g, " ");
 
+// Counts for one fishing zone in the report: vessels inside it, vessels nearby, and how many of those
+// were unmatched or high priority.
 export interface ZoneSummary {
   zone: string;
   inside: number;
@@ -27,19 +32,27 @@ export interface ZoneSummary {
   highPriority: number;
 }
 
+// Everything the Coastal impact page shows, worked out from the list of cases in one pass.
 export interface ImpactSummary {
   total: number;
+  // How many cases fall in each AIS match, permit-decision and review-priority group.
   identity: Record<IdentityStatus, number>;
   authorization: Record<AuthorizationStatus, number>;
   review: Record<ReviewLevel | "none", number>;
+  // Per-zone counts, plus vessels farther than NEAR_KM from every zone and vessels with no position.
   zones: ZoneSummary[];
   outsideZones: number;
   unlocated: number;
+  // Which kinds of missing evidence come up most often, with how many cases each affects.
   missingEvidence: { code: string; count: number }[];
+  // The cases a person should look at, most urgent first.
   queue: Case[];
 }
 
+// Counts and groups the cases for the Coastal impact report. This is plain counting over data the backend
+// already returned: no scores or decisions are made here.
 export function summarize(cases: Case[]): ImpactSummary {
+  // Start with every counter at zero, and one row per fishing zone.
   const s: ImpactSummary = {
     total: cases.length,
     identity: { matched: 0, ambiguous: 0, unmatched: 0, insufficient_data: 0 },
@@ -51,18 +64,23 @@ export function summarize(cases: Case[]): ImpactSummary {
     missingEvidence: [],
     queue: [],
   };
+  // Tally of each missing-evidence reason code seen across all cases.
   const codes = new Map<string, number>();
 
+  // Visit every case once and add it to each counter it belongs to.
   for (const c of cases) {
     const o = c.observation;
     s.identity[o.identity_status]++;
     s.authorization[c.authorization.status]++;
     s.review[c.review_priority?.level ?? "none"]++;
 
+    // Reason codes that start with "missing_" or "unresolved_" mean evidence the backend lacked.
     for (const code of c.authorization.reason_codes) {
       if (/^(missing|unresolved)_/.test(code)) codes.set(code, (codes.get(code) ?? 0) + 1);
     }
 
+    // Find the closest fishing zone. No position means it cannot be placed; beyond NEAR_KM counts as "outside".
+    // Otherwise add it to that zone's row as inside or nearby.
     const z = nearestZone(o.position);
     if (!z) s.unlocated++;
     else if (z.km > NEAR_KM) s.outsideZones++;
@@ -75,19 +93,27 @@ export function summarize(cases: Case[]): ImpactSummary {
     }
   }
 
+  // Turn the tally into a list, most common missing evidence first.
   s.missingEvidence = [...codes].map(([code, count]) => ({ code, count })).sort((a, b) => b.count - a.count);
+  // The review queue: everything not routine, ordered by urgency, then by detection score within the same urgency.
   s.queue = cases
     .filter((c) => c.review_priority && c.review_priority.level !== "routine")
     .sort((a, b) => priorityRank(a) - priorityRank(b) || b.observation.detection_confidence - a.observation.detection_confidence);
   return s;
 }
 
+// Formats a list as Markdown bullet points, or a single "None" bullet when the list is empty.
 const list = (items: string[]) => (items.length ? items.map((i) => `- ${i}`).join("\n") : "- None");
 
+// Builds the downloadable Markdown report for one case, from the same data shown in the case panel.
 export function caseReport(c: Case): string {
+  // Shortcuts to the parts of the case used in the report text below.
   const o = c.observation;
+  // The permit decision.
   const a = c.authorization;
+  // The vessel assessment (may be missing).
   const v = c.vessel_assessment;
+  // The AIS match evidence (may be missing).
   const m = o.match_evidence;
   return `# GhostFleet case report: ${o.observation_id}
 
@@ -140,6 +166,7 @@ ${
 `;
 }
 
+// Builds the downloadable Markdown version of the whole Coastal impact page from its summary.
 export function impactReport(s: ImpactSummary, sourceLabel: string): string {
   return `# GhostFleet coastal impact report
 
@@ -190,8 +217,11 @@ ${list(
 `;
 }
 
+// Saves text to the user's computer as a file. It makes a temporary link to the text, clicks it to start
+// the browser's download, then frees the link.
 export function download(filename: string, text: string) {
   const url = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
+  // A hidden link that is clicked to start the download.
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
