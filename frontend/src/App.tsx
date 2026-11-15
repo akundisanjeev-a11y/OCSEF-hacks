@@ -7,9 +7,7 @@ import { Investigations } from "./components/Investigations";
 const tabs = { overview: "Overview", investigations: "Investigations", lookup: "Check vessel ID" } as const;
 type Tab = keyof typeof tabs;
 
-// Root component: the top bar (tabs and backend switch) plus whichever screen is selected.
 export function App() {
-  // Which screen is showing.
   const [tab, setTab] = useState<Tab>("overview");
   const [filtersTarget, setFiltersTarget] = useState<HTMLDivElement | null>(null);
   return <HistoricalWorkspace><div className="app">
