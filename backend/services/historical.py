@@ -4,18 +4,18 @@ import asyncio
 import io
 import json
 import math
-import os
 import re
 import time
 import zipfile
 from datetime import datetime, timedelta, timezone
-from typing import Literal
+from typing import Annotated, Literal
 from urllib.parse import quote
 
 import httpx
 from fastapi import HTTPException
 from pydantic import AwareDatetime, BaseModel, Field, model_validator
 from backend.services.land_coverage import estimate_land
+from backend.services.gfw_credentials import get_gfw_token
 
 DATASETS = {"presence": "public-global-presence:latest", "fishing": "public-global-fishing-effort:latest", "sar": "public-global-sar-presence:latest"}
 IDENTITY = "public-global-vessel-identity:latest"
@@ -33,6 +33,15 @@ class AreaQuery(BaseModel):
     window_hours: int = Field(default=24, ge=1, le=168)
     layer: Literal["presence", "fishing", "sar"] = "presence"
     allow_land: bool = False
+    flag: list[Annotated[str, Field(pattern=r'^[A-Z]{3}$')]] = Field(default_factory=list, max_length=10)
+    geartype: list[Annotated[str, Field(pattern=r'^[a-z][a-z0-9_]{0,45}$')]] = Field(default_factory=list, max_length=10)
+    vessel_id: str | None = Field(default=None, min_length=1, max_length=200, pattern=r'^[A-Za-z0-9_-]+$')
+    vessel_type: str | None = Field(default=None, pattern=r'^[a-z][a-z0-9_]{0,45}$')
+    shiptype: str | None = Field(default=None, pattern=r'^[a-z][a-z0-9_]{0,45}$')
+    speed: Literal['<2','2-4','4-6','6-10','10-15','15-25','>25'] | None = None
+    distance_from_port_km: Literal[0,1,2,3,4,5] | None = None
+    sar_matched: Literal['false','true','all'] = 'false'
+    neural_vessel_type: Literal['all','likely_fishing','likely_non_fishing','unknown'] = 'all'
 
     @model_validator(mode="after")
     def valid_area(self):
@@ -42,7 +51,42 @@ class AreaQuery(BaseModel):
             raise ValueError("Select an area no larger than 40° longitude by 30° latitude")
         if self.layer == "sar" and self.hours_ago < 124:
             raise ValueError("SAR requires a window ending at least 124 hours ago")
+        if self.layer != 'presence' and (self.vessel_type is not None or self.speed is not None):
+            raise ValueError('vessel_type/speed filters apply only to AIS presence')
+        if self.shiptype is not None and self.layer != 'sar':
+            raise ValueError('shiptype applies only to matched SAR')
+        if self.layer == 'presence' and self.geartype:
+            raise ValueError('geartype applies to fishing activity or matched SAR')
+        if self.layer != 'fishing' and self.distance_from_port_km is not None:
+            raise ValueError('distance_from_port_km applies only to fishing activity')
+        if self.layer != 'sar' and (self.sar_matched != 'false' or self.neural_vessel_type != 'all'):
+            raise ValueError('SAR filters require the SAR layer')
+        if self.neural_vessel_type != 'all':
+            raise ValueError('GFW currently rejects documented neural score thresholds: this field is stored as text. Use SAR AIS-match filtering; no score filter was applied.')
+        if self.layer == 'sar' and self.sar_matched == 'false' and (self.flag or self.geartype or self.vessel_id or self.shiptype):
+            raise ValueError('Identity filters require matched SAR; unmatched detections have no established AIS identity')
+        if self.mode == 'synthetic' and any((self.flag,self.geartype,self.vessel_id,self.vessel_type,self.shiptype,self.speed,
+                self.distance_from_port_km is not None,self.sar_matched != 'false',self.neural_vessel_type != 'all')):
+            raise ValueError('These provider filters are available in GFW mode only')
         return self
+
+
+def activity_filter(query):
+    clauses = []
+    for field in ('flag','geartype'):
+        values = getattr(query,field)
+        if values:
+            clauses.append(field + " in (" + ', '.join("'"+value+"'" for value in values) + ')')
+    for field in ('vessel_id','vessel_type','shiptype','speed'):
+        value = getattr(query,field)
+        if value is not None:
+            clauses.append(f"{field} = '{value}'")
+    if query.distance_from_port_km is not None:
+        clauses.append(f'distance_from_port_km = {query.distance_from_port_km}')
+    if query.layer == 'sar':
+        if query.sar_matched != 'all':
+            clauses.append(f"matched='{query.sar_matched}'")
+    return ' AND '.join(clauses)
 
 
 class VesselEnrichment(BaseModel):
@@ -87,9 +131,9 @@ def decode_response(content: bytes) -> dict:
 
 
 async def gfw_request(path: str, *, params=None, body=None) -> dict:
-    token = os.environ.get("GFW_API_TOKEN")
+    token = get_gfw_token()
     if not token:
-        raise HTTPException(503, "Set GFW_API_TOKEN privately on the backend to enable GFW historical data. Fictional mode is available separately.")
+        raise HTTPException(503, "Set GFW_API_TOKEN in the backend environment or .env to enable GFW historical data. Fictional mode is available separately.")
     try:
         async with httpx.AsyncClient(timeout=110, follow_redirects=False) as client:
             async with client.stream("POST" if body is not None else "GET", "https://gateway.api.globalfishingwatch.org/v3/" + path,
@@ -152,11 +196,16 @@ def report_rows(payload: dict, dataset: str) -> list[dict]:
         if not isinstance(entry, dict):
             raise HTTPException(502, "Unsupported GFW report entry")
         nested = entry.get(dataset)
+        known_dataset = dataset in entry
         if nested is None:
             # :latest queries return rows under the resolved version, e.g. :v5.0.
             matching_keys = [key for key in entry if key.split(":", 1)[0] == dataset.split(":", 1)[0]]
             if len(matching_keys) == 1:
                 nested = entry[matching_keys[0]]
+                known_dataset = True
+        # GFW returns a resolved dataset key with null for a completed empty report.
+        if known_dataset and nested is None:
+            continue
         if isinstance(nested, list):
             rows.extend(nested)
         elif any(key in entry for key in ("lat", "vesselId", "vessel_id", "hours", "detections")):
@@ -179,7 +228,10 @@ async def report(query: AreaQuery, start: str, end: str, *, vessels: bool = Fals
         # documentation examples; FLAG is supported for its gridded report.
         params.update({"spatial-resolution": "LOW", "group-by": "FLAG" if query.layer == "presence" else "GEARTYPE"})
     else:
-        params.update({"spatial-resolution": "LOW", "filters[0]": "matched='false'"})
+        params.update({"spatial-resolution": "LOW"})
+    filters = activity_filter(query)
+    if filters:
+        params['filters[0]'] = filters
     ring = [[query.west, query.south], [query.east, query.south], [query.east, query.north], [query.west, query.north], [query.west, query.south]]
     geojson = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {}, "geometry": {"type": "Polygon", "coordinates": [ring]}}]}
     # GFW permits only one report concurrently for a user/token.
