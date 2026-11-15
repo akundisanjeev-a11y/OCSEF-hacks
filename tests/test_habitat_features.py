@@ -34,6 +34,7 @@ def test_habitat_clip_union_points_and_strict_date_exclusion(tmp_path):
         datetime(2025,11,5,tzinfo=timezone.utc),datetime(2025,11,12,tzinfo=timezone.utc))
     assert result['eligible_for_scoring'] is False and result['features'] is None
     assert len(result['layers'])==1  # Unselected saltmarsh cannot block or enter extraction.
+    assert HabitatIndex(path).availability()['ready'] is True
     reference=result['layers'][0]['reference_only']
     assert reference['polygon_source_records_intersecting']==2
     assert reference['point_occurrences_inside']==1
@@ -43,3 +44,21 @@ def test_habitat_clip_union_points_and_strict_date_exclusion(tmp_path):
 def test_missing_index_does_not_imply_zero_habitat(tmp_path):
     result=HabitatIndex(tmp_path/'missing.sqlite').query(PriorityArea(west=0,south=0,east=5,north=5),None,None)
     assert result['status']=='unavailable' and result['features'] is None
+    assert HabitatIndex(tmp_path/'missing.sqlite').availability()['status'] == 'missing'
+    assert not (tmp_path/'missing.sqlite').exists()
+
+
+def test_broken_reference_index_is_reported_without_crashing(tmp_path):
+    path = tmp_path/'invalid.sqlite'
+    path.write_bytes(b'not a sqlite database')
+    assert HabitatIndex(path).availability()['status'] == 'invalid'
+
+
+def test_missing_habitat_archives_do_not_create_an_empty_index(tmp_path, monkeypatch):
+    from training import prepare_habitats
+    (tmp_path/'docs').mkdir()
+    (tmp_path/'docs/priority-engine-step1-inventory.json').write_text(json.dumps({'habitat_archives':[{'archive':'WCMC008_missing.zip'}]}))
+    monkeypatch.setattr(prepare_habitats,'ROOT',tmp_path)
+    with pytest.raises(ValueError,match='--source-dir'):
+        prepare_habitats.prepare(destination=tmp_path/'index', source_dir=tmp_path/'incoming')
+    assert not (tmp_path/'index/habitats.sqlite').exists()

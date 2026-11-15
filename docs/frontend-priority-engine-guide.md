@@ -124,23 +124,42 @@ High `[60,80)`, Critical `[80,100]`.
 ```powershell
 python -m pip install -r backend/requirements.txt
 python -m training.activity_forecast.setup_inference
-python -m uvicorn backend.main:app --reload
+python -m uvicorn backend.main:app --reload --reload-dir backend --reload-dir training
 ```
 
 In another terminal: `cd frontend`, `npm ci`, `npm run dev`.
 The permanent depth-four checkpoint and matching four-day-lag compact inference
 archive are included. No raw training exports or habitat GIS files are shipped.
-For an existing old inference directory, preserve it and restore separately:
+By default, startup restores the matched release to a versioned inference cache
+and leaves old processed/training directories untouched. Leave
+`ACTIVITY_FORECAST_DATA_DIR` blank or unset to use that default. For a deliberate
+custom data directory, restore separately:
 
 ```powershell
 python -m training.activity_forecast.setup_inference --destination datasets/activity_forecast/inference_v4
 ```
 
-Set `ACTIVITY_FORECAST_DATA_DIR=datasets/activity_forecast/inference_v4` privately
+Only for that custom-directory option, set
+`ACTIVITY_FORECAST_DATA_DIR=datasets/activity_forecast/inference_v4` privately
 in root `.env`, then restart. GFW credentials stay on the backend. No frontend
 token is needed. Optional local habitat reference setup is described in the
 [step-two guide](priority-engine-step2-extraction.md); scoring works without those
 reference files because they are date-excluded.
+
+`GET /priority/health` (or `/api/priority/health` through Vite) distinguishes
+assessment readiness, forecast readiness and marine-reference availability.
+Completed results preserve reference counts and source years in
+`components.habitats.layers`, without geometry or numerical scoring eligibility.
+The Marine habitat reference disclosure shows those details or explains missing
+files. Replacing/installing the local index invalidates the job cache for a new
+assessment. Date-mismatched forecasts are excluded with their actual dates.
+
+To align the activity report with the saved model, open **Filters → Exact
+historical dates (UTC) → Use model dates**. This loads the model's actual target
+week with an exclusive next-day end. You can also apply an explicit UTC
+start/end of up to seven days. The source publishing lag still applies. Choose
+complete five-degree model squares and leave incompatible fleet filters off if
+you want the forecast to contribute. Partial boundary squares remain excluded.
 
 Frontend source: `AreaPriority.tsx` and the typed `api/priority.ts`. The existing
 backend OpenAPI schema at `/docs` includes the validated request/job/result DTOs.

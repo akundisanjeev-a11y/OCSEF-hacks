@@ -60,14 +60,22 @@ def create_app(*, seed_fixtures: bool = True, load_forecast: bool = True) -> Fas
                     # A missing ML package must not crash module import and leave
                     # the reload supervisor holding an unresponsive port.
                     from backend.services.activity_forecast import ActivityForecaster
+                    from training.activity_forecast.setup_inference import setup_bundled
+                    # Local processed/ may belong to an older checkpoint or a
+                    # teammate's training run. Default to the matching release
+                    # bundle in a content-addressed cache without overwriting it.
+                    history = (configured_path('ACTIVITY_FORECAST_DATA_DIR',root/'datasets/activity_forecast/processed')
+                               if os.getenv('ACTIVITY_FORECAST_DATA_DIR', '').strip() else setup_bundled())
                     return ActivityForecaster(
                         configured_path('ACTIVITY_FORECAST_MODEL_PATH',root/'weights/activity_forecast/best_model.joblib'),
-                        configured_path('ACTIVITY_FORECAST_DATA_DIR',root/'datasets/activity_forecast/processed'),
+                        history,
                     )
                 app.state.forecaster = await run_in_threadpool(load_model)
             except Exception:
                 logging.getLogger(__name__).exception('Activity forecast unavailable')
-                app.state.forecast_error = 'Install backend/requirements.txt in the project virtual environment, run python -m training.activity_forecast.setup_inference, then restart FastAPI.'
+                app.state.forecast_error = ('Install backend/requirements.txt in the project virtual environment and restart FastAPI. '
+                    'The bundled history is restored automatically. If ACTIVITY_FORECAST_DATA_DIR is set, it must match the saved checkpoint; '
+                    'unset that override to use the bundled release. Custom history is never overwritten.')
         async with httpx.AsyncClient(timeout=110, follow_redirects=False,
                                      limits=httpx.Limits(max_connections=8, max_keepalive_connections=4, keepalive_expiry=60)) as client:
             app.state.gfw_client = client

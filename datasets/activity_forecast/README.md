@@ -11,8 +11,13 @@ After cloning, run from the repository root:
 python -m training.activity_forecast.setup_inference
 ```
 
-This restores `processed/` without replacing different existing local data.
-Then start `python -m uvicorn backend.main:app --reload`.
+This restores the current release into `inference_cache/<archive-sha256>/`.
+FastAPI also restores that versioned bundle automatically when
+`ACTIVITY_FORECAST_DATA_DIR` is unset or blank. Existing `processed/` training
+history is preserved, so pulling a new checkpoint cannot leave the server using
+an older release's publishing lag. An explicit custom history override is still
+honored and must match the checkpoint.
+Then start `python -m uvicorn backend.main:app --reload --reload-dir backend --reload-dir training`.
 
 This is a historical demonstration: observations through October 31, 2025, with
 forecasts for November 5-11, 2025, using the permanent depth-four model and a

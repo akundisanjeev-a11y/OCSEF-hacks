@@ -73,13 +73,17 @@ historical inference-data bundle are included on `main`. After installing
 
 ```powershell
 python -m training.activity_forecast.setup_inference
-python -m uvicorn backend.main:app --reload
+python -m uvicorn backend.main:app --reload --reload-dir backend --reload-dir training
 ```
 
 Backend routes: `POST /activity-forecast`, `GET /activity-forecast/info`, and
 `GET /forecast/health`. The frontend's existing Vite `/api` proxy maps browser
 requests such as `/api/activity-forecast` onto those routes. The earlier direct
 backend `/api/activity-forecast` URL remains an alias.
+
+Default startup restores the matching inference archive into a versioned cache.
+Leave `ACTIVITY_FORECAST_DATA_DIR` blank or unset; explicit custom history must
+match the checkpoint. Existing local training history is never overwritten.
 
 This ML component predicts **apparent fishing hours**, even though the website
 monitors many vessel types. Its bundled historical observations end October 31,
@@ -125,7 +129,7 @@ from the repository root, using the same virtual environment:
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
 .\.venv\Scripts\python.exe -m training.activity_forecast.setup_inference
-.\.venv\Scripts\python.exe -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn backend.main:app --reload --reload-dir backend --reload-dir training --host 127.0.0.1 --port 8000
 ```
 
 Before starting FastAPI, configure `GFW_API_TOKEN` privately in your terminal

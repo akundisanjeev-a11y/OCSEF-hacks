@@ -38,10 +38,42 @@ class HabitatIndex:
     def __init__(self,path):
         self.path=Path(path)
 
+    def cache_key(self):
+        try:
+            stat = self.path.stat()
+            return [str(self.path.resolve()), stat.st_size, stat.st_mtime_ns]
+        except OSError:
+            return None
+
+    def availability(self):
+        """Inspect readiness without creating a database or returning geometries."""
+        if not self.path.is_file():
+            return {'ready': False, 'status': 'missing', 'layers': 0,
+                    'message': 'Marine habitat reference data is not installed on this backend.'}
+        try:
+            with sqlite3.connect(f'{self.path.resolve().as_uri()}?mode=ro',uri=True) as connection:
+                tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+                if not {'layers', 'features', 'bounds'} <= tables:
+                    raise ValueError('Missing index tables')
+                layers = 0
+                for status, raw in connection.execute('SELECT status,metadata FROM layers'):
+                    metadata = json.loads(raw)
+                    if status in ('complete', 'partial') and (metadata.get('dataset') in ('coral_reefs', 'seagrass') or metadata.get('archive', '').startswith(('WCMC008','WCMC013-014'))):
+                        layers += 1
+            return {'ready': bool(layers), 'status': 'reference_only' if layers else 'empty', 'layers': layers,
+                    'message': 'Historical marine references are available; they are not date-matched scoring inputs.' if layers else 'The index contains no prepared coral or seagrass reference layers.'}
+        except (OSError, ValueError, TypeError, AttributeError, sqlite3.Error):
+            return {'ready': False, 'status': 'invalid', 'layers': 0,
+                    'message': 'The marine reference index is unreadable or incomplete; prepare it again from the original sources.'}
+
     def query(self,area,start,end):
         if not self.path.is_file():
             return {'status':'unavailable','eligible_for_scoring':False,
                 'reason':'habitat_index_not_prepared','features':None,'layers':[]}
+        readiness = self.availability()
+        if not readiness['ready']:
+            return {'status':'unavailable','eligible_for_scoring':False,
+                    'reason':'habitat_index_'+readiness['status'],'features':None,'layers':[]}
         selection=box(area.west,area.south,area.east,area.north)
         layers=[]
         with sqlite3.connect(f'{self.path.resolve().as_uri()}?mode=ro',uri=True) as connection:

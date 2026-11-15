@@ -33,6 +33,8 @@ class AreaQuery(BaseModel):
     north: float = Field(ge=-90, le=90)
     hours_ago: int = Field(default=100, ge=100, le=24 * 365)
     window_hours: int = Field(default=24, ge=1, le=168)
+    start: AwareDatetime | None = None
+    end: AwareDatetime | None = None
     layer: Literal["presence", "fishing", "sar"] = "presence"
     allow_land: bool = False
     flag: list[Annotated[str, Field(pattern=r'^[A-Z]{3}$')]] = Field(default_factory=list, max_length=10)
@@ -47,9 +49,17 @@ class AreaQuery(BaseModel):
 
     @model_validator(mode="after")
     def valid_area(self):
+        if (self.start is None) != (self.end is None):
+            raise ValueError('Supply both exact start and end dates, or neither')
+        if self.start is not None:
+            if not 0 < (self.end-self.start).total_seconds() <= 168*3600:
+                raise ValueError('Exact area period must be positive and no longer than seven days')
+            lag = 124 if self.layer == 'sar' else 100
+            if self.end > datetime.now(timezone.utc)-timedelta(hours=lag):
+                raise ValueError(f'The exact window must end at least {lag} hours ago for this layer')
         if self.west >= self.east or self.south >= self.north:
             raise ValueError("Use an increasing bounding box; split selections crossing the date line")
-        if self.layer == "sar" and self.hours_ago < 124:
+        if self.layer == "sar" and self.start is None and self.hours_ago < 124:
             raise ValueError("SAR requires a window ending at least 124 hours ago")
         if self.layer != 'presence' and (self.vessel_type is not None or self.speed is not None):
             raise ValueError('vessel_type/speed filters apply only to AIS presence')
@@ -337,6 +347,9 @@ def sample_area(query, start, end):
 
 async def query_area(query: AreaQuery):
     start, end = period(query.hours_ago, query.window_hours)
+    if query.start is not None:
+        start = query.start.astimezone(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00','Z')
+        end = query.end.astimezone(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00','Z')
     applied_filters=query.model_dump(include={'flag','geartype','vessel_id','vessel_type','shiptype','speed','distance_from_port_km','sar_matched','neural_vessel_type'})
     land_check = await asyncio.to_thread(estimate_land, query.west, query.south, query.east, query.north) if query.mode == "gfw" else None
     if land_check and land_check["skip"] and not query.allow_land:

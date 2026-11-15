@@ -101,8 +101,17 @@ def score_features(extraction):
     # A partial assessment has no reassuring category. Strong observed evidence
     # can still support at least High, regardless of unobserved factors.
     category=category_for(score) if score is not None and (complete or score>=60) else None
-    summaries={key:{field:value.get(field) for field in ('status','eligible_for_scoring','reason','temporal_alignment','source_dataset','model_version','forecast_start','forecast_end_exclusive')}
+    summaries={key:{field:value.get(field) for field in ('status','eligible_for_scoring','reason','detail','temporal_alignment','source_dataset','model_version','forecast_start','forecast_end_exclusive')}
                for key,value in components.items()}
+    # Keep useful marine context in the API result without redistributing GIS
+    # geometry or allowing static reference layers into the numerical score.
+    if 'habitats' in summaries:
+        summaries['habitats']['layers'] = [
+            {'status': layer.get('status'), 'eligible_for_scoring': False,
+             'reference_year': layer.get('source', {}).get('reference_year'),
+             'name': 'Coral reefs' if layer.get('source', {}).get('dataset') == 'coral_reefs' or layer.get('source', {}).get('archive', '').startswith('WCMC008') else 'Seagrass' if layer.get('source', {}).get('dataset') == 'seagrass' or layer.get('source', {}).get('archive', '').startswith('WCMC013-014') else 'Marine reference layer',
+             'reference_only': layer.get('reference_only'), 'reason': layer.get('reason')}
+            for layer in components['habitats'].get('layers', [])]
     return {'policy_version':POLICY_VERSION,'status':'complete' if complete else 'partial' if available else 'unavailable',
         'priority_score':round(score,2) if score is not None else None,'priority_category':category,
         'score_kind':'minimum_supported_review_priority','score_range':[round(score or 0,2),round(upper,2)],

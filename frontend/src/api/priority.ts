@@ -4,6 +4,7 @@ import type { Area, ActivityFilters, HistoricalAreaResult } from './historical';
 export type PriorityFilters = Omit<ActivityFilters, 'sar_matched' | 'neural_vessel_type'>;
 export type PriorityRequest = { area: Area; start: string; end: string; filters: PriorityFilters; include_vessel_evidence: boolean };
 export type PriorityCategory = 'Minimal' | 'Low' | 'Medium' | 'High' | 'Critical';
+export type MarineReference = { status?: string; reason?: string; layers?: { name: string; reference_year: number | null; status: string; eligible_for_scoring: false; reference_only?: { polygon_source_records_intersecting: number; point_source_records_inside: number; mapped_polygon_area_km2: number } | null }[] };
 export type PriorityResult = {
   policy_version: string; status: 'complete' | 'partial' | 'unavailable';
   priority_score: number | null; priority_category: PriorityCategory | null;
@@ -12,6 +13,7 @@ export type PriorityResult = {
   factors: { code: string; label: string; weight: number; available: boolean; normalized_value: number | null; contribution_points: number | null; reason: string; sources: string[] }[];
   adjustments: { points: number; reason: string }[]; review_triggers: string[];
   excluded_components: Record<string, string | null>; limitations: string[];
+  components?: Record<string, MarineReference & { detail?: string | null; forecast_start?: string; forecast_end_exclusive?: string }>;
 };
 export type PriorityJob = {
   id: string; status: 'queued' | 'running' | 'complete' | 'failed' | 'cancelled';

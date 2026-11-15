@@ -36,9 +36,19 @@ def setup(archive=None, destination=None):
     return destination
 
 
+def setup_bundled(archive=None, cache_root=None):
+    """Restore a release into its own cache; never replace local training history."""
+    archive = Path(archive or ROOT/'datasets/activity_forecast/inference_history.zip')
+    with archive.open('rb') as stream:
+        version = hashlib.file_digest(stream, 'sha256').hexdigest()
+    cache_root = Path(cache_root or ROOT/'datasets/activity_forecast/inference_cache')
+    return setup(archive=archive, destination=cache_root/version)
+
+
 if __name__ == '__main__':
     import argparse
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--destination',type=Path)
     args=parser.parse_args()
-    print('Historical inference data ready:', setup(destination=args.destination))
+    restored = setup(destination=args.destination) if args.destination is not None else setup_bundled()
+    print('Historical inference data ready:', restored)

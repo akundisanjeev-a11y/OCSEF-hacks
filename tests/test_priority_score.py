@@ -79,3 +79,17 @@ def test_partial_component_cannot_be_used_even_if_left_in_input_map():
     data['scoring_inputs']['local_events']['representative_event_points_inside_by_code']['fishing_in_no_take_mpa']=1
     result=score_features(data)
     assert result['priority_category'] is None and not result['review_triggers']
+
+
+def test_static_marine_reference_survives_api_summary_without_changing_score():
+    data = extraction()
+    before = score_features(data)
+    data['components']['habitats'] = {'status':'reference_only','eligible_for_scoring':False,'layers':[
+        {'source':{'dataset':'coral_reefs','reference_year':2018},'status':'complete','reference_only':{'polygon_source_records_intersecting':2,'point_source_records_inside':1,'mapped_polygon_area_km2':12.5},'geometry':'must not be returned'}]}
+    after = score_features(data)
+    assert after['priority_score'] == before['priority_score']
+    assert after['coverage_percent'] == before['coverage_percent']
+    layer = after['components']['habitats']['layers'][0]
+    assert layer['reference_year'] == 2018 and layer['name'] == 'Coral reefs'
+    assert layer['reference_only']['mapped_polygon_area_km2'] == 12.5
+    assert layer['eligible_for_scoring'] is False and 'geometry' not in layer

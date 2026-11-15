@@ -38,6 +38,13 @@ The frontend uses the existing `/api` proxy. No token is sent to the frontend.
 
 ## User workflow
 
+Filters includes **Exact historical dates (UTC)**. Supply both `start` and `end`
+to `/historical/area` for an absolute interval of at most seven days, end
+exclusive. These override the relative window and may select an older model
+release's dates; current source publishing delays still apply. **Use model dates**
+loads the actual saved forecast period rather than assuming the current year.
+The returned exact dates continue into reports, screening and area priority.
+
 ### Observations and your saved ML forecast
 
 Overview includes **GFW activity filters**: flag and vessel ID; fishing gear and

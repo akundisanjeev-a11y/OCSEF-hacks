@@ -88,7 +88,7 @@ export function ForecastPanel({ area, onBoundsChange, onForecastChange, onCompar
 
     {/* Inputs: a point to forecast. Selecting an area on the map fills in its centre. */}
     <div className="block forecast-inputs">
-      <p className="forecast-intro">Estimates next week's apparent fishing activity for the model square around a point. Selecting an area on the map fills in its centre.</p>
+      <p className="forecast-intro">Estimates apparent fishing activity for the saved model's historical period around a point. Selecting an area on the map fills in its centre.</p>
       <div className="forecast-controls"><label className="field-label">Forecast latitude<input type="number" min={-90} max={90} step="any" value={latitude} onChange={(e) => { clear(); setLatitude(e.target.value); }} /></label><label className="field-label">Forecast longitude<input type="number" min={-180} max={180} step="any" value={longitude} onChange={(e) => { clear(); setLongitude(e.target.value); }} /></label></div>
       <div className="forecast-actions">
         <button type="button" className="primary" disabled={loading || comparing || latitude === "" || longitude === ""} onClick={() => void predict(Number(latitude), Number(longitude))}>{loading ? "Calculating forecast…" : "Get fishing forecast"}</button>
@@ -107,6 +107,7 @@ export function ForecastPanel({ area, onBoundsChange, onForecastChange, onCompar
     {/* Result: the forecast, the baseline it is compared with, and the change. */}
     {scored && <div className="block forecast-result" aria-live="polite">
       <div className="forecast-values"><div><strong>{hours(scored.predicted_week_hours)}</strong><span>Predicted apparent fishing vessel-hours</span></div><div><strong>{hours(scored.repeat_last_week_hours)}</strong><span>Repeat-last-week baseline vessel-hours</span></div><div><strong>{change === null ? "Unavailable" : `${change >= 0 ? "+" : ""}${change.toFixed(1)}%`}</strong><span>Change versus baseline</span></div></div>
+      <details className="plain"><summary>Forecast dates and coverage</summary><p>Observed through {scored.observation_cutoff}. Forecast: {scored.target_start} to {scored.target_end}. These historical dates are separate from the selected activity report.</p><p>This forecast covers model square {scored.cell_id}, not the entire rectangle you selected.</p></details>
       {onShowReasoning ? <button type="button" onClick={onShowReasoning}>Show forecast reasoning</button> : <details className="plain"><summary>How was this estimated?</summary><p>{scored.selected_explanation}</p><p>{scored.interpretation}</p></details>}
     </div>}
   </section>;

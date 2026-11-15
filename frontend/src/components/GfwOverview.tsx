@@ -7,6 +7,7 @@ import { ShipSymbol } from "./ShipSymbol";
 import { ForecastPanel } from "./ForecastPanel";
 import { ForecastEvidence } from "./ForecastEvidence";
 import type { ForecastResult } from "../api/forecast";
+import { fetchForecastInfo } from "../api/forecast";
 import type { ForecastComparison, ActivityArrow } from "../forecastMap";
 import { ActivityFilterControls } from "./ActivityFilterControls";
 import type { ActivityFilters } from "../api/historical";
@@ -37,6 +38,27 @@ export function GfwOverview({ onInvestigations, filtersTarget }: { onInvestigati
   const [filters, setFilters] = useState<ActivityFilters>({});
   const [hoursAgo, setHoursAgo] = useState(100);
   const [windowHours, setWindowHours] = useState(24);
+  const [exactPeriod, setExactPeriod] = useState<{ start: string; end: string } | null>(null);
+  const [dateStart, setDateStart] = useState("");
+  const [dateEnd, setDateEnd] = useState("");
+  const [dateError, setDateError] = useState("");
+  const [loadingModelDates, setLoadingModelDates] = useState(false);
+  const modelDatesAbort = useRef<AbortController | null>(null);
+  useEffect(() => () => modelDatesAbort.current?.abort(), []);
+
+  async function useModelDates() {
+    modelDatesAbort.current?.abort();
+    const controller = new AbortController(); modelDatesAbort.current = controller;
+    setLoadingModelDates(true); setDateError("");
+    try {
+      const info = await fetchForecastInfo(controller.signal);
+      if (controller.signal.aborted) return;
+      const start = new Date(`${info.target_start}T00:00:00Z`).toISOString();
+      const end = new Date(Date.parse(`${info.target_end}T00:00:00Z`)+86400000).toISOString();
+      setDateStart(start.slice(0,16)); setDateEnd(end.slice(0,16)); setExactPeriod({start,end});
+    } catch (e) { if (!controller.signal.aborted) setDateError(e instanceof Error ? e.message : String(e)); }
+    finally { if (!controller.signal.aborted) setLoadingModelDates(false); }
+  }
   const [result, setResult] = useState<HistoricalAreaResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [queryPhase, setQueryPhase] = useState<"connection" | "reports">("connection");
@@ -84,13 +106,13 @@ export function GfwOverview({ onInvestigations, filtersTarget }: { onInvestigati
     checkBackendConnection().then(() => {
       if (!active) return null;
       setQueryPhase("reports");
-      return fetchHistoricalArea({ ...area, ...filters, mode: "gfw", layer, hours_ago: hoursAgo, window_hours: windowHours, ...(allowLand ? { allow_land: true } : {}) });
+      return fetchHistoricalArea({ ...area, ...filters, mode: "gfw", layer, hours_ago: hoursAgo, window_hours: windowHours, ...exactPeriod, ...(allowLand ? { allow_land: true } : {}) });
     })
       .then((data) => { if (active && data) setResult(data); })
       .catch((e) => { if (active) setError(e instanceof Error ? e.message : String(e)); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [area, layer, hoursAgo, windowHours, retry, allowLand, filters]);
+  }, [area, layer, hoursAgo, windowHours, retry, allowLand, filters, exactPeriod]);
 
   useEffect(() => () => { detailVersion.current++; }, []);
 
@@ -229,8 +251,16 @@ export function GfwOverview({ onInvestigations, filtersTarget }: { onInvestigati
       <label className="filter"><span>Activity layer</span><select value={layer} onChange={(e) => { const next = e.target.value as HistoricalQuery["layer"]; setLayer(next); setFilters({}); if (next === "sar") setHoursAgo((previous) => Math.max(124, previous)); }}><option value="presence">All boat activity</option><option value="fishing">Possible fishing activity</option><option value="sar">Satellite radar sightings</option></select></label>
       <Info label="Where the data comes from"><p>AIS is a radio system boats use to broadcast their identity and location. GFW uses those signals to estimate boat activity and possible fishing. SAR is satellite radar, which can spot objects on the water even without a boat's radio signal. A radar sighting does not always identify the boat.</p></Info>
       <Info label="Boat symbols"><div className="ship-symbol-key">{["fishing", "cargo", "carrier", "tanker", "passenger", "tug", "unknown"].map(type => <span key={type}><ShipSymbol type={type} />{shipNames[shipKind(type)]}</span>)}</div><p>Symbols in the boat list show the reported type. Gray means the type was not supplied. Type and color do not tell us whether a boat is allowed to fish.</p></Info>
-      <label className="filter"><span>Window ends (hours ago)</span><input type="number" min={layer === "sar" ? 124 : 100} max={8760} value={hoursAgo} onChange={(e) => setHoursAgo(Number(e.target.value))} /></label>
-      <label className="filter"><span>Window duration</span><select value={windowHours} onChange={(e) => setWindowHours(Number(e.target.value))}><option value={1}>1 hour</option><option value={24}>24 hours</option><option value={168}>7 days</option></select></label>
+      <label className="filter"><span>Window ends (hours ago)</span><input type="number" disabled={!!exactPeriod} min={layer === "sar" ? 124 : 100} max={8760} value={hoursAgo} onChange={(e) => setHoursAgo(Number(e.target.value))} /></label>
+      <label className="filter"><span>Window duration</span><select disabled={!!exactPeriod} value={windowHours} onChange={(e) => setWindowHours(Number(e.target.value))}><option value={1}>1 hour</option><option value={24}>24 hours</option><option value={168}>7 days</option></select></label>
+      <details><summary>Exact historical dates (UTC)</summary><p>Choose up to seven days. The end is exclusive. Model-date alignment still requires complete model squares and compatible fleet filters.</p>
+        <button type="button" disabled={loadingModelDates} onClick={() => void useModelDates()}>{loadingModelDates ? "Loading model dates…" : "Use model dates"}</button>
+        <label className="filter"><span>Start (UTC)</span><input type="datetime-local" value={dateStart} onChange={e => setDateStart(e.target.value)} /></label>
+        <label className="filter"><span>End, exclusive (UTC)</span><input type="datetime-local" value={dateEnd} onChange={e => setDateEnd(e.target.value)} /></label>
+        <button type="button" onClick={() => { const start = Date.parse(dateStart+"Z"), end = Date.parse(dateEnd+"Z"); if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || end-start > 168*3600000) { setDateError("Choose a valid UTC interval of up to seven days."); return; } modelDatesAbort.current?.abort(); setLoadingModelDates(false); setDateError(""); setExactPeriod({start:new Date(start).toISOString(),end:new Date(end).toISOString()}); }}>Apply exact dates</button>
+        {exactPeriod && <><p>Using {exactPeriod.start} to {exactPeriod.end}.</p><button type="button" onClick={() => { modelDatesAbort.current?.abort(); setLoadingModelDates(false); setExactPeriod(null); setDateError(""); }}>Use relative window again</button></>}
+        {dateError && <p className="notice error" role="alert">{dateError}</p>}
+      </details>
       <label className="filter"><span><input type="checkbox" checked={allowLand} onChange={(e) => setAllowLand(e.target.checked)} /> Override land estimate (small/unmapped waterways)</span></label>
       <button type="button" disabled={!area || loading} onClick={() => setRetry((previous) => previous + 1)}>Refresh selected area</button>
       <details><summary>Area coordinates</summary>{(["west", "south", "east", "north"] as const).map((key) => <label className="filter" key={key}><span>{key}</span><input type="number" step="0.1" value={area?.[key] ?? ""} onChange={(e) => setArea((previous) => ({ ...(previous ?? { west: -5, south: 1, east: 3, north: 7 }), [key]: Number(e.target.value) }))} /></label>)}</details>

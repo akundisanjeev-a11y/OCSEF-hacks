@@ -57,3 +57,26 @@ def test_failure_is_not_a_zero_score():
             if response.json()['status']=='failed': break
             sleep(.01)
         assert response.json()['status']=='failed' and response.json()['result'] is None
+
+
+def test_health_exposes_missing_reference_and_cache_refreshes_when_it_arrives(tmp_path):
+    from backend.services.habitat_features import HabitatIndex
+    app=create_app(seed_fixtures=False,load_forecast=False)
+    async def collect(body,**kwargs):
+        return extraction()
+    with TestClient(app) as client:
+        app.state.priority_jobs.habitats=HabitatIndex(tmp_path/'habitats.sqlite')
+        app.state.priority_jobs.extractor=collect
+        health=client.get('/priority/health').json()
+        assert health['status']=='ready' and health['habitats']['status']=='missing'
+        assert client.get('/api/priority/health').status_code==200
+        first=client.post('/priority/assessments',json=BODY).json()['id']
+        for _ in range(100):
+            if client.get('/priority/assessments/'+first).json()['status']=='complete': break
+            sleep(.01)
+        assert client.post('/priority/assessments',json=BODY).json()['id']==first
+        # Even an invalid newly copied file must invalidate the old missing-file
+        # result, then report its actual readiness rather than a stale success.
+        (tmp_path/'habitats.sqlite').write_bytes(b'new source, not a valid database')
+        assert client.get('/priority/health').json()['habitats']['status']=='invalid'
+        assert client.post('/priority/assessments',json=BODY).json()['id']!=first

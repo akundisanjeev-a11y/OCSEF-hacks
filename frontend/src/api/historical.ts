@@ -8,7 +8,7 @@ export type ActivityFilters = {
   sar_matched?: "false" | "true" | "all";
   neural_vessel_type?: "all" | "likely_fishing" | "likely_non_fishing" | "unknown";
 };
-export type HistoricalQuery = Area & ActivityFilters & { mode: "gfw" | "synthetic"; layer: "presence" | "fishing" | "sar"; hours_ago: number; window_hours: number; allow_land?: boolean };
+export type HistoricalQuery = Area & ActivityFilters & { mode: "gfw" | "synthetic"; layer: "presence" | "fishing" | "sar"; hours_ago: number; window_hours: number; start?: string; end?: string; allow_land?: boolean };
 export type ActivityCell = { id: string; lat: number; lon: number; value: number; date: string; vessel_type: string; vessel_count_lower_bound?: number | null; mean_length_m?: number | null; source_rows?: number };
 export type HistoricalVessel = { vessel_id: string; name: string; mmsi: string | null; vessel_type: string; hours: number; length_m?: number | null };
 export type HistoricalAreaResult = { cells: ActivityCell[]; vessels: HistoricalVessel[]; mode: HistoricalQuery["mode"]; layer: HistoricalQuery["layer"]; start: string; end: string; dataset: string; bounds?: Area; applied_filters?: ActivityFilters; notes: string[]; skipped?: boolean; land_check?: { status: string; land_fraction: number | null; skip: boolean; note: string; source: string } | null };

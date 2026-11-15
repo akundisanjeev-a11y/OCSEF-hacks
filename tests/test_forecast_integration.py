@@ -7,7 +7,7 @@ import pytest
 
 from backend.main import create_app
 from backend.services.activity_forecast import ActivityForecaster
-from training.activity_forecast.setup_inference import setup
+from training.activity_forecast.setup_inference import setup, setup_bundled
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -72,3 +72,55 @@ def test_forecast_dependency_failure_does_not_disable_gfw_api(monkeypatch):
         assert client.get('/cases').json() == {'cases': []}
         assert client.get('/forecast/health').json()['forecast_ready'] is False
         assert client.get('/activity-forecast/info').status_code == 503
+
+
+def test_default_startup_uses_current_bundle_without_replacing_legacy_history(tmp_path, monkeypatch):
+    import training.activity_forecast.setup_inference as restore
+    monkeypatch.delenv('ACTIVITY_FORECAST_DATA_DIR', raising=False)
+    monkeypatch.delenv('ACTIVITY_FORECAST_MODEL_PATH', raising=False)
+    legacy = ROOT/'datasets/activity_forecast/processed/metadata.json'
+    before = legacy.read_bytes() if legacy.exists() else None
+    monkeypatch.setattr(restore, 'setup_bundled', lambda: setup_bundled(cache_root=tmp_path/'bundled'))
+    with TestClient(create_app(seed_fixtures=False)) as client:
+        assert client.get('/forecast/health').json()['forecast_ready'] is True
+        result = client.post('/activity-forecast', json={'latitude':27.5,'longitude':122.5})
+        assert result.status_code == 200 and result.json()['status'] == 'scored'
+        assert client.get('/priority/health').json()['forecast_ready'] is True
+    assert (legacy.read_bytes() if legacy.exists() else None) == before
+
+
+def test_explicit_custom_history_is_honored_and_failure_is_actionable(tmp_path, monkeypatch):
+    custom = tmp_path/'custom'
+    custom.mkdir()
+    original = b'{"local_training_history":true}'
+    (custom/'metadata.json').write_bytes(original)
+    monkeypatch.setenv('ACTIVITY_FORECAST_DATA_DIR', str(custom))
+    with TestClient(create_app(seed_fixtures=False)) as client:
+        assert client.get('/health').status_code == 200
+        assert client.get('/forecast/health').json()['forecast_ready'] is False
+        response = client.get('/activity-forecast/info')
+        assert response.status_code == 503
+        assert 'ACTIVITY_FORECAST_DATA_DIR' in response.json()['detail']['message']
+    assert (custom/'metadata.json').read_bytes() == original
+
+
+def test_bundled_cache_is_repeatable_and_changes_with_the_release(tmp_path):
+    import hashlib
+    archive = ROOT/'datasets/activity_forecast/inference_history.zip'
+    first = setup_bundled(archive=archive, cache_root=tmp_path/'cache')
+    assert setup_bundled(archive=archive, cache_root=tmp_path/'cache') == first
+    revised = tmp_path/'next.zip'
+    with ZipFile(archive) as source:
+        files = {name: source.read(name) for name in source.namelist() if name != 'manifest.json'}
+    original = files['metadata.json']
+    metadata = json.loads(original)
+    metadata['release_test_marker'] = 'new release'
+    files['metadata.json'] = json.dumps(metadata).encode()
+    with ZipFile(revised,'w') as target:
+        for name, payload in files.items():
+            target.writestr(name,payload)
+        target.writestr('manifest.json',json.dumps({name:hashlib.sha256(payload).hexdigest() for name,payload in files.items()}))
+    second = setup_bundled(archive=revised, cache_root=tmp_path/'cache')
+    assert second != first
+    assert (first/'metadata.json').read_bytes() == original
+    assert json.loads((second/'metadata.json').read_text())['release_test_marker'] == 'new release'

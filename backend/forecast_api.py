@@ -16,7 +16,7 @@ def get_forecaster(request):
     if service is None:
         raise HTTPException(503, detail={
             "code": "forecast_unavailable",
-            "message": "Forecast model or history is unavailable. Contact the backend teammate.",
+            "message": getattr(request.app.state, "forecast_error", None) or "Forecast model or history is unavailable. Restart the backend and check /forecast/health.",
         })
     return service
 

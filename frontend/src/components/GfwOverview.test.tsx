@@ -3,9 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { checkBackendConnection, fetchHistoricalArea, fetchHistoricalVessel, screenHistoricalRisks, type HistoricalAreaResult, type HistoricalEvidence } from "../api/historical";
 import { GfwOverview } from "./GfwOverview";
+import { fetchForecastInfo, type ForecastInfo } from "../api/forecast";
 
 vi.mock("../api/historical", () => ({ checkBackendConnection: vi.fn(), fetchHistoricalArea: vi.fn(), fetchHistoricalVessel: vi.fn(), screenHistoricalRisks: vi.fn() }));
 vi.mock("./ForecastPanel", () => ({ ForecastPanel: () => <div>Forecast panel</div> }));
+vi.mock("../api/forecast", () => ({ fetchForecastInfo: vi.fn() }));
 vi.mock("./CaseMap", () => ({ CaseMap: ({ onAreaChange }: { onAreaChange: (area: unknown) => void }) => <>
   <button onClick={() => onAreaChange({ west: -5, east: 3, south: 1, north: 7 })}>Draw test area</button>
   <button onClick={() => onAreaChange(null)}>Clear test area</button>
@@ -33,6 +35,27 @@ beforeEach(() => {
   vi.mocked(fetchHistoricalVessel).mockResolvedValue(evidence);
 });
 afterEach(cleanup);
+
+it('aligns activity dates to the real model period and can return to relative dates', async () => {
+  vi.mocked(fetchForecastInfo).mockResolvedValue({ target_start:'2025-11-05', target_end:'2025-11-11' } as ForecastInfo);
+  render(<GfwOverview />);
+  fireEvent.click(screen.getByText('Draw test area'));
+  await screen.findByText('Test vessel');
+  fireEvent.click(screen.getByText('Use model dates'));
+  await waitFor(() => expect(fetchHistoricalArea).toHaveBeenLastCalledWith(expect.objectContaining({start:'2025-11-05T00:00:00.000Z',end:'2025-11-12T00:00:00.000Z'})));
+  expect((screen.getByLabelText('Window duration') as HTMLSelectElement).disabled).toBe(true);
+  fireEvent.click(screen.getByText('Use relative window again'));
+  await waitFor(() => expect(vi.mocked(fetchHistoricalArea).mock.calls.at(-1)![0]).not.toHaveProperty('start'));
+});
+
+it('does not send incomplete or overlong exact dates', async () => {
+  render(<GfwOverview />);
+  fireEvent.change(screen.getByLabelText('Start (UTC)'), {target:{value:'2025-11-05T00:00'}});
+  fireEvent.change(screen.getByLabelText('End, exclusive (UTC)'), {target:{value:'2025-11-14T00:00'}});
+  fireEvent.click(screen.getByText('Apply exact dates'));
+  expect(screen.getByRole('alert').textContent).toContain('up to seven days');
+  expect(fetchHistoricalArea).not.toHaveBeenCalled();
+});
 
 describe("Overview GFW integration", () => {
   it("reports an unresponsive backend before attempting provider reports", async () => {

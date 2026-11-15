@@ -28,7 +28,7 @@ class PriorityJobs:
             if now-self.jobs[key]['touched']>900 and self.jobs[key]['status'] not in ('queued','running'):
                 self.jobs.pop(key);self.tasks.pop(key,None)
         model=self.forecaster.info()['model_sha256'] if self.forecaster else None
-        key=hashlib.sha256(json.dumps([body.model_dump(mode='json'),model],sort_keys=True).encode()).hexdigest()
+        key=hashlib.sha256(json.dumps([body.model_dump(mode='json'),model,self.habitats.cache_key()],sort_keys=True).encode()).hexdigest()
         for job in self.jobs.values():
             if job['key']==key and job['status'] not in ('failed','cancelled'):
                 return job
@@ -83,6 +83,14 @@ def jobs(request):
 @router.get('/policy')
 def get_policy():
     return policy()
+
+
+@router.get('/health')
+def get_health(request: Request):
+    manager = jobs(request)
+    return {'status': 'ready', 'forecast_ready': manager.forecaster is not None,
+            'habitats': manager.habitats.availability(),
+            'note': 'Assessment availability is separate from input completeness. Missing sources never become zero risk.'}
 
 
 @router.post('/assessments',status_code=202,response_model=PriorityJob)

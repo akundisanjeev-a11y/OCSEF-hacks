@@ -72,6 +72,27 @@ class HistoricalTests(unittest.TestCase):
         self.assertEqual(data["cells"], [])
         self.assertEqual(data["vessels"], [])
 
+    def test_exact_historical_period_can_match_an_older_model_release(self):
+        response = self.scan(start='2025-11-05T00:00:00Z',end='2025-11-12T00:00:00Z')
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.json()['start'],'2025-11-05T00:00:00.000Z')
+        self.assertEqual(response.json()['end'],'2025-11-12T00:00:00.000Z')
+
+    def test_exact_area_dates_require_a_complete_available_seven_day_or_shorter_period(self):
+        for change in [
+            {'start':'2025-11-05T00:00:00Z'},
+            {'start':'2025-11-05T00:00:00Z','end':'2025-11-05T00:00:00Z'},
+            {'start':'2025-11-05T00:00:00Z','end':'2025-11-13T00:00:00Z'},
+            {'start':'2025-11-05','end':'2025-11-12'},
+            {'start':datetime.now(timezone.utc).isoformat(),'end':datetime.now(timezone.utc).isoformat()},
+        ]:
+            self.assertEqual(self.scan(**change).status_code,422)
+
+    def test_explicit_sar_dates_are_checked_without_a_fake_relative_offset(self):
+        response = self.scan(layer='sar',start='2025-11-05T00:00:00Z',end='2025-11-12T00:00:00Z')
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.json()['vessels'],[])
+
     def test_sar_has_older_cutoff_and_no_invented_identity(self):
         self.assertEqual(self.scan(layer="sar").status_code, 422)
         result = self.scan(layer="sar", hours_ago=124).json()

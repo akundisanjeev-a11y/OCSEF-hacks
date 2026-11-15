@@ -28,10 +28,15 @@ def parts(geometry):
         yield geometry
 
 
-def prepare(destination=DEFAULT,datasets=('coral_reefs','seagrass')):
+def prepare(destination=DEFAULT,datasets=('coral_reefs','seagrass'),source_dir=None):
     destination=Path(destination).resolve()
-    destination.mkdir(parents=True,exist_ok=True)
     inventory=json.loads((ROOT/'docs/priority-engine-step1-inventory.json').read_text())
+    source_root = Path(source_dir).resolve() if source_dir is not None else ROOT
+    selected = [source for source in inventory['habitat_archives'] if any(source['archive'].startswith(DATASET_ARCHIVES[name]) for name in datasets)]
+    missing = [source['archive'] for source in selected if not (source_root/source['archive']).is_file()]
+    if missing:
+        raise ValueError('Missing marine reference ZIPs: '+', '.join(missing)+'. Obtain the audited files from your teammate and use --source-dir with their folder. No empty index was created.')
+    destination.mkdir(parents=True,exist_ok=True)
     database=destination/'habitats.sqlite'
     with sqlite3.connect(database) as connection:
         connection.executescript('''PRAGMA journal_mode=WAL;
@@ -41,10 +46,8 @@ def prepare(destination=DEFAULT,datasets=('coral_reefs','seagrass')):
             CREATE INDEX IF NOT EXISTS feature_layer ON features(layer_id);
             CREATE VIRTUAL TABLE IF NOT EXISTS bounds USING rtree(id,minx,maxx,miny,maxy);
         ''')
-        for source in inventory['habitat_archives']:
-            if not any(source['archive'].startswith(DATASET_ARCHIVES[name]) for name in datasets):
-                continue
-            archive_path=ROOT/source['archive']
+        for source in selected:
+            archive_path=source_root/source['archive']
             with archive_path.open('rb') as stream:
                 if hashlib.file_digest(stream,'sha256').hexdigest()!=source['sha256']:
                     raise ValueError('Habitat archive changed since its audited inventory')
@@ -133,5 +136,6 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,default=DEFAULT)
     parser.add_argument('--datasets',nargs='+',choices=tuple(DATASET_ARCHIVES),default=list(DATASET_ARCHIVES))
+    parser.add_argument('--source-dir',type=Path,help='Folder containing the audited WCMC ZIPs; originals are never modified.')
     args=parser.parse_args()
-    prepare(args.output,args.datasets)
+    prepare(args.output,args.datasets,args.source_dir)

@@ -2,7 +2,9 @@
 
 Step 2 implements the feature collector and prepares **two** marine reference
 datasets: warm-water coral reefs (2018) and seagrass (2021). Their point and polygon
-layers are already indexed locally. Cold-water coral and saltmarsh are excluded
+layers can be indexed locally when the audited files are available. They are not
+included in Git, so another teammate's index is not installed by pulling main.
+Cold-water coral and saltmarsh are excluded
 from the collector and preparation defaults. Original downloads are preserved.
 
 The earlier command failed while repairing a very large saltmarsh geometry
@@ -13,6 +15,25 @@ indexes and does not retry saltmarsh:
 ```powershell
 & .\.venv\Scripts\python.exe -m training.prepare_habitats
 ```
+
+On a machine without the source ZIPs, obtain either the completed
+`habitats.sqlite` from your teammate and copy it to
+`datasets/priority_engine/habitats/habitats.sqlite`, or obtain these audited ZIPs:
+
+- `WCMC008_CoralReefs2018_v4_1.zip`
+- `WCMC013-014_SeagrassPtPy2021_v7_1.zip`
+
+Keep both ZIPs in a local folder and run:
+
+```powershell
+.\.venv\Scripts\python.exe -m training.prepare_habitats --source-dir "C:\path\to\marine-zips"
+```
+
+Checksums must match the audited inventory. Missing ZIPs produce an actionable
+error before creating an empty database. A custom prepared index may instead be
+configured with `PRIORITY_HABITAT_INDEX` on the backend. No raw GIS files need to
+be committed or redistributed through the website. Check `/priority/health` for
+readiness, then calculate a new assessment to load the installed reference.
 
 Core implementation:
 
