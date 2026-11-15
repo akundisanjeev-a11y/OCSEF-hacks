@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import * as maplibregl from "maplibre-gl";
 import type { GeoJSONSource, StyleSpecification } from "maplibre-gl";
@@ -57,12 +57,13 @@ const STYLE: StyleSpecification = {
   version: 8,
   projection: { type: "globe" },
   sky: {
-    "sky-color": "#04070d",
-    "horizon-color": "#1d4f9c",
-    "fog-color": "#04070d",
+    "sky-color": "#070b12",
+    "horizon-color": "#23405f",
+    "fog-color": "#070b12",
     "sky-horizon-blend": 0.6,
     "horizon-fog-blend": 0.6,
-    "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 0.9, 5, 0.6, 7, 0],
+    // A thin limb around the globe, not a glow.
+    "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 0.35, 5, 0.2, 7, 0],
   },
   sources: {
     "local-land": { type: "geojson", data: landOutlineUrl, attribution: "Outline: Natural Earth (public domain)" },
@@ -83,9 +84,10 @@ const STYLE: StyleSpecification = {
     },
   },
   layers: [
-    { id: "background", type: "background", paint: { "background-color": "#0b254b" } },
-    { id: "local-land-fill", type: "fill", source: "local-land", paint: { "fill-color": "#294a78" } },
-    { id: "local-land-outline", type: "line", source: "local-land", paint: { "line-color": "#3f6291", "line-width": .7 } },
+    // Chart-style basemap: dark water, slightly lighter land, a fine coastline.
+    { id: "background", type: "background", paint: { "background-color": "#0d1b2d" } },
+    { id: "local-land-fill", type: "fill", source: "local-land", paint: { "fill-color": "#1e2c40" } },
+    { id: "local-land-outline", type: "line", source: "local-land", paint: { "line-color": "#3b4d66", "line-width": .7 } },
     {
       id: "imagery",
       type: "raster",
@@ -150,6 +152,55 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
   const [selectionError, setSelectionError] = useState("");
   const [dragBox, setDragBox] = useState<{ x: number; y: number; w: number; h: number; invalid: boolean } | null>(null);
   useEffect(() => { onSelectingChange?.(selecting); }, [selecting, onSelectingChange]);
+
+  // Legend auto-hide: after LEGEND_IDLE_MS without activity on the map it slides down to its title strip.
+  // The strip can be dragged (or clicked) to bring it back up, or dragged down to hide it sooner.
+  const LEGEND_IDLE_MS = 6000;
+  const LEGEND_PEEK = 18; // how far the strip stays above the hidden position, so its 30px title shows
+  const [legendHidden, setLegendHidden] = useState(false);
+  const [legendOffset, setLegendOffset] = useState<number | null>(null); // live position while dragging
+  const legendRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const suppressLegendClick = useRef(false);
+
+  // Restart the idle countdown on any pointer, wheel or key activity over the map, while the legend is showing.
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport || legendHidden) return;
+    let timer = window.setTimeout(() => setLegendHidden(true), LEGEND_IDLE_MS);
+    const activity = () => { window.clearTimeout(timer); timer = window.setTimeout(() => setLegendHidden(true), LEGEND_IDLE_MS); };
+    const events = ["pointermove", "pointerdown", "wheel", "keydown", "touchstart"] as const;
+    events.forEach(name => viewport.addEventListener(name, activity, { passive: true }));
+    return () => { window.clearTimeout(timer); events.forEach(name => viewport.removeEventListener(name, activity)); };
+  }, [legendHidden]);
+
+  // Dragging the legend's title strip moves it with the pointer; on release it settles open or hidden.
+  function startLegendDrag(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (event.button !== 0 || !legendRef.current) return;
+    const max = legendRef.current.offsetHeight - LEGEND_PEEK;
+    const startY = event.clientY, startOffset = legendHidden ? max : 0;
+    let moved = false;
+    const handle = event.currentTarget;
+    handle.setPointerCapture(event.pointerId);
+    const move = (moveEvent: PointerEvent) => {
+      const dy = moveEvent.clientY - startY;
+      if (Math.abs(dy) > 4) moved = true;
+      if (moved) setLegendOffset(Math.max(0, Math.min(max, startOffset + dy)));
+    };
+    const stop = (upEvent: PointerEvent) => {
+      handle.removeEventListener("pointermove", move); handle.removeEventListener("pointerup", stop); handle.removeEventListener("pointercancel", stop);
+      setLegendOffset(null);
+      if (moved) { suppressLegendClick.current = true; setLegendHidden(startOffset + upEvent.clientY - startY > max / 2); }
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", stop);
+    handle.addEventListener("pointercancel", stop);
+  }
+  // A click (or Enter/Space) on the strip toggles the legend; a drag that just ended is not treated as a click.
+  function toggleLegend() {
+    if (suppressLegendClick.current) { suppressLegendClick.current = false; return; }
+    setLegendHidden(hidden => !hidden);
+  }
 
   useEffect(() => {
     let map: maplibregl.Map;
@@ -231,11 +282,12 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
       map.addSource("forecast-target", { type: "geojson", data: areaGeoJson(null) });
       map.addLayer({ id: "forecast-neighbors-fill", type: "fill", source: "forecast-neighbors", paint: { "fill-color": "#9d79e5", "fill-opacity": .06 } });
       map.addLayer({ id: "forecast-neighbors-line", type: "line", source: "forecast-neighbors", paint: { "line-color": "#ad8de3", "line-width": 1, "line-opacity": .65 } });
-      map.addLayer({ id: "forecast-arrow-shadow", type: "line", source: "forecast-arrows", paint: { "line-color": "#0b203b", "line-width": 7 } });
-      map.addLayer({ id: "forecast-arrow-line", type: "line", source: "forecast-arrows", paint: { "line-color": "#ffda87", "line-width": 3 } });
-      map.addLayer({ id: "forecast-arrow-head", type: "fill", source: "forecast-arrowheads", paint: { "fill-color": "#ffda87", "fill-outline-color": "#bd9444" } });
-      map.addLayer({ id: "forecast-target-outline", type: "line", source: "forecast-target", paint: { "line-color": "#ffda87", "line-width": 3 } });
-      map.addLayer({ id: "forecast-arrow-hit", type: "line", source: "forecast-arrows", paint: { "line-color": "#ffda87", "line-opacity": .01, "line-width": 16 } });
+      // Forecast arrows: thick red lines with a dark edge so they stand out on any background.
+      map.addLayer({ id: "forecast-arrow-shadow", type: "line", source: "forecast-arrows", paint: { "line-color": "#0b1320", "line-width": 9 } });
+      map.addLayer({ id: "forecast-arrow-line", type: "line", source: "forecast-arrows", paint: { "line-color": "#e5484d", "line-width": 5 } });
+      map.addLayer({ id: "forecast-arrow-head", type: "fill", source: "forecast-arrowheads", paint: { "fill-color": "#e5484d", "fill-outline-color": "#8f1d22" } });
+      map.addLayer({ id: "forecast-target-outline", type: "line", source: "forecast-target", paint: { "line-color": "#e5484d", "line-width": 3 } });
+      map.addLayer({ id: "forecast-arrow-hit", type: "line", source: "forecast-arrows", paint: { "line-color": "#e5484d", "line-opacity": .01, "line-width": 18 } });
       map.on("click", "forecast-arrow-hit", event => { const properties = event.features?.[0]?.properties; if (properties) forecastClick.current?.(properties as ActivityArrow); });
       map.on("click", "forecast-arrow-head", event => { const properties = event.features?.[0]?.properties; if (properties) forecastClick.current?.(properties as ActivityArrow); });
       setReady(true);
@@ -423,45 +475,54 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
     <>
       {noticeTarget ? createPortal(notices, noticeTarget) : notices}
     <div className="map-wrap" aria-busy={!mapError && (!ready || tilesLoading)}>
+      {/* Toolbar above the map: selection tools on the left, view settings on the right. */}
+      <div className="map-toolbar">
+        <div className="map-toolbar-group">
+          <button
+            type="button"
+            disabled={!ready}
+            className={selecting ? "is-on" : "primary"}
+            onClick={() => { setSelectionError(""); setSelecting((s) => !s); }}
+            aria-pressed={selecting}
+          >
+            <svg className="tool-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden="true"><path d="M1 3.5V1h2.5M8.5 1H11v2.5M11 8.5V11H8.5M3.5 11H1V8.5" /></svg>
+            {selecting ? "Cancel selection" : area ? "Select new area" : "Select area"}
+          </button>
+          {area && (
+            <button type="button" onClick={clearArea}>
+              Clear area
+            </button>
+          )}
+          {selecting && <span className="selection-hint" role="status">{dragBox?.invalid ? "Select a valid map rectangle" : "Drag to select an area · Esc to cancel"}</span>}
+          {ready && tilesLoading && !mapError && !selecting && <span className="map-tile-loading" role="status"><span className="loading-spinner" aria-hidden="true" />Updating map layers…</span>}
+        </div>
+        <div className="map-toolbar-group">
+          <div className="segmented" role="group" aria-label="Map view">
+            <button type="button" className={view === "globe" ? "is-on" : undefined} onClick={() => setView("globe")} aria-pressed={view === "globe"}>
+              3D
+            </button>
+            <button type="button" className={view === "mercator" ? "is-on" : undefined} onClick={() => setView("mercator")} aria-pressed={view === "mercator"}>
+              2D
+            </button>
+          </div>
+          <label className="basemap-choice"><span className="sr-only">Basemap</span><select aria-label="Basemap" value={basemap} onChange={(event) => { setBasemap(event.target.value as Basemap); setBasemapWarning(""); }}><option value="outline">Simple ocean map</option><option value="imagery">Satellite photos</option></select></label>
+        </div>
+      </div>
+
+      {/* The map itself, with its overlays positioned inside. */}
+      <div className="map-viewport" ref={viewportRef}>
       <div ref={containerRef} className="map" />
-      {!ready && !mapError && <div className="map-loading-shell"><div className="skeleton skeleton-globe" aria-hidden="true" /><LoadingStatus label="Loading the globe…" detail="Preparing the map and geographic layers." /></div>}
-      {ready && tilesLoading && !mapError && <div className="map-tile-loading"><LoadingStatus label="Updating map layers…" /></div>}
+      {!ready && !mapError && <div className="map-loading-shell"><LoadingStatus label="Loading the globe…" detail="Preparing the map and geographic layers." /></div>}
       {dragBox && (
         <div className={`drag-box${dragBox.invalid ? " too-large" : ""}`} style={{ left: dragBox.x, top: dragBox.y, width: dragBox.w, height: dragBox.h }} />
       )}
 
-
-      <div className="map-tools">
-        <label className="basemap-choice"><span className="sr-only">Basemap</span><select aria-label="Basemap" value={basemap} onChange={(event) => { setBasemap(event.target.value as Basemap); setBasemapWarning(""); }}><option value="outline">Simple ocean map</option><option value="imagery">Satellite photos</option></select></label>
-        <div className="segmented" role="group" aria-label="Map view">
-          <button type="button" className={view === "globe" ? "is-on" : undefined} onClick={() => setView("globe")} aria-pressed={view === "globe"}>
-            3D
-          </button>
-          <button type="button" className={view === "mercator" ? "is-on" : undefined} onClick={() => setView("mercator")} aria-pressed={view === "mercator"}>
-            2D
-          </button>
-        </div>
-        <button
-          type="button"
-          disabled={!ready}
-          className={selecting ? "is-on" : "primary"}
-          onClick={() => { setSelectionError(""); setSelecting((s) => !s); }}
-          aria-pressed={selecting}
-        >
-          {selecting ? "Cancel selection" : area ? "Select new area" : "Select area"}
-        </button>
-        {area && (
-          <button type="button" onClick={clearArea}>
-            Clear area
-          </button>
-        )}
-      </div>
-      {selecting && <div className="selection-hint" role="status">{dragBox?.invalid ? "Select a valid map rectangle" : "Drag to select an area · Esc to cancel"}</div>}
-
-      {activityCells !== undefined ? !selecting && <div className="activity-legend">
-        <strong>{activityLayerNames[activityLayer]}</strong><div className="heat-scale" aria-hidden="true" /><div className="heat-scale-labels"><span>Less activity</span><span>More activity</span></div>
+      {activityCells !== undefined ? !selecting && <div ref={legendRef} className={`activity-legend${legendHidden ? " is-hidden" : ""}`} style={legendOffset !== null ? { transform: `translateY(${legendOffset}px)`, transition: "none" } : undefined}>
+        {/* Title strip: drag it up or down, or click it, to show or hide the legend. */}
+        <button type="button" className="legend-handle" aria-expanded={!legendHidden} aria-label={legendHidden ? "Show map legend" : "Hide map legend"} title="Drag or click to show or hide" onPointerDown={startLegendDrag} onClick={toggleLegend}><span className="legend-grip" aria-hidden="true" /><strong>{activityLayerNames[activityLayer]}</strong></button>
+        <div className="heat-scale" aria-hidden="true" /><div className="heat-scale-labels"><span>Less activity</span><span>More activity</span></div>
         <span className="activity-legend-hint">{activityCells.length ? mapZoom < 6 ? "Zoom in to explore activity squares" : "Click a colored square for details" : "Select an area to load activity"}</span>
-        {forecastComparison && <div className="forecast-map-key"><strong>Purple: historical forecast squares</strong><span>Gold arrows → higher predicted activity</span><span>Not boat travel directions</span><small>{forecastComparison.cells[0]?.target_start} through {forecastComparison.cells[0]?.target_end}</small></div>}
+        {forecastComparison && <div className="forecast-map-key"><strong>Purple: historical forecast squares</strong><span>Red arrows → higher predicted activity</span><span>Not boat travel directions</span><small>{forecastComparison.cells[0]?.target_start} through {forecastComparison.cells[0]?.target_end}</small></div>}
         <Info label="Reading this map"><p>Brighter green means more {activityUnits[activityLayer]} in the selected time period. Colors compare activity within your selected area; they do not show danger or illegal behavior. Dark or empty areas can mean missing data.</p><p>Zooming in reveals small activity squares, each about 11 km north to south. Squares show approximate areas around reported grid points, not individual boat locations. Several boats can use the same square. The boat list covers the whole area you selected.</p><p>To show each boat in its correct place, we need separate position records with a boat ID, coordinates and observation time. The current GFW area reports do not provide that combination.</p><a href="https://globalfishingwatch.org" target="_blank" rel="noreferrer">Data from Global Fishing Watch</a></Info>
       </div> : <div className="map-legend">
         <span>
@@ -485,6 +546,7 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
           Illustrative fishing zone
         </span>
       </div>}
+      </div>
     </div>
     </>
   );

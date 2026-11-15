@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { checkBackendConnection, fetchHistoricalArea, fetchHistoricalVessel, type ActivityCell, type Area, type HistoricalAreaResult, type HistoricalEvidence, type HistoricalQuery, type HistoricalVessel } from "../api/historical";
 import { CaseMap } from "./CaseMap";
@@ -51,6 +51,14 @@ export function GfwOverview({ onInvestigations, filtersTarget }: { onInvestigati
   const [page, setPage] = useState(0);
   const detailVersion = useRef(0);
   const ignoreCaseSelect = useCallback(() => {}, []);
+  // Height of the dock under the map, set by dragging the resize handle (null = default layout).
+  const [dockHeight, setDockHeight] = useState<number | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
+  // Width of the forecast panel, set by dragging the handle beside the map (null = default width).
+  const [forecastWidth, setForecastWidth] = useState<number | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const forecastRef = useRef<HTMLElement>(null);
   useEffect(() => { publishResult?.(result); }, [result, publishResult]);
   const handleSelecting = useCallback((active: boolean) => {
     if (active && filtersMenu.current) filtersMenu.current.open = false;
@@ -86,6 +94,66 @@ export function GfwOverview({ onInvestigations, filtersTarget }: { onInvestigati
 
   useEffect(() => () => { detailVersion.current++; }, []);
 
+  // Keeps both the map and the dock usable: neither can be dragged smaller than its minimum.
+  const MAP_MIN = 260, DOCK_MIN = 110;
+  function clampDock(height: number) {
+    const total = rootRef.current?.clientHeight ?? 0;
+    return Math.round(Math.max(DOCK_MIN, Math.min(total - MAP_MIN, height)));
+  }
+  // Dragging the handle: the dock's height follows the pointer's distance from the bottom of the screen area.
+  function startResize(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 0 || !rootRef.current) return;
+    event.preventDefault();
+    const bottom = rootRef.current.getBoundingClientRect().bottom;
+    const handle = event.currentTarget;
+    handle.setPointerCapture(event.pointerId);
+    const move = (moveEvent: PointerEvent) => setDockHeight(clampDock(bottom - moveEvent.clientY));
+    const stop = () => { handle.removeEventListener("pointermove", move); handle.removeEventListener("pointerup", stop); handle.removeEventListener("pointercancel", stop); };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", stop);
+    handle.addEventListener("pointercancel", stop);
+  }
+  // Keyboard: up arrow makes the map smaller, down arrow makes it bigger; Home/End jump to the limits.
+  function resizeWithKeys(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const current = dockHeight ?? dockRef.current?.offsetHeight ?? 0;
+    const step = event.shiftKey ? 80 : 24;
+    const next = event.key === "ArrowUp" ? current + step : event.key === "ArrowDown" ? current - step : event.key === "Home" ? DOCK_MIN : event.key === "End" ? Number.MAX_SAFE_INTEGER : null;
+    if (next === null) return;
+    event.preventDefault();
+    setDockHeight(clampDock(next));
+  }
+
+  // The forecast panel stays readable and the map keeps at least 360px of width.
+  const PANEL_MIN = 220, PANEL_MAX = 560, MAP_MIN_WIDTH = 360;
+  function clampPanel(width: number) {
+    // The panel can only take width the map can give up while staying at least MAP_MIN_WIDTH wide.
+    const map = stageRef.current?.querySelector<HTMLElement>(".map-panel");
+    const room = (forecastRef.current?.offsetWidth ?? 0) + (map?.offsetWidth ?? 0) - MAP_MIN_WIDTH;
+    return Math.round(Math.max(PANEL_MIN, Math.min(PANEL_MAX, room, width)));
+  }
+  // Dragging the side handle: the panel's width follows the pointer horizontally.
+  function startSideResize(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 0 || !forecastRef.current) return;
+    event.preventDefault();
+    const startX = event.clientX, startWidth = forecastRef.current.offsetWidth;
+    const handle = event.currentTarget;
+    handle.setPointerCapture(event.pointerId);
+    const move = (moveEvent: PointerEvent) => setForecastWidth(clampPanel(startWidth + moveEvent.clientX - startX));
+    const stop = () => { handle.removeEventListener("pointermove", move); handle.removeEventListener("pointerup", stop); handle.removeEventListener("pointercancel", stop); };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", stop);
+    handle.addEventListener("pointercancel", stop);
+  }
+  // Keyboard: left arrow makes the map wider, right arrow makes it narrower.
+  function sideResizeWithKeys(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const current = forecastWidth ?? forecastRef.current?.offsetWidth ?? 0;
+    const step = event.shiftKey ? 80 : 24;
+    const next = event.key === "ArrowRight" ? current + step : event.key === "ArrowLeft" ? current - step : event.key === "Home" ? PANEL_MIN : event.key === "End" ? PANEL_MAX : null;
+    if (next === null) return;
+    event.preventDefault();
+    setForecastWidth(clampPanel(next));
+  }
+
   const ordered = result?.vessels ?? [];
   const pageCount = Math.max(1, Math.ceil(ordered.length / 50));
   const visible = ordered.slice(Math.min(page, pageCount - 1) * 50, (Math.min(page, pageCount - 1) + 1) * 50);
@@ -105,39 +173,54 @@ export function GfwOverview({ onInvestigations, filtersTarget }: { onInvestigati
     finally { if (detailVersion.current === version) setDetailLoading(false); }
   }
 
-  return <div className={`dash gfw-overview ${leftOpen ? "left-open" : "left-closed"} ${rightOpen ? "right-open" : "right-closed"}`}>
+  return <div ref={rootRef} className={`gfw-overview ${leftOpen ? "left-open" : "left-closed"} ${rightOpen ? "right-open" : "right-closed"}`} style={dockHeight ? { gridTemplateRows: `minmax(${MAP_MIN}px, 1fr) auto ${dockHeight}px` } : undefined}>
     <div className="workspace-notices" ref={setNoticeTarget} />
-    {loading && <div className="area-query-loading"><LoadingStatus label={queryPhase === "connection" ? "Connecting to the backend…" : "Loading selected-area activity and vessels…"} detail={queryPhase === "reports" ? "GFW reports run sequentially. You can keep using the globe or choose a different area." : "Checking the connection before requesting GFW data."} /><div className="loading-track" aria-hidden="true" /></div>}
-    <div className="globe-stage">
-    <div className="drawer-slot left-slot"><button type="button" className="drawer-bookmark left-bookmark" aria-expanded={leftOpen} aria-controls="forecast-drawer" onClick={() => { setLeftOpen(value => !value); if (!leftOpen) setRightOpen(false); }}>{leftOpen ? "‹ Forecast" : "› Forecast"}</button>
-    <aside id="forecast-drawer" className="panel side-drawer" inert={!leftOpen}><ForecastPanel area={area} onBoundsChange={setForecastBounds} onForecastChange={handleForecast} onComparisonChange={setForecastComparison} onShowReasoning={showForecastReasoning} /></aside></div>
 
-    <section className="panel map-panel"><CaseMap groups={[]} selectedId={null} onSelect={ignoreCaseSelect} area={area} onAreaChange={setArea} activityCells={result?.cells ?? []} activityLayer={layer} onActivitySelect={value => { setEvidenceView("activity"); setCell(value); setRightOpen(true); setLeftOpen(false); }} forecastBounds={forecastBounds} forecastComparison={forecastComparison} onForecastArrowSelect={handleForecastArrow} selectedForecastArrow={forecastArrow} onSelectingChange={handleSelecting} noticeTarget={noticeTarget} /></section>
+    {/* The stage: forecast panel, map and evidence panel side by side. */}
+    <div className="globe-stage" ref={stageRef}>
+    <div className="drawer-slot left-slot"><button type="button" className="drawer-bookmark left-bookmark" aria-expanded={leftOpen} aria-controls="forecast-drawer" onClick={() => { setLeftOpen(value => !value); if (!leftOpen) setRightOpen(false); }}>{leftOpen ? "‹ Forecast" : "› Forecast"}</button>
+    <aside id="forecast-drawer" ref={forecastRef} className="panel side-drawer" inert={!leftOpen} style={forecastWidth ? { width: forecastWidth } : undefined}><ForecastPanel area={area} onBoundsChange={setForecastBounds} onForecastChange={handleForecast} onComparisonChange={setForecastComparison} onShowReasoning={showForecastReasoning} /></aside></div>
+
+    {/* Drag handle on the map's left edge. Drag left or right to resize the map; double-click to reset. */}
+    {leftOpen && <div className="side-resizer" role="separator" aria-orientation="vertical" aria-label="Resize map width" title="Drag to resize the map · double-click to reset" tabIndex={0} onPointerDown={startSideResize} onKeyDown={sideResizeWithKeys} onDoubleClick={() => setForecastWidth(null)}><span aria-hidden="true" /></div>}
+
+    <section className="panel map-panel">
+      {loading && <div className="area-query-loading"><LoadingStatus label={queryPhase === "connection" ? "Connecting to the backend…" : "Loading selected-area activity and vessels…"} detail={queryPhase === "reports" ? "GFW reports run sequentially. You can keep using the globe or choose a different area." : "Checking the connection before requesting GFW data."} /><div className="loading-track" aria-hidden="true" /></div>}
+      <CaseMap groups={[]} selectedId={null} onSelect={ignoreCaseSelect} area={area} onAreaChange={setArea} activityCells={result?.cells ?? []} activityLayer={layer} onActivitySelect={value => { setEvidenceView("activity"); setCell(value); setRightOpen(true); setLeftOpen(false); }} forecastBounds={forecastBounds} forecastComparison={forecastComparison} onForecastArrowSelect={handleForecastArrow} selectedForecastArrow={forecastArrow} onSelectingChange={handleSelecting} noticeTarget={noticeTarget} />
+    </section>
 
     <div className="drawer-slot right-slot"><button type="button" className="drawer-bookmark right-bookmark" aria-expanded={rightOpen} aria-controls="evidence-drawer" onClick={() => { setRightOpen(value => !value); if (!rightOpen) setLeftOpen(false); }}>{rightOpen ? "Evidence ›" : "Evidence ‹"}</button>
     <aside id="evidence-drawer" className="panel case-panel side-drawer" aria-live="polite" aria-busy={evidenceView === "vessel" && detailLoading} inert={!rightOpen}><div className="panel-head"><h2>{evidenceView === "forecast" ? "Forecast reasoning" : evidenceView === "activity" ? "Activity square" : selected?.name ?? "Vessel evidence"}</h2>{(selected || forecastResult || cell) && <button type="button" onClick={() => { if (evidenceView === "vessel") { detailVersion.current++; setSelected(null); setEvidence(null); setDetailLoading(false); setDetailError(""); } setRightOpen(false); }}>Close report</button>}</div>
       {(forecastResult || selected || cell) && <div className="evidence-view-tabs" role="group" aria-label="Evidence type">{forecastResult && <button type="button" aria-pressed={evidenceView === "forecast"} onClick={() => setEvidenceView("forecast")}>Forecast</button>}{selected && <button type="button" aria-pressed={evidenceView === "vessel"} onClick={() => setEvidenceView("vessel")}>Boat report</button>}{cell && <button type="button" aria-pressed={evidenceView === "activity"} onClick={() => setEvidenceView("activity")}>Activity square</button>}</div>}
       {evidenceView === "forecast" && forecastResult && <ForecastEvidence forecast={forecastResult} comparison={forecastComparison} arrow={forecastArrow} />}
-      {evidenceView === "vessel" && !selected && !cell && <p className="empty">Choose a boat from the list below to see its identity, available permits and reasons it may need review.</p>}
-      {evidenceView === "activity" && cell && <div className="block"><h3>Selected activity square</h3><p><strong>{Number(cell.value).toLocaleString(undefined, { maximumFractionDigits: 2 })} {activityUnits[layer]}</strong></p><p>Near {Number(cell.lat).toFixed(2)}°, {Number(cell.lon).toFixed(2)}°</p>{result && <p>{formatTime(result.start)} → {formatTime(result.end)}</p>}<p>Boats reported: {cell.vessel_count_lower_bound != null ? `at least ${cell.vessel_count_lower_bound}` : "count not available"}.</p><Info label="What this square means"><p>This is an approximate area where activity was recorded, not a single boat. One boat seen for two hours and two boats seen for one hour each can both contribute two boat-hours. The boat list below covers your entire selection; it does not tell us which boats used this square.</p></Info></div>}
+      {evidenceView === "vessel" && !selected && !cell && <div className="empty-state"><h3>No evidence open</h3><p>Choose a boat from the list below to see its identity, available permits and reasons it may need review.</p><p>Forecast reasoning and activity squares you click on the map also open here.</p></div>}
+      {evidenceView === "activity" && cell && <div className="block"><p className="readout"><strong>{Number(cell.value).toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong> {activityUnits[layer]}</p><dl className="kv"><dt>Position</dt><dd className="mono">{Number(cell.lat).toFixed(2)}°, {Number(cell.lon).toFixed(2)}°</dd>{result && <><dt>Period</dt><dd>{formatTime(result.start)} → {formatTime(result.end)}</dd></>}<dt>Boats reported</dt><dd>{cell.vessel_count_lower_bound != null ? `at least ${cell.vessel_count_lower_bound}` : "count not available"}</dd></dl><Info label="What this square means"><p>This is an approximate area where activity was recorded, not a single boat. One boat seen for two hours and two boats seen for one hour each can both contribute two boat-hours. The boat list below covers your entire selection; it does not tell us which boats used this square.</p></Info></div>}
       {evidenceView === "vessel" && detailLoading && <><LoadingStatus label="Retrieving vessel evidence…" detail="Loading identity, authorization records and risk insights." /><Skeleton /></>}
       {evidenceView === "vessel" && detailError && <p className="notice error" role="alert">{detailError}</p>}
       {evidenceView === "vessel" && evidence && <VesselEvidence report={evidence} />}
     </aside></div>
     </div>
 
-    <section className="panel stats"><div className="panel-head"><h2>Your selected area · past activity</h2></div><div className="stat-row"><div className="stat"><strong>{result ? result.cells.length : "—"}</strong><Info label="Activity squares"><p>Activity squares (also called activity cells) are small map areas, not exact boat locations. They combine activity during your chosen time. One square can contain several boats, or the same boat at different times.</p></Info></div><div className="stat"><strong>{result ? result.vessels.length : "—"}</strong><Info label="Boats in this area"><p>Area-associated vessels means boat identities reported somewhere in your selected area during your chosen time. The list does not locate each boat inside an individual activity square. Radar sightings without a known identity are not listed as identified boats.</p></Info></div></div>{result && <Info label="Activity dates and source"><p className="stat-note">{formatTime(result.start)} → {formatTime(result.end)} · {result.dataset}</p></Info>}
-      {result?.land_check && <Info label="Land estimate and coverage"><p className="stat-note">{result.land_check.land_fraction !== null ? `Conservative land estimate: ${(result.land_check.land_fraction * 100).toFixed(1)}%. ` : ""}{result.skipped ? "Skipped before GFW queries: over 75% land. Choose a water-focused area or override the estimate. " : ""}{result.land_check.note}</p></Info>}
+    {/* Drag handle between the map and the dock. Drag up or down to resize the map; double-click to reset. */}
+    <div className="map-resizer" role="separator" aria-orientation="horizontal" aria-label="Resize map" title="Drag to resize the map · double-click to reset" tabIndex={0} onPointerDown={startResize} onKeyDown={resizeWithKeys} onDoubleClick={() => setDockHeight(null)}><span aria-hidden="true" /></div>
+
+    {/* The dock under the map: a summary strip for the selected area, then its vessel table. */}
+    <div className="dock" ref={dockRef}>
+    <section className="panel stats"><h2>Your selected area · past activity</h2>
+      <div className="stat-row"><div className="stat"><strong>{result ? result.cells.length : "—"}</strong><Info label="Activity squares"><p>Activity squares (also called activity cells) are small map areas, not exact boat locations. They combine activity during your chosen time. One square can contain several boats, or the same boat at different times.</p></Info></div><div className="stat"><strong>{result ? result.vessels.length : "—"}</strong><Info label="Boats in this area"><p>Area-associated vessels means boat identities reported somewhere in your selected area during your chosen time. The list does not locate each boat inside an individual activity square. Radar sightings without a known identity are not listed as identified boats.</p></Info></div></div>
+      <div className="stat-notes">{result && <Info label="Activity dates and source"><p className="stat-note">{formatTime(result.start)} → {formatTime(result.end)} · {result.dataset}</p></Info>}
+      {result?.land_check && <Info label="Land estimate and coverage"><p className="stat-note">{result.land_check.land_fraction !== null ? `Conservative land estimate: ${(result.land_check.land_fraction * 100).toFixed(1)}%. ` : ""}{result.skipped ? "Skipped before GFW queries: over 75% land. Choose a water-focused area or override the estimate. " : ""}{result.land_check.note}</p></Info>}</div>
+      {!!result?.vessels.length && <div className="overview-investigation-link"><span>Screen all {result.vessels.length} boats for warning signs</span><button type="button" className="primary" onClick={onInvestigations}>Investigate selected boats</button></div>}
     </section>
 
-    <section className="panel list-panel" aria-live="polite" aria-busy={loading}><div className="panel-head"><h2>Boats in your selected area</h2>{loading && <span className="loading-spinner" aria-hidden="true" />}</div>
+    <section className="panel list-panel" aria-live="polite" aria-busy={loading}><div className="list-head"><h2>Boats in your selected area</h2>{loading && <span className="loading-spinner" aria-hidden="true" />}{!!result?.vessels.length && <div className="pager"><button disabled={page <= 0} onClick={() => setPage((previous) => previous - 1)}>Previous</button><span>{ordered.length} matching vessels · page {Math.min(page, pageCount - 1) + 1} / {pageCount}</span><button disabled={page >= pageCount - 1} onClick={() => setPage((previous) => previous + 1)}>Next</button></div>}</div>
       {loading && <Skeleton variant="table" label="Loading area-associated vessels" />}
       {error && <div className="notice error" role="alert">{error}</div>}
-      {!!result?.vessels.length && <div className="overview-investigation-link"><div><strong>Ready to review {result.vessels.length} boats</strong><p>Open Investigations to screen the whole area for warning signs and review full reports.</p></div><button type="button" className="primary" onClick={onInvestigations}>Investigate selected boats</button></div>}
       {!area && <p className="empty">Click Select area on the globe and draw a small rectangle. That selection now triggers a GFW query.</p>}
       {result && result.vessels.length === 0 && <p className="empty">{result.skipped ? "Area skipped because it exceeds the land threshold. No GFW reports were requested." : layer === "sar" ? "SAR cells are not assigned vessel IDs by this area view. Unmatched detections have no established identity." : "No vessel IDs returned for this area and window. This does not prove no boats were present."}</p>}
-      {!!result?.vessels.length && <><div className="table-scroll"><table className="case-table"><thead><tr><th>Vessel</th><th>MMSI</th><th>Type</th><th>Reported length</th><th>Time seen (hours)</th><th>Evidence</th></tr></thead><tbody>{visible.map((vessel) => <tr key={vessel.vessel_id} className={selected?.vessel_id === vessel.vessel_id ? "selected" : undefined}><td>{vessel.name}</td><td>{vessel.mmsi ?? "Unavailable"}</td><td><ShipSymbol type={vessel.vessel_type} /> {shipNames[shipKind(vessel.vessel_type)]}</td><td>{vessel.length_m ? `${vessel.length_m.toFixed(1)} m` : "Unknown"}</td><td>{vessel.hours.toFixed(2)}</td><td><button type="button" onClick={() => void inspect(vessel)}>Inspect vessel</button></td></tr>)}</tbody></table></div><div className="risk-toolbar"><button disabled={page <= 0} onClick={() => setPage((previous) => previous - 1)}>Previous</button><span>{ordered.length} matching vessels · page {Math.min(page, pageCount - 1) + 1} / {pageCount}</span><button disabled={page >= pageCount - 1} onClick={() => setPage((previous) => previous + 1)}>Next</button></div></>}
+      {!!result?.vessels.length && <div className="table-scroll"><table className="data-table"><thead><tr><th>Vessel</th><th>MMSI</th><th>Type</th><th className="num">Reported length</th><th className="num">Time seen (hours)</th><th className="action">Evidence</th></tr></thead><tbody>{visible.map((vessel) => <tr key={vessel.vessel_id} className={selected?.vessel_id === vessel.vessel_id ? "selected" : undefined}><td>{vessel.name}</td><td className="id">{vessel.mmsi ?? "Unavailable"}</td><td><span className="type-cell"><ShipSymbol type={vessel.vessel_type} /> {shipNames[shipKind(vessel.vessel_type)]}</span></td><td className="num">{vessel.length_m ? `${vessel.length_m.toFixed(1)} m` : "Unknown"}</td><td className="num">{vessel.hours.toFixed(2)}</td><td className="action"><button type="button" className="quiet" onClick={() => void inspect(vessel)}>Inspect vessel</button></td></tr>)}</tbody></table></div>}
     </section>
+    </div>
     {renderFilters(<details className="filters-menu" ref={filtersMenu} onKeyDown={event => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}>
     <summary aria-controls="area-controls">Filters</summary>
     <aside id="area-controls" className="panel area-controls"><div className="panel-head"><h2>Filters</h2><button type="button" aria-label="Close filters" onClick={() => { if (filtersMenu.current) { filtersMenu.current.open = false; filtersMenu.current.querySelector("summary")?.focus(); } }}>Close</button></div><div className="filter-body">

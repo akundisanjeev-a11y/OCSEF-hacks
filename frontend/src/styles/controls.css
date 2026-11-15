@@ -1,0 +1,633 @@
+/* Shared controls and content patterns. Screens compose these; they do not restyle them. */
+
+/* ---------- Buttons ---------- */
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--control-h);
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1);
+  background: transparent;
+  color: var(--text);
+  font: 500 var(--fs-sm) / 1 var(--font-ui);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms, border-color 120ms, color 120ms;
+}
+
+button:hover:not(:disabled) {
+  background: var(--ink-3);
+  border-color: #3a4a61;
+}
+
+button:disabled {
+  color: var(--text-3);
+  border-color: var(--line);
+  cursor: default;
+}
+
+/* The one filled button on a screen: the action that moves the workflow forward. */
+button.primary {
+  background: var(--accent-solid);
+  border-color: var(--accent-solid);
+  color: #fff;
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--accent-solid-hover);
+  border-color: var(--accent-solid-hover);
+}
+
+button.primary:disabled {
+  background: var(--ink-3);
+  border-color: var(--ink-3);
+  color: var(--text-3);
+}
+
+/* A pressed toggle (2D/3D, panel toggles, active selection mode). */
+button.is-on,
+button[aria-pressed="true"] {
+  background: var(--ink-4);
+  border-color: #3d5778;
+  color: #fff;
+}
+
+/* Low-emphasis action inside dense rows. */
+button.quiet {
+  border-color: transparent;
+  color: var(--accent);
+  padding: 0 6px;
+}
+
+button.quiet:hover:not(:disabled) {
+  background: var(--accent-wash);
+  border-color: transparent;
+}
+
+/* Two or more buttons joined into one control. */
+.segmented {
+  display: inline-flex;
+}
+
+.segmented button {
+  border-radius: 0;
+  margin-left: -1px;
+  min-width: 34px;
+}
+
+.segmented button:first-child {
+  margin-left: 0;
+  border-radius: var(--r-1) 0 0 var(--r-1);
+}
+
+.segmented button:last-child {
+  border-radius: 0 var(--r-1) var(--r-1) 0;
+}
+
+.segmented button.is-on {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Form fields ---------- */
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+select {
+  height: var(--control-h);
+  width: 100%;
+  min-width: 0;
+  padding: 0 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1);
+  background: var(--ink-0);
+  color: var(--text);
+  font: 400 var(--fs-md) / 1 var(--font-ui);
+  transition: border-color 120ms;
+}
+
+input[type="number"] {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+input::placeholder {
+  color: var(--text-3);
+}
+
+input:hover:not(:disabled),
+select:hover:not(:disabled) {
+  border-color: #3a4a61;
+}
+
+input:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+input:disabled,
+select:disabled {
+  color: var(--text-3);
+  border-color: var(--line);
+}
+
+select {
+  appearance: none;
+  padding-right: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a2aebf' stroke-width='1.3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--accent-solid);
+  margin: 0 6px 0 0;
+  vertical-align: -2px;
+}
+
+/* A labelled field: small caption above the control. */
+.filter,
+.field-label {
+  display: grid;
+  gap: var(--s-1);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.filter > span {
+  color: var(--text-2);
+}
+
+/* ---------- Panes ---------- */
+
+/* A docked region of the frame. Layout files add the dividing rules. */
+.panel {
+  min-width: 0;
+  background: var(--ink-1);
+}
+
+/* Title bar of a pane. */
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: var(--bar-h);
+  padding: 0 var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+
+/* A padded content group inside a pane. Groups are separated by a rule. */
+.block {
+  padding: var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.block > h3 {
+  margin-bottom: var(--s-2);
+}
+
+/* Small label above a title. */
+.eyebrow {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+/* Secondary line of metadata. */
+.stat-note {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+
+/* ---------- Disclosure ("more about this") ---------- */
+
+.info-disclosure {
+  font-size: var(--fs-sm);
+}
+
+.info-disclosure > summary,
+details.plain > summary,
+.row-risk-explanation > summary,
+.remaining-checks > summary,
+.raw > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.info-disclosure > summary::-webkit-details-marker,
+details.plain > summary::-webkit-details-marker,
+.row-risk-explanation > summary::-webkit-details-marker,
+.remaining-checks > summary::-webkit-details-marker,
+.raw > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Chevron that turns when the section opens. */
+.info-disclosure > summary::before,
+details.plain > summary::before,
+.row-risk-explanation > summary::before,
+.remaining-checks > summary::before,
+.raw > summary::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-right: 1.3px solid currentColor;
+  border-bottom: 1.3px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 120ms;
+  flex: none;
+}
+
+.info-disclosure[open] > summary::before,
+details.plain[open] > summary::before,
+.row-risk-explanation[open] > summary::before,
+.remaining-checks[open] > summary::before,
+.raw[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.info-disclosure > summary:hover,
+details.plain > summary:hover,
+.row-risk-explanation > summary:hover,
+.remaining-checks > summary:hover,
+.raw > summary:hover {
+  color: var(--text);
+}
+
+.info-content {
+  margin-top: var(--s-2);
+  padding-left: 11px;
+  border-left: 1px solid var(--line-strong);
+  color: var(--text-2);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.info-content ul,
+.info-content ol {
+  margin-bottom: var(--s-2);
+}
+
+/* A stack of disclosures reads as a list of notes. */
+.note-list {
+  display: grid;
+  gap: var(--s-2);
+}
+
+/* ---------- Messages ---------- */
+
+.notice {
+  margin: 0;
+  padding: var(--s-2) var(--s-3);
+  border-left: 2px solid var(--line-strong);
+  background: var(--ink-2);
+  font-size: var(--fs-sm);
+  color: var(--text);
+}
+
+.notice.error {
+  border-left-color: var(--error);
+  background: var(--error-wash);
+}
+
+.notice button {
+  margin-left: var(--s-2);
+}
+
+/* Empty state: says what belongs here and how to fill it. */
+.empty {
+  margin: 0;
+  padding: var(--s-6) var(--s-4);
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  max-width: 52ch;
+}
+
+.empty-state {
+  padding: var(--s-8) var(--s-6);
+  max-width: 46ch;
+}
+
+.empty-state h3 {
+  font-size: var(--fs-md);
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0;
+  margin-bottom: var(--s-2);
+}
+
+.empty-state p,
+.empty-state li {
+  color: var(--text-2);
+}
+
+.empty-state ol {
+  margin-top: var(--s-3);
+  display: grid;
+  gap: var(--s-1);
+}
+
+/* ---------- Loading ---------- */
+
+.loading-status {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  font-size: var(--fs-sm);
+}
+
+.loading-status strong {
+  display: block;
+  font-weight: 500;
+}
+
+.loading-detail {
+  display: block;
+  color: var(--text-3);
+}
+
+.loading-elapsed {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  color: var(--text-3);
+}
+
+.loading-spinner {
+  width: 12px;
+  height: 12px;
+  margin-top: 3px;
+  border: 1.5px solid var(--line-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Thin indeterminate bar under a toolbar while a query runs. */
+.loading-track {
+  position: relative;
+  height: 2px;
+  overflow: hidden;
+  background: var(--line);
+}
+
+.loading-track::after {
+  content: "";
+  position: absolute;
+  inset: 0 70% 0 0;
+  background: var(--accent);
+  animation: track 1.4s ease-in-out infinite;
+}
+
+@keyframes track {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(340%);
+  }
+}
+
+/* Placeholder rows shaped like the content that will replace them. */
+.skeleton-content {
+  padding: var(--s-3) var(--s-4);
+}
+
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.skeleton {
+  display: block;
+  height: 9px;
+  border-radius: 1px;
+  background: var(--ink-3);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.skeleton-primary {
+  width: 32%;
+}
+
+.skeleton-secondary {
+  width: 18%;
+}
+
+.skeleton-action {
+  width: 64px;
+  margin-left: auto;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ---------- Data table ---------- */
+
+.table-scroll {
+  overflow: auto;
+}
+
+.data-table,
+.case-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-md);
+}
+
+.data-table th,
+.case-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 30px;
+  padding: 0 var(--s-3);
+  background: var(--ink-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.data-table td,
+.case-table td {
+  height: 36px;
+  padding: 0 var(--s-3);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.data-table th:first-child,
+.data-table td:first-child,
+.case-table th:first-child,
+.case-table td:first-child {
+  padding-left: var(--s-4);
+}
+
+.data-table th:last-child,
+.data-table td:last-child,
+.case-table th:last-child,
+.case-table td:last-child {
+  padding-right: var(--s-4);
+}
+
+.data-table tbody tr:hover,
+.case-table tbody tr:hover {
+  background: var(--ink-2);
+}
+
+.data-table tbody tr.selected,
+.case-table tbody tr.selected {
+  background: var(--ink-4);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* Numeric cells: right-aligned figures; their headers align with them but keep the interface font. */
+td.num,
+th.num {
+  text-align: right;
+}
+
+td.num {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+td.id {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+td.action,
+th.action {
+  text-align: right;
+  width: 1%;
+}
+
+/* Vessel type: glyph plus name on one line. */
+.type-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--text-2);
+}
+
+/* Previous / page / next under a table. */
+.pager,
+.risk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-4);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+/* ---------- Key / value grid ---------- */
+
+.kv {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) minmax(0, 1fr);
+  gap: 5px var(--s-4);
+  font-size: var(--fs-md);
+}
+
+.kv dt {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  padding-top: 1px;
+}
+
+.kv dd {
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Underline tabs (switch what a pane shows) ---------- */
+
+.view-tabs,
+.evidence-view-tabs {
+  display: flex;
+  gap: var(--s-4);
+  padding: 0 var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.view-tabs button,
+.evidence-view-tabs button {
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.view-tabs button:hover:not(:disabled),
+.evidence-view-tabs button:hover:not(:disabled) {
+  background: none;
+  color: var(--text);
+}
+
+.view-tabs button[aria-pressed="true"],
+.evidence-view-tabs button[aria-pressed="true"] {
+  background: none;
+  border-bottom-color: var(--accent);
+  color: var(--text);
+}
+
+/* ---------- Vessel type glyph ---------- */
+
+.ship-type-symbol {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+
+/* ---------- State text ---------- */
+
+.state-review {
+  color: var(--review);
+}
+
+.state-clear {
+  color: var(--clear);
+}
+
+.state-missing {
+  color: var(--missing);
+}
+
+.state-error {
+  color: var(--error);
+}

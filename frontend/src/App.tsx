@@ -11,9 +11,13 @@ export function App() {
   const [tab, setTab] = useState<Tab>("overview");
   const [filtersTarget, setFiltersTarget] = useState<HTMLDivElement | null>(null);
   return <HistoricalWorkspace><div className="app">
-    <header className="topbar"><div className="brand">GHOSTFLEET</div><nav className="tabs" aria-label="Screens">
-      {(Object.keys(tabs) as Tab[]).map(key => <button type="button" key={key} className={tab === key ? "active" : undefined} aria-current={tab === key ? "page" : undefined} onClick={() => setTab(key)}>{tabs[key]}</button>)}
-    </nav><div className="header-filters" ref={setFiltersTarget} hidden={tab !== "overview"} /></header>
+    <header className="topbar">
+      <div className="brand">GhostFleet</div>
+      <nav className="tabs" aria-label="Screens">
+        {(Object.keys(tabs) as Tab[]).map(key => <button type="button" key={key} className={tab === key ? "active" : undefined} aria-current={tab === key ? "page" : undefined} onClick={() => setTab(key)}>{tabs[key]}</button>)}
+      </nav>
+      <div className="header-filters" ref={setFiltersTarget} hidden={tab !== "overview"} />
+    </header>
     <main className="content">
       <div hidden={tab !== "overview"}><GfwOverview filtersTarget={filtersTarget} onInvestigations={() => setTab("investigations")} /></div>
       {tab === "lookup" && <VesselCheck />}

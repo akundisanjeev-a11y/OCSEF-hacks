@@ -1,0 +1,305 @@
+/* Evidence reports: the vessel report, warning explanations and forecast reasoning.
+   Shared by Overview, Investigations and Check vessel ID. Reads like a document: sections divided by rules. */
+
+/* ---------- Report header ---------- */
+
+.report-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px var(--s-3);
+  align-items: center;
+  padding: var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.report-header .ship-type-symbol {
+  width: 34px;
+  height: 34px;
+  grid-row: span 2;
+}
+
+.report-heading h3 {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.report-heading span {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.report-dates {
+  grid-column: 2;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+/* ---------- Report sections ---------- */
+
+.report-section {
+  padding: var(--s-4);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-md);
+  line-height: 1.55;
+}
+
+.report-section > p {
+  color: var(--text-2);
+}
+
+.section-label {
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+
+.status-line {
+  margin-bottom: var(--s-1);
+  font-size: var(--fs-lg);
+}
+
+.status-line strong {
+  font-weight: 600;
+}
+
+/* Collapsible report section: a full-width row with a chevron. */
+.report-section.collapsible {
+  padding: 0;
+}
+
+.report-section.collapsible > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+}
+
+.report-section.collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+
+.report-section.collapsible > summary::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  margin-left: auto;
+  border-right: 1.3px solid var(--text-2);
+  border-bottom: 1.3px solid var(--text-2);
+  transform: rotate(45deg);
+  transition: transform 120ms;
+}
+
+.report-section.collapsible[open] > summary::after {
+  transform: rotate(225deg);
+}
+
+.report-section.collapsible > summary:hover {
+  background: var(--ink-2);
+}
+
+.report-section.collapsible > :not(summary) {
+  margin: 0 var(--s-4) var(--s-4);
+}
+
+.report-section.collapsible .raw {
+  margin-bottom: var(--s-2);
+}
+
+/* A statement of what the evidence cannot show. */
+.evidence-limit {
+  margin: var(--s-3) 0;
+  padding-left: var(--s-3);
+  border-left: 2px solid var(--line-strong);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+/* ---------- Checks table ---------- */
+
+.check-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-md);
+}
+
+.check-table td {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+}
+
+.check-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.check-table td.num strong {
+  font-weight: 500;
+}
+
+.report-section .check-table + .stat-note {
+  margin-top: var(--s-2);
+}
+
+/* ---------- Warning explanations ---------- */
+
+.finding {
+  margin: var(--s-3) 0;
+}
+
+.explanation-card {
+  padding: var(--s-3);
+  border-left: 2px solid var(--line-strong);
+  background: var(--ink-2);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+}
+
+.explanation-card.explanation-flagged {
+  border-left-color: var(--review);
+  background: var(--review-wash);
+}
+
+.explanation-card h4 {
+  margin-bottom: var(--s-1);
+  font-size: var(--fs-md);
+  color: var(--text);
+}
+
+.explanation-flagged h4 {
+  color: var(--review);
+}
+
+.explanation-card h5 {
+  margin-top: var(--s-2);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.03em;
+  color: var(--text-3);
+}
+
+.explanation-card p {
+  margin: 2px 0 0;
+  color: var(--text-2);
+}
+
+.explanation-card .evidence-observation {
+  color: var(--text);
+}
+
+.explanation-card small {
+  display: block;
+  margin-top: var(--s-2);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+.source-event-details {
+  margin-top: var(--s-2);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.source-event-details > button {
+  margin-top: var(--s-1);
+}
+
+.source-event {
+  margin-top: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--line);
+  font-size: var(--fs-sm);
+}
+
+.source-event p {
+  margin-bottom: 2px;
+}
+
+.source-event small {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+/* Raw source records. */
+.raw pre {
+  max-height: 260px;
+  margin-top: var(--s-2);
+  padding: var(--s-3);
+  overflow: auto;
+  background: var(--ink-0);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.report-sources .stat-note {
+  font-size: var(--fs-xs);
+}
+
+.identity-details {
+  margin-top: var(--s-1);
+}
+
+/* ---------- Forecast reasoning ---------- */
+
+.forecast-evidence .block > .eyebrow {
+  margin-bottom: 2px;
+}
+
+.evidence-title {
+  margin-bottom: var(--s-3);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0;
+}
+
+.forecast-evidence .block > h3:not(.evidence-title) {
+  margin-bottom: var(--s-2);
+}
+
+.forecast-evidence p {
+  color: var(--text-2);
+}
+
+.analysis-headline {
+  margin: var(--s-3) 0;
+  font-size: var(--fs-md);
+  color: var(--text) !important;
+  line-height: 1.55;
+}
+
+.forecast-evidence .explanation-card {
+  margin-bottom: var(--s-2);
+}
+
+.forecast-evidence .info-disclosure {
+  margin-top: var(--s-2);
+}
+
+.forecast-evidence .evidence-limit strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.arrow-explanation {
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--line);
+}
+
+.forecast-evidence > .info-disclosure {
+  padding: var(--s-3) var(--s-4);
+}

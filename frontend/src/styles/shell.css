@@ -1,0 +1,219 @@
+/* The application frame: navigation bar on top, the active screen in the middle, a status bar below.
+   The frame always fills the window; screens scroll inside their own panes. */
+
+.app {
+  display: grid;
+  grid-template-rows: var(--nav-h) minmax(0, 1fr) var(--status-h);
+  height: 100vh;
+  min-height: 480px;
+}
+
+/* ---------- Navigation bar ---------- */
+
+.topbar {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s-6);
+  padding: 0 var(--s-4);
+  background: var(--ink-1);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--s-1);
+}
+
+.tabs button {
+  height: 100%;
+  padding: 0 var(--s-3);
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  /* The underline sits on the bar's bottom edge. */
+  box-shadow: inset 0 -2px 0 transparent;
+}
+
+.tabs button:hover:not(:disabled) {
+  background: none;
+  color: var(--text);
+}
+
+.tabs button.active {
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* Right side of the bar: screen-level controls. */
+.header-filters {
+  position: relative;
+  align-self: center;
+  margin-left: auto;
+}
+
+/* ---------- Filters menu (opens from the navigation bar) ---------- */
+
+.filters-menu > summary {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h);
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.filters-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.filters-menu > summary:hover {
+  background: var(--ink-3);
+}
+
+.filters-menu[open] > summary {
+  background: var(--ink-4);
+  border-color: #3d5778;
+}
+
+.area-controls {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  width: 340px;
+  max-height: calc(100vh - var(--nav-h) - var(--status-h) - 16px);
+  overflow-y: auto;
+  background: var(--ink-1);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-2);
+  box-shadow: var(--shadow-pop);
+}
+
+.filter-body {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4);
+}
+
+.filter-body > details:not(.info-disclosure) > summary {
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.filter-body form,
+.filter-body > details:not(.info-disclosure)[open] {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.filter-body form {
+  margin-top: var(--s-3);
+}
+
+.filter-body form button {
+  justify-self: start;
+}
+
+.ship-symbol-key {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2);
+  margin-bottom: var(--s-2);
+}
+
+.ship-symbol-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* ---------- Screen area ---------- */
+
+.content {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.content > * {
+  height: 100%;
+}
+
+/* ---------- Status bar ---------- */
+
+.footnote {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--s-4);
+  background: var(--ink-1);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Two columns that share the screen: a working list on the left and its detail on the right. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
+  height: 100%;
+}
+
+.split > .panel {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.split > .panel + .panel {
+  border-left: 1px solid var(--line);
+}
+
+/* Pane title bars stay put while the pane scrolls. */
+.split > .panel > .panel-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--ink-1);
+}
+
+@media (max-width: 900px) {
+  .app {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .content {
+    overflow: visible;
+  }
+
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+
+  .split > .panel + .panel {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
