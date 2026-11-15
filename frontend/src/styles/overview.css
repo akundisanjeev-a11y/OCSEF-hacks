@@ -1,0 +1,679 @@
+/* Overview: the map is the centre of a three-column stage (forecast · map · evidence),
+   with a docked area summary and vessel table underneath. */
+
+.gfw-overview {
+  position: relative;
+  display: grid;
+  /* Map, resize handle, dock. Dragging the handle replaces this with a fixed dock height. */
+  grid-template-rows: minmax(360px, 1fr) auto minmax(220px, 36%);
+  height: 100%;
+}
+
+/* ---------- Stage ---------- */
+
+.globe-stage {
+  display: flex;
+  min-height: 0;
+}
+
+/* ---------- Map resize handle ---------- */
+
+/* A bar between the map and the dock; drag it up or down to resize the map. */
+.map-resizer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 9px;
+  background: var(--ink-1);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  cursor: row-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+/* The grip in the middle of the bar. */
+.map-resizer span {
+  width: 36px;
+  height: 3px;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.map-resizer:hover,
+.map-resizer:active {
+  background: var(--ink-3);
+}
+
+.map-resizer:hover span,
+.map-resizer:active span {
+  border-color: var(--accent);
+}
+
+.map-resizer:focus-visible {
+  outline: none;
+  background: var(--ink-3);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* The same kind of handle standing upright on the map's left edge, for resizing horizontally. */
+.side-resizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 9px;
+  flex: none;
+  background: var(--ink-1);
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.side-resizer span {
+  width: 3px;
+  height: 36px;
+  border-left: 1px solid var(--line-strong);
+  border-right: 1px solid var(--line-strong);
+}
+
+.side-resizer:hover,
+.side-resizer:active {
+  background: var(--ink-3);
+}
+
+.side-resizer:hover span,
+.side-resizer:active span {
+  border-color: var(--accent);
+}
+
+.side-resizer:focus-visible {
+  outline: none;
+  background: var(--ink-3);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* A docked side panel plus the narrow tab that opens and closes it. */
+.drawer-slot {
+  display: flex;
+  min-height: 0;
+  flex: none;
+}
+
+.left-slot {
+  flex-direction: row-reverse;
+}
+
+.side-drawer {
+  overflow-y: auto;
+  min-height: 0;
+}
+
+#forecast-drawer {
+  width: 300px;
+  border-right: 1px solid var(--line);
+}
+
+#evidence-drawer {
+  width: 420px;
+  border-left: 1px solid var(--line);
+}
+
+.left-closed #forecast-drawer,
+.right-closed #evidence-drawer {
+  display: none;
+}
+
+/* Collapse tab: a slim strip with a vertical label at the edge of the map. */
+.drawer-bookmark {
+  width: 24px;
+  height: 100%;
+  padding: var(--s-3) 0;
+  align-items: flex-start;
+  border: 0;
+  border-radius: 0;
+  background: var(--ink-1);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  writing-mode: vertical-rl;
+}
+
+.left-bookmark {
+  border-right: 1px solid var(--line);
+}
+
+.right-bookmark {
+  border-left: 1px solid var(--line);
+}
+
+.drawer-bookmark:hover:not(:disabled) {
+  background: var(--ink-2);
+  color: var(--text);
+}
+
+.drawer-bookmark[aria-expanded="true"] {
+  color: var(--text-2);
+}
+
+/* Panels inside the evidence drawer keep their title bar visible while scrolling. */
+.side-drawer > .panel-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--ink-1);
+}
+
+.side-drawer .evidence-view-tabs {
+  position: sticky;
+  top: var(--bar-h);
+  z-index: 2;
+  background: var(--ink-1);
+}
+
+/* ---------- Map pane ---------- */
+
+.map-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  background: var(--ink-0);
+}
+
+.map-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Query progress shown as a thin band above the map toolbar. */
+.area-query-loading {
+  border-bottom: 1px solid var(--line);
+  background: var(--ink-1);
+}
+
+.area-query-loading .loading-status {
+  padding: 6px var(--s-4);
+}
+
+/* Toolbar above the map. */
+.map-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  height: var(--bar-h);
+  padding: 0 var(--s-3);
+  background: var(--ink-1);
+  border-bottom: 1px solid var(--line);
+}
+
+.map-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.tool-icon {
+  width: 11px;
+  height: 11px;
+}
+
+.basemap-choice select {
+  width: 150px;
+}
+
+.selection-hint,
+.map-tile-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: var(--s-2);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.map-tile-loading .loading-spinner {
+  margin-top: 0;
+}
+
+.map-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.map {
+  position: absolute;
+  inset: 0;
+}
+
+.map-loading-shell {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--ink-0);
+}
+
+/* Rectangle drawn while selecting an area: a fine dashed GIS selection frame. */
+.drag-box {
+  position: absolute;
+  z-index: 5;
+  border: 1px dashed #9cc4ea;
+  background: rgba(90, 155, 216, 0.08);
+  pointer-events: none;
+}
+
+.drag-box.too-large {
+  border-color: var(--error);
+  background: var(--error-wash);
+}
+
+/* Map messages (selection errors, basemap fallback) float under the toolbar. */
+.workspace-notices {
+  position: absolute;
+  top: calc(var(--bar-h) + 10px);
+  left: 50%;
+  z-index: 30;
+  width: min(560px, 80%);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.workspace-notices .notice {
+  pointer-events: auto;
+  margin-bottom: var(--s-2);
+  background: var(--ink-1);
+  box-shadow: var(--shadow-pop);
+}
+
+/* ---------- Map legend ---------- */
+
+.activity-legend,
+.map-legend {
+  position: absolute;
+  left: var(--s-3);
+  bottom: var(--s-3);
+  z-index: 4;
+  width: 232px;
+  padding: 10px 12px;
+  background: rgba(11, 17, 27, 0.92);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-2);
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+
+/* The activity legend slides down to its 30px title strip after a few idle seconds. */
+.activity-legend {
+  padding-top: 0;
+  transition: transform 320ms ease;
+}
+
+/* Hidden: moved down so only the title strip stays above the map's bottom edge. */
+.activity-legend.is-hidden {
+  transform: translateY(calc(100% - 18px));
+}
+
+/* Title strip: the drag handle. A grip line on top signals it can be pulled. */
+.legend-handle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: calc(100% + 24px);
+  height: 30px;
+  margin: 0 -12px 4px;
+  padding: 4px 12px 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.legend-handle:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.legend-handle strong {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.legend-grip {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 28px;
+  height: 3px;
+  transform: translateX(-50%);
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.legend-handle:hover .legend-grip {
+  border-color: var(--accent);
+}
+
+/* The colour ramp matches the heatmap's own colours. */
+.heat-scale {
+  height: 6px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, #16475c, #176d79, #22a99a, #39d9ad, #92ffbf);
+}
+
+.heat-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
+  color: var(--text-3);
+}
+
+.activity-legend-hint {
+  display: block;
+  margin: 6px 0;
+  color: var(--text-2);
+}
+
+.forecast-map-key {
+  display: grid;
+  gap: 1px;
+  margin: 8px 0 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.forecast-map-key strong {
+  font-weight: 500;
+  color: var(--forecast);
+}
+
+.forecast-map-key span:first-of-type {
+  color: #e5484d;
+}
+
+.forecast-map-key small {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+.activity-legend .info-disclosure {
+  font-size: var(--fs-xs);
+}
+
+.activity-legend .info-content {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.map-legend {
+  display: grid;
+  gap: 4px;
+}
+
+.map-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-mark {
+  width: 8px;
+  height: 8px;
+  background: currentColor;
+}
+
+/* ---------- MapLibre's own controls, matched to the app ---------- */
+
+.maplibregl-ctrl-top-left .maplibregl-ctrl {
+  margin: var(--s-3) 0 0 var(--s-3);
+}
+
+.maplibregl-ctrl-group {
+  background: var(--ink-1) !important;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1) !important;
+  box-shadow: none !important;
+}
+
+.maplibregl-ctrl-group button {
+  width: 26px !important;
+  height: 26px !important;
+  border: 0;
+  border-radius: 0;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--line-strong) !important;
+}
+
+.maplibregl-ctrl-group button:hover:not(:disabled) {
+  background: var(--ink-3) !important;
+}
+
+.maplibregl-ctrl-group .maplibregl-ctrl-icon {
+  filter: invert(0.85);
+}
+
+.maplibregl-ctrl-scale {
+  background: rgba(11, 17, 27, 0.85) !important;
+  border-color: var(--text-3) !important;
+  color: var(--text-2) !important;
+  font: var(--fs-xs) var(--font-mono) !important;
+}
+
+.maplibregl-ctrl-attrib {
+  background: rgba(11, 17, 27, 0.85) !important;
+  color: var(--text-3) !important;
+  font-size: var(--fs-xs) !important;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: var(--text-2) !important;
+}
+
+.maplibregl-ctrl-attrib-button {
+  filter: invert(0.8);
+}
+
+/* ---------- Dock: area summary and vessel table ---------- */
+
+.dock {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 0;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+}
+
+.stats > h2 {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-4);
+}
+
+.stat > strong {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.stat .info-disclosure {
+  margin-top: 2px;
+}
+
+.stat-notes {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.overview-investigation-link {
+  display: grid;
+  gap: var(--s-2);
+  margin-top: auto;
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.overview-investigation-link button {
+  justify-self: start;
+}
+
+.list-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.list-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--bar-h);
+  padding: 0 var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.list-head .loading-spinner {
+  margin-top: 0;
+}
+
+.list-head .pager {
+  margin-left: auto;
+  padding: 0;
+}
+
+.list-panel .table-scroll {
+  flex: 1;
+  min-height: 0;
+}
+
+.list-panel .data-table th:first-child,
+.list-panel .data-table td:first-child {
+  min-width: 180px;
+}
+
+/* Activity square readout in the evidence drawer. */
+.readout {
+  margin-bottom: var(--s-3);
+  color: var(--text-2);
+}
+
+.readout strong {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text);
+  margin-right: 4px;
+}
+
+.case-panel .kv {
+  margin-bottom: var(--s-3);
+}
+
+@media (max-width: 1200px) {
+  #evidence-drawer {
+    width: 360px;
+  }
+
+  #forecast-drawer {
+    width: 270px;
+  }
+}
+
+@media (max-width: 900px) {
+  .gfw-overview {
+    display: block;
+    height: auto;
+  }
+
+  /* On small screens everything stacks and the page scrolls, so there is nothing to resize. */
+  .map-resizer,
+  .side-resizer {
+    display: none;
+  }
+
+  #forecast-drawer {
+    width: auto !important;
+  }
+
+  .globe-stage {
+    flex-direction: column;
+  }
+
+  .drawer-slot {
+    flex-direction: column !important;
+  }
+
+  .drawer-bookmark {
+    width: 100%;
+    height: 30px;
+    padding: 0 var(--s-4);
+    writing-mode: horizontal-tb;
+    align-items: center;
+    justify-content: flex-start;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  #forecast-drawer,
+  #evidence-drawer {
+    width: auto;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .map-panel {
+    height: 460px;
+    flex: none;
+  }
+
+  .dock {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stats {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .list-panel .table-scroll {
+    max-height: 520px;
+  }
+
+  .map-toolbar {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 6px var(--s-3);
+  }
+}

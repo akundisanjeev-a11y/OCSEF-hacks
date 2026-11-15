@@ -35,9 +35,12 @@ export function forecastFeatures(comparison: ForecastComparison | null) {
     const b = center(to.bounds), dx = b[0] - a[0], dy = b[1] - a[1];
     const tail: [number, number] = [a[0] + dx * .2, a[1] + dy * .2];
     const tip: [number, number] = [a[0] + dx * .8, a[1] + dy * .8];
+    // The line stops inside the arrowhead, so its thick end never shows past the point.
+    const lineEnd: [number, number] = [a[0] + dx * .75, a[1] + dy * .75];
     const properties: ActivityArrow = { from_id: from.cell_id, to_id: to.cell_id, from_hours: from.predicted_week_hours, to_hours: to.predicted_week_hours, difference: to.predicted_week_hours - from.predicted_week_hours };
-    arrows.features.push({ type: "Feature", properties, geometry: { type: "LineString", coordinates: [tail, tip] } });
-    heads.features.push({ type: "Feature", properties, geometry: { type: "Polygon", coordinates: [[tip, [tip[0] - dx * .15 - dy * .07, tip[1] - dy * .15 + dx * .07], [tip[0] - dx * .15 + dy * .07, tip[1] - dy * .15 - dx * .07], tip]] } });
+    arrows.features.push({ type: "Feature", properties, geometry: { type: "LineString", coordinates: [tail, lineEnd] } });
+    // A small head: 9% of the arrow's span long, 4.5% to each side.
+    heads.features.push({ type: "Feature", properties, geometry: { type: "Polygon", coordinates: [[tip, [tip[0] - dx * .09 - dy * .045, tip[1] - dy * .09 + dx * .045], [tip[0] - dx * .09 + dy * .045, tip[1] - dy * .09 - dx * .045], tip]] } });
   }
   return { cells, arrows, heads };
 }

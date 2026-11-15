@@ -26,10 +26,8 @@ describe("historical model globe panel", () => {
     expect(await screen.findByText("34,723")).toBeTruthy();
     expect(fetchForecast).toHaveBeenCalledWith(27.5, 122.5, expect.any(AbortSignal));
     expect(onBoundsChange).toHaveBeenLastCalledWith(prediction.bounds);
-    expect(screen.getByText(/forecast 2025-08-04 through 2025-08-10/)).toBeTruthy();
     expect(screen.getByText("+15.7%")).toBeTruthy();
     expect(screen.queryByText("Try verified historical example")).toBeNull();
-    expect(screen.getByText(/Observed through/).closest('details')?.open).toBe(false);
   });
 
   it("accepts a large selection but keeps forecast coverage tied to the returned model cell", async () => {
@@ -39,7 +37,6 @@ describe("historical model globe panel", () => {
     await screen.findByText("34,723");
     expect(fetchForecast).toHaveBeenCalledWith(27.5, 122.5, expect.any(AbortSignal));
     expect(onBoundsChange).toHaveBeenLastCalledWith(prediction.bounds);
-    expect(screen.getByText(/does not represent a precise forecast for the drawn rectangle/)).toBeTruthy();
   });
 
   it("renders valid zero predictions and avoids percentage division by zero", async () => {

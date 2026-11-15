@@ -1,0 +1,91 @@
+/* Forecast panel (left of the map): inputs, one action, a results readout, then reference notes. */
+
+.forecast-panel .tag {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.forecast-panel .panel-head h2 {
+  white-space: nowrap;
+}
+
+/* When the panel narrows, the tag gives way to the title. */
+@media (max-width: 1200px) and (min-width: 901px) {
+  .forecast-panel .tag {
+    display: none;
+  }
+}
+
+.forecast-intro {
+  margin-bottom: var(--s-3);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  line-height: 1.55;
+}
+
+/* Latitude and longitude side by side. */
+.forecast-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2);
+}
+
+.forecast-actions {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+}
+
+.forecast-actions .primary {
+  flex: 1;
+}
+
+/* Result readout: three figures as rows, number on the right. */
+.forecast-values {
+  display: grid;
+  margin-bottom: var(--s-3);
+}
+
+.forecast-values > div {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.forecast-values > div:first-child {
+  padding-top: 0;
+}
+
+.forecast-values strong {
+  font-family: var(--font-mono);
+  font-size: var(--fs-lg);
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.forecast-values > div:first-child strong {
+  font-size: var(--fs-xl);
+}
+
+.forecast-values span {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.forecast-result > button {
+  width: 100%;
+}
+
+.forecast-panel .loading-status {
+  border-bottom: 1px solid var(--line);
+}
+
+.forecast-panel .skeleton-content {
+  border-bottom: 1px solid var(--line);
+}

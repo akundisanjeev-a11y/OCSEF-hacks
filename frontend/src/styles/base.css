@@ -1,0 +1,145 @@
+/* Reset, document defaults and small utilities. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--ink-0);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* Page title. */
+h1 {
+  font-size: var(--fs-lg);
+}
+
+/* Panel title. */
+h2 {
+  font-size: var(--fs-md);
+}
+
+/* Section label inside a panel: small and quiet, so content carries the hierarchy. */
+h3 {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+h4 {
+  font-size: var(--fs-md);
+}
+
+h5 {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+p {
+  margin: 0 0 var(--s-2);
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+ul,
+ol {
+  margin: 0 0 var(--s-2);
+  padding-left: 18px;
+}
+
+dl,
+dd {
+  margin: 0;
+}
+
+small,
+.small {
+  font-size: var(--fs-sm);
+}
+
+pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Utilities. */
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+.muted {
+  color: var(--text-2);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Thin scrollbars that match the frame. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
