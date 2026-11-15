@@ -1,9 +1,13 @@
 """Run with: python -m uvicorn backend.main:app --reload."""
 
 import json
+import logging
+import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
 from backend.schemas import Case, CaseListResponse, DataMode
@@ -13,6 +17,8 @@ from backend.services.permit_evidence import load_investigation_inputs, load_per
 from backend.services.vessel_lookup import VesselCheckRequest, VesselCheckResponse, check_vessel, load_lookup_registry
 from backend.services.historical import AreaQuery, VesselEnrichment, query_area, enrich_vessel
 from backend.services.risk_screening import RiskScreenRequest, screen_risks
+from backend.forecast_api import router as forecast_router
+from backend.services.activity_forecast import ActivityForecaster
 
 FIXTURE_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic" / "static_cases.json"
 
@@ -31,8 +37,29 @@ def load_demo_cases(store: CaseService) -> list[str]:
     return sorted(case.observation.observation_id for case in cases)
 
 
-def create_app(*, seed_fixtures: bool = True) -> FastAPI:
-    app = FastAPI(title="GhostFleet")
+def create_app(*, seed_fixtures: bool = True, load_forecast: bool = True) -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(app):
+        app.state.forecaster = None
+        app.state.forecast_error = None
+        if load_forecast:
+            root = Path(__file__).resolve().parents[1]
+            try:
+                app.state.forecaster = await run_in_threadpool(
+                    ActivityForecaster,
+                    Path(os.getenv('ACTIVITY_FORECAST_MODEL_PATH', root/'weights/activity_forecast/best_model.joblib')),
+                    Path(os.getenv('ACTIVITY_FORECAST_DATA_DIR', root/'datasets/activity_forecast/processed')),
+                )
+            except Exception:
+                logging.getLogger(__name__).exception('Activity forecast unavailable')
+                app.state.forecast_error = 'Run python -m training.activity_forecast.setup_inference and check the saved model, then restart.'
+        yield
+        app.state.forecaster = None
+
+    app = FastAPI(title="GhostFleet", lifespan=lifespan)
+    app.include_router(forecast_router)
+    # Compatibility for callers using the earlier direct-backend URL.
+    app.include_router(forecast_router, prefix='/api', include_in_schema=False)
     store = CaseService()
     if seed_fixtures:
         load_demo_cases(store)
@@ -42,6 +69,11 @@ def create_app(*, seed_fixtures: bool = True) -> FastAPI:
     def health():
         # Process readiness only; this does not assert upstream GFW access.
         return {"status": "ok"}
+
+    @app.get('/forecast/health')
+    def forecast_health():
+        return {'forecast_ready': getattr(app.state, 'forecaster', None) is not None,
+                'forecast_message': getattr(app.state, 'forecast_error', None)}
 
     @app.post("/historical/area")
     async def historical_area(query: AreaQuery):

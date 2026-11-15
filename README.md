@@ -9,14 +9,40 @@ Its data selector keeps fictional cases as a separate option. The **GFW historic
 tab remains an advanced explorer. **Check vessel ID** retains manual lookup.
 Investigations/Coastal Impact still use the demo-seeded case API.
 No image detector is required.
-The floating-litter experiment is archived outside this repository; it is not
-part of the ship-monitoring workflow. Local datasets, training runs and model
-weights are excluded from Git. Existing fishing data and model files remain local.
-The default window ends 100 hours ago; SAR uses at least 124 hours.
+The default GFW window ends 100 hours ago; SAR uses at least 124 hours.
 Choose fictional mode for a walkthrough or configure `GFW_API_TOKEN` privately
 on FastAPI to use GFW. See [historical globe setup and data limits](backend/HISTORICAL_GLOBE.md).
 Dots represent activity cells, not exact boat positions. National authorization
 still requires applicable permit/rule evidence.
+
+## Your trained ML forecast
+
+The forecast source, saved best model, evaluation metadata and a compact
+historical inference-data bundle are included on `main`. After installing
+`backend/requirements.txt`, run:
+
+```powershell
+python -m training.activity_forecast.setup_inference
+python -m uvicorn backend.main:app --reload
+```
+
+Backend routes: `POST /activity-forecast`, `GET /activity-forecast/info`, and
+`GET /forecast/health`. The frontend's existing Vite `/api` proxy maps browser
+requests such as `/api/activity-forecast` onto those routes. The earlier direct
+backend `/api/activity-forecast` URL remains an alias.
+
+This ML component predicts **apparent fishing hours**, even though the website
+monitors many vessel types. Its bundled historical observations end July 31,
+2025; it is not a live forecast or an authorization classifier.
+See the [frontend handoff](docs/frontend-activity-forecast-guide.md) and
+[ML guide](training/activity_forecast/README.md).
+
+## Local experiment files
+
+The floating-litter experiment is archived outside this repository; it is not
+part of the ship-monitoring workflow. Raw datasets, training runs and other model
+artifacts stay local. Only the saved best forecast, its metadata/rules and the
+compact historical inference bundle described above are included in Git.
 
 ## Vessel ID lookup
 
