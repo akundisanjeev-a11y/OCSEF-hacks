@@ -303,3 +303,9 @@
 .forecast-evidence > .info-disclosure {
   padding: var(--s-3) var(--s-4);
 }
+
+/* Secondary text after a status line, e.g. how many checks were incomplete. */
+.status-note {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}

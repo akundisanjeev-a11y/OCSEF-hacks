@@ -36,6 +36,8 @@ export function VesselEvidence({ report }: { report: HistoricalEvidence }) {
     {/* Warning signs that were reported, each with what it does and does not establish. */}
     <section className="report-section">
       <h4 className="section-label">Findings · what needs a closer look</h4>
+      {report.risk && <p className="status-line"><strong className={report.risk.state === "flagged" ? "state-review" : report.risk.state === "unknown" ? "state-missing" : "state-clear"}>Risk screening: {report.risk.state === "flagged" ? `${report.risk.flag_count} warning types for review` : report.risk.state === "unknown" ? "Incomplete information" : "No reported flags"}</strong>{report.risk.missing_count > 0 && <span className="status-note"> · {report.risk.missing_count} checks have incomplete information.</span>}</p>}
+      {report.risk?.source_period_precision === "calendar_day" && <Info label="Source date precision"><p>The request uses the UTC times above. GFW labels its returned summary period by calendar day; those labels do not independently verify the exact hour of each source event. Inspect source event times before making a claim about a shorter interval.</p></Info>}
       <p>{flagged.length ? `${flagged.length} ${flagged.length === 1 ? "type of warning was" : "types of warning were"} reported. Each explanation below separates the source finding from what still needs verification.` : "No positive warning count was returned. Check missing information below before drawing conclusions."}</p>
       <p className="evidence-limit">These checks cover this boat's activity during the report dates, wherever it occurred. A flag is not automatically an incident inside your selected area.</p>
       {flagged.map(row => <div className="finding" key={row.code}><IndicatorExplanation indicator={row} />{row.code === "iuu_listing" ? <ListingEvidence report={report} /> : <SourceEventDetails report={report} indicator={row} area={area} />}</div>)}
@@ -48,7 +50,7 @@ export function VesselEvidence({ report }: { report: HistoricalEvidence }) {
       <h4 className="section-label">All check counts and missing information</h4>
       <table className="check-table"><tbody>{report.indicators.map(row => {
         const status = indicatorNarrative(row).status;
-        return <tr key={row.code}><td>{warningNames[row.code] ?? row.label}</td><td className={`num ${status === "flagged" ? "state-review" : status === "unavailable" ? "state-missing" : "state-clear"}`}><strong>{row.count === null ? "Unavailable" : row.count}</strong></td></tr>;
+        return <tr key={row.code}><td>{warningNames[row.code] ?? row.label}</td><td className={`num ${status === "flagged" ? "state-review" : status === "unavailable" ? "state-missing" : "state-clear"}`}><strong>{row.count_is_lower_bound ? "at least " : ""}{row.count === null ? "Unavailable" : row.count}</strong></td></tr>;
       })}</tbody></table>
       {anyUnavailable && <p className="stat-note">Unavailable means no usable result was returned. It was not counted as a clean check.</p>}
     </section>

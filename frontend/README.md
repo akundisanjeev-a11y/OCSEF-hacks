@@ -1,33 +1,42 @@
 # GhostFleet frontend
 
-React + TypeScript (Vite). Two screens:
+React, TypeScript and Vite. The current screens are Overview, Investigations,
+and Check vessel ID. They use GFW historical area queries, vessel identity
+records and risk insights. There is no sample-data switch in the main website.
 
-- **Investigation**: case list and case detail, backed by `GET /cases`, `GET /cases/{observation_id}` and `POST /demo/run`.
-- **Detection lab** displays the bundled example boxes in **Sample data** mode. Live image uploads require a detector serving `POST /detections`. The included case service provides investigation routes.
+Follow the [root setup instructions](../README.md#run-ghostfleet) to install the
+backend requirements, restore the bundled forecast history, and configure the
+private backend GFW token before starting FastAPI.
 
-## Run it
+In a second terminal, from the repository root:
 
-Start the FastAPI backend from the repository root:
-
-```
-python -m pip install -r backend/requirements.txt
-python -m uvicorn backend.main:app --reload
-```
-
-Then, in a second terminal:
-
-```
+```powershell
 cd frontend
 npm ci
 npm run dev
 ```
 
-Open http://localhost:5173.
+Open the URL Vite prints, usually http://localhost:5173. Its /api proxy forwards
+requests to FastAPI on port 8000. For another backend address, set BACKEND_URL
+in the frontend terminal or ignored frontend/.env.local and restart Vite.
+This address is not an API token. Keep GFW credentials on the backend.
 
-The dev server forwards every `/api/...` request to FastAPI at `http://localhost:8000`, so the backend needs no CORS setup. To use a different backend URL, copy `.env.example` to `.env.local` and change `BACKEND_URL`.
+Select a rectangle in Overview to load activity and vessel IDs. The top-right
+Filters button controls activity type, dates and provider filters. Open
+Investigations to screen the selection or Check vessel ID to search an identifier.
+Reports and screening use the area response's exact dates. Changing selection
+invalidates old requests and screening; opened reports stay in session history
+with their own dates. Reloading clears session data.
 
-Use the **Backend** menu in the top right to switch to **Sample data**. The app then reads `fixtures/samples/*.json` and needs no backend.
+The left forecast drawer uses saved observations through July 31, 2025 to
+estimate August 4-10, 2025 activity. It covers the center model square and nearby
+squares, not the entire selected rectangle. Its dates are separate from GFW's
+activity dates. Gold arrows compare estimates, not boat travel.
 
-## Keeping in sync with the backend
+```powershell
+npm test
+npm run build
+```
 
-`src/api/types.ts` mirrors `backend/schemas.py`. When a Pydantic model changes, update the matching TypeScript type. `fixtures/samples/cases.synthetic.json` is a saved copy of `GET /cases?data_mode=synthetic`; refresh it the same way when the schema changes.
+Legacy case and Detection Lab components remain in source for compatibility;
+they are not the current navigation or a prerequisite for GFW queries.

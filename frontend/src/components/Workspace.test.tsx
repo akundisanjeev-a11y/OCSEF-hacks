@@ -124,6 +124,30 @@ test("screening survives navigation, Stop preserves results, and resume skips co
   expect(vi.mocked(streamHistoricalRisks).mock.calls[1][0]).toEqual(["second-boat"]);
 });
 
+test("flagged boats with missing checks can be retried instead of being called complete", async () => {
+  const partial: VesselRisk = { vessel_id: "real-id", state: "flagged", flag_count: 1, missing_count: 1, indicators: [{ code: "ais_gap", label: "Radio gaps", count: null, event_ids: [], reported_positive: true, status: "conflicting", quality_notes: ["The source fields disagree."] }], cached: false };
+  vi.mocked(streamHistoricalRisks).mockImplementation(async (_ids, _start, _end, callback) => {
+    callback(partial);
+    return { checked: 1, remaining: 0, paused: false, elapsed_ms: 1 };
+  });
+  render(<App />);
+  fireEvent.click(screen.getByText("Draw area"));
+  fireEvent.click(await screen.findByText("Investigate selected boats"));
+  fireEvent.click(screen.getByText("Screen vessel risks"));
+  await screen.findByText("Resume / retry remaining checks");
+  expect(screen.queryByText("All boats checked")).toBeNull();
+  expect(screen.getByText(/exact count unavailable/)).toBeTruthy();
+  fireEvent.click(screen.getByText("Why does this need review?"));
+  expect(screen.getByText(/no exact count is asserted/)).toBeTruthy();
+  vi.mocked(streamHistoricalRisks).mockImplementation(async (_ids, _start, _end, callback) => {
+    callback({ ...partial, missing_count: 0, indicators: [{ code: "ais_gap", label: "Radio gaps", count: 1, event_ids: [] }] });
+    return { checked: 1, remaining: 0, paused: false, elapsed_ms: 1 };
+  });
+  fireEvent.click(screen.getByText("Resume / retry remaining checks"));
+  await screen.findByText("All boats checked");
+  expect(vi.mocked(streamHistoricalRisks).mock.calls[1][0]).toEqual(["real-id"]);
+});
+
 test("clearing the selected area aborts screening and rejects stale results", async () => {
   let onResult!: (risk: VesselRisk) => void;
   let resolve!: (completion: RiskScreenCompletion) => void;

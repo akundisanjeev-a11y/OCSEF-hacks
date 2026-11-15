@@ -1,14 +1,14 @@
 """Insights-only screening: no full identity report requests."""
 import asyncio
 from collections import deque
-import math
 import time
 from datetime import timezone
 
 from fastapi import HTTPException
 from pydantic import AwareDatetime, BaseModel, Field, model_validator
 
-from backend.services.historical import IDENTITY, gfw_request, summarize_evidence
+from backend.services.historical import IDENTITY, gfw_request
+from backend.services.risk_evidence import assess_risk
 
 _semaphore = asyncio.Semaphore(4)
 _cache = {}
@@ -36,20 +36,8 @@ class RiskStreamRequest(RiskScreenRequest):
     vessel_ids: list[str] = Field(min_length=1, max_length=5000)
 
 
-def classify(insights):
-    _, indicators = summarize_evidence({}, insights)
-    for indicator in indicators:
-        value = indicator["count"]
-        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
-            indicator["count"] = None
-    known = [i for i in indicators if isinstance(i["count"], (int, float)) and i["count"] >= 0]
-    flags = [i for i in known if i["count"] > 0]
-    state = "flagged" if flags else "no_flags" if len(known) == len(indicators) else "unknown"
-    if insights.get("vesselIdsWithoutIdentity"):
-        state = "unknown"
-    return {"state": state, "indicators": indicators, "flag_count": len(flags),
-            "missing_count": len(indicators) - len(known),
-            "note": "Risk indicators are leads for review, not findings of illegality or proof of authorization."}
+def classify(insights, *, vessel_id=None, start=None, end=None):
+    return assess_risk(insights, vessel_id=vessel_id, start=start, end=end)
 
 
 def risk_period(query):
@@ -60,7 +48,7 @@ def risk_period(query):
 
 def cached_risk(key):
     cached = _cache.get(key)
-    if cached and time.monotonic() - cached[0] < (60 if cached[1]["state"] == "unknown" else 900):
+    if cached and time.monotonic() - cached[0] < (60 if cached[1]["state"] == "unknown" or cached[1]["missing_count"] > 0 else 900):
         return {**cached[1], "cached": True}
     return None
 
@@ -77,7 +65,7 @@ async def fetch_one(vessel_id, start, end, client):
                 "vessels": [{"datasetId": IDENTITY, "vesselId": vessel_id}], "startDate": start, "endDate": end,
                 "includes": INCLUDES,
             }, **({"client": client} if client is not None else {}))
-            result = {"vessel_id": vessel_id, **classify(insights), "cached": False}
+            result = {"vessel_id": vessel_id, **classify(insights, vessel_id=vessel_id, start=start, end=end), "cached": False}
             # Screening needs counts, not potentially huge event-ID arrays.
             # The on-demand full report still retrieves the original evidence.
             result["indicators"] = [{**row, "event_ids": []} for row in result["indicators"]]
@@ -144,5 +132,5 @@ async def screen_risks(query: RiskScreenRequest, client=None):
             result = event["result"]
             results[result["vessel_id"]] = result
     start, end = risk_period(query)
-    return {"results": [results.get(vessel_id) or failed_risk(vessel_id, "Screening paused after an upstream error", 429)
+    return {"results": [results.get(vessel_id) or {**failed_risk(vessel_id, "Screening paused before this vessel was checked", None), "not_checked": True}
                         for vessel_id in query.vessel_ids], "start": start, "end": end}

@@ -1,10 +1,10 @@
 # Frontend handoff: trained fishing-activity forecast
 
 Frontend integration is now implemented in Overview. The **ML fishing-activity
-forecast** occupies the left sliding drawer. Filters and **Area controls** are
-below the map and boat list, in the forecast panel's former location. Forecast the selected
-area's center or enter a point. **Try verified historical example** runs the
-documented example without needing a GFW token. A scored result draws its model
+forecast** occupies the left sliding drawer. Filters and area controls open from
+the collapsible **Filters** button in the top-right header. Forecast the selected
+area's center or enter a point. No historical-example button is shown. The saved
+forecast needs no GFW token. A scored result draws its model
 cell in purple, separately from the GFW area selection, and shows the model's
 own historical dates. Insufficient data, failed requests and changed selections
 clear the old result. GFW area requests also perform a short backend readiness

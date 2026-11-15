@@ -3,8 +3,8 @@
 ## Historical globe
 
 Overview now includes an **ML fishing-activity forecast** in the left sliding
-drawer. Filters and area controls are below the map and boat list. Select an area
-or try the forecast's verified historical example.
+drawer. Filters and area controls open from the collapsible **Filters** button
+at the top right. Select an area or enter forecast coordinates manually.
 The purple model-cell overlay and its displayed historical dates are separate
 from the GFW observation window. This predicts apparent fishing vessel-hours,
 not ship counts or illegality. See [forecast usage](docs/frontend-activity-forecast-guide.md).
@@ -13,17 +13,16 @@ activity; they do not predict boat movement. Selecting an arrow opens its values
 and model explanation in the right Evidence drawer.
 
 Overview queries GFW when an area is selected, displays activity cells and
-area-associated vessels, and retrieves vessel identity/risk evidence. Filters and
-vessel evidence live in sliding drawers with bookmark toggles. Opening a vessel
-report expands evidence and hides the filters. Selecting an area hides empty
-evidence. Selection stripes turn red above the backend's 40° by 30° limit;
-releasing an invalid selection shows an alert above the globe without a query.
+area-associated vessels, and retrieves vessel identity/risk evidence. The
+forecast and vessel evidence live in sliding drawers with bookmark toggles. Opening a vessel
+report expands evidence and hides the forecast drawer. Selecting an area closes
+Filters and hides empty evidence. There is no application area-size cap;
+coordinates must remain valid and date-line crossings need separate rectangles.
 Information labels explain activity cells, area-associated vessels and symbols.
 
 **Investigations** uses Overview's selected boats and is the only screen for bulk risk screening. Choose **Investigate selected boats** in Overview, then **Screen vessel risks** in Investigations. Results arrive individually through a rolling four-worker stream and remain available when switching tabs. See [screening checks, performance and limits](docs/risk-screening.md).
-**Coastal impact** summarizes the same real area results and screening coverage,
-without illustrative zones or claims of measured ecological damage. The duplicate
-historical tab and fictional-data selectors are removed. Reports are retained
+The navigation is **Overview**, **Investigations**, then **Check vessel ID**.
+The Coastal impact tab, duplicate historical tab and fictional-data selectors are removed. Reports are retained
 in browser memory for this session; reloading clears them.
 No image detector is required.
 The default GFW window ends 100 hours ago; SAR uses at least 124 hours.
@@ -100,17 +99,49 @@ Search follows the [GFW Vessels API example](https://globalfishingwatch.org/our-
 
 ## Run GhostFleet
 
-From the repository root, install the backend dependencies and start the API.
+Prerequisites: Python and Node.js with npm. A clean Windows installation was
+verified with Python 3.15, Node 24.22.1 and npm 11.19.1. Run backend commands
+from the repository root, using the same virtual environment:
 
-```sh
-python -m pip install -r backend/requirements.txt
-python -m uvicorn backend.main:app --reload
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
+.\.venv\Scripts\python.exe -m training.activity_forecast.setup_inference
+.\.venv\Scripts\python.exe -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-In a second terminal, run `cd frontend`, `npm ci`, then `npm run dev`. Open the
+Before starting FastAPI, configure `GFW_API_TOKEN` privately in your terminal
+environment or an ignored root/backend `.env` file (`GFW_API_TOKEN=your_token`).
+Do not put the token in the frontend. The saved forecast needs no API token;
+real activity queries and vessel lookups require suitable GFW access.
+
+In a second terminal, from the repository root:
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
+
+Open the
 URL printed by Vite (usually `http://localhost:5173`). Select an area on Overview,
 choose **Investigate selected boats**, then screen risks and open reports in
-Investigations. Coastal impact summarizes the same selection and screening results. The main website uses GFW APIs and does not require image inference.
+Investigations. The main website uses GFW APIs and does not require image inference.
+
+Check `http://127.0.0.1:8000/health` for process readiness and
+`http://127.0.0.1:8000/forecast/health` for model readiness. Neither verifies
+GFW credentials. Check `http://localhost:5173/api/health` to verify the frontend
+proxy. Restart each server from its own terminal after changing its environment.
+
+For the complete automated checks:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements-dev.txt
+.\.venv\Scripts\python.exe -m pytest -q
+cd frontend
+npm test
+npm run build
+```
 
 ## GhostFleet — Backend 2
 
@@ -143,7 +174,7 @@ lacks identity, position and time. These are fictional examples, not real vessel
 Run checks with:
 
 ```powershell
-.venv\Scripts\python -m unittest discover -s tests -v
+.venv\Scripts\python -m pytest -q
 ```
 
 Backend 2 step 2 is available in `backend/services/permit_evidence.py`, with

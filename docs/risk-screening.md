@@ -13,19 +13,34 @@ It does not download a full identity report or separately fetch each event.
 
 | Check | GFW field used | Interpretation |
 | --- | --- | --- |
-| Possible fishing in no-take protected areas | `apparentFishing.periodSelectedCounters.eventsInNoTakeMPAs`, falling back to `eventsInNoTakeMpas` length | Any positive count is a warning sign. |
-| Possible fishing without a known regional permit | `apparentFishing.periodSelectedCounters.eventsInRFMOWithoutKnownAuthorization`, falling back to `eventsInRfmoWithoutKnownAuthorization` length | Missing public permits are not proof that permission does not exist. |
-| Radio-signal gaps | `gap.aisOff` or `gaps.aisOff` length | A gap is not, by itself, evidence of wrongdoing. |
+| Possible fishing in no-take protected areas | `apparentFishing.periodSelectedCounters.eventsInNoTakeMPAs`; distinct valid `eventsInNoTakeMpas` IDs if that counter is absent | Positive evidence is a review lead, not a violation finding. |
+| Possible fishing without a known regional permit | `apparentFishing.periodSelectedCounters.eventsInRFMOWithoutKnownAuthorization`; distinct valid `eventsInRfmoWithoutKnownAuthorization` IDs if that counter is absent | Missing public permits are not proof that permission does not exist. |
+| Radio-signal gaps | Distinct valid IDs in `gap.aisOff` or `gaps.aisOff` | Qualifying offshore gaps, not all missing signals or proof of intentional disabling. |
 | Illegal-fishing list records | `vesselIdentity.iuuVesselList.totalTimesListedInThePeriod` | Counts records relevant to the selected period, not a finding made by GhostFleet. |
 
-A positive known count produces **flagged**. **No reported flags** requires all
-four counts to be known and zero. Missing/invalid counts remain unknown. A GFW
-`vesselIdsWithoutIdentity` response makes the status unknown. Failed requests are
+A positive known count or attributable positive source record produces **flagged**.
+Contradictory records stay reviewable with an unavailable exact count; they do
+not become invented totals. **No reported flags** requires all four counts to be
+known and zero. Missing, invalid, conflicting and unverified counts remain
+unavailable. A nonempty GFW `vesselIdsWithoutIdentity` response makes the status
+unknown and prevents attribution; its observed optional `null` value does not
+invalidate otherwise valid evidence. Failed requests are
 shown separately, and boats not started after a provider pause remain unchecked.
 These rules do not determine legal authorization or measure ecological damage.
 There is no labeled evaluation dataset establishing a detection accuracy or
 false-negative rate; transport tests establish equivalent outputs, not real-world
-truth. Boolean, negative and non-finite counts are treated as unavailable.
+truth. Boolean, negative, fractional, numeric-string, unsafe-size and non-finite
+counts are treated as unavailable. Both full reports and screening use
+`backend/services/risk_evidence.py`. See the [extensive classifier audit](risk-classification-audit.md).
+
+Event-ID arrays are de-duplicated and validated. A count derived from supplied
+positive event IDs is shown as **at least** that number, not an asserted complete
+total. Explicit invalid/null counters do not turn into zero because an event
+array is empty. Counters smaller than their distinct event lists, conflicting
+gap aliases, and zero counters with malformed supporting records cannot be clean.
+Supplied owner IDs and period labels are checked against the request. GFW's live
+period labels have calendar-day precision, which cannot independently verify
+hour-level cutoffs; source event timestamps are needed for finer claims.
 
 ## Options considered and changes implemented
 
@@ -34,7 +49,7 @@ truth. Boolean, negative and non-finite counts are treated as unavailable.
 | Reuse upstream HTTP connections | Implemented with one app-lifetime HTTP client, persistent connections and a four-request global semaphore. Avoids creating a new TLS connection/client for every boat. |
 | Fill the next worker slot immediately | Implemented with a rolling four-worker queue. A slow boat no longer blocks the next sixteen-boat batch. |
 | Display results as they finish | Implemented through `POST /historical/risks/stream` using newline-delimited JSON. One browser request handles up to 5,000 boats, with heartbeats while waiting. Larger selections continue in bounded chunks. |
-| Reuse exact boat/date results | Implemented: known results live for 15 minutes, incomplete results for one minute, with a 5,000-entry bound. Failed calls are not cached. Simultaneous identical calls share one in-flight request. |
+| Reuse exact boat/date results | Implemented: complete known results live for 15 minutes; unknown and partially complete flagged results live for one minute, with a 5,000-entry bound. Failed calls are not cached. Simultaneous identical calls share one in-flight request. |
 | Send only screening data to the browser | Implemented. Counts are kept; event-ID arrays are omitted from screening responses. Full reports still retrieve the original evidence on demand. |
 | Avoid reloading an opened full report | Implemented for the same boat and exact dates within the browser session. |
 | Increase concurrency aggressively | Not implemented. Keeping four upstream checks avoids increasing provider pressure. A future increase should be measured against provider latency and rate-limit errors. |

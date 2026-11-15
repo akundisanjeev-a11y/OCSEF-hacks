@@ -8,7 +8,7 @@ import { ShipSymbol } from "./ShipSymbol";
 import { shipKind, shipNames } from "../vesselSymbols";
 import { warningNames } from "../vesselLanguage";
 import { IndicatorExplanation } from "./RiskExplanation";
-import { indicatorNarrative } from "../evidenceNarrative";
+import { hasRiskEvidence, indicatorNarrative } from "../evidenceNarrative";
 
 export function Investigations({ onOverview }: { onOverview: () => void }) {
   const workspace = useHistoricalWorkspace()!;
@@ -37,7 +37,7 @@ export function Investigations({ onOverview }: { onOverview: () => void }) {
   const checked = checks.length;
   const flagged = checks.filter(row => row.state === "flagged").length;
   const incomplete = checks.filter(row => row.state === "unknown" || row.error || row.missing_count > 0).length;
-  const pending = (result?.vessels ?? []).filter(vessel => !risks[vessel.vessel_id] || risks[vessel.vessel_id].state === "unknown" || risks[vessel.vessel_id].error).length;
+  const pending = (result?.vessels ?? []).filter(vessel => !risks[vessel.vessel_id] || risks[vessel.vessel_id].state === "unknown" || risks[vessel.vessel_id].missing_count > 0 || risks[vessel.vessel_id].error).length;
   const lastPage = Math.max(0, Math.ceil(vessels.length / 50) - 1);
   const currentPage = Math.min(page, lastPage);
   const percent = result?.vessels.length ? Math.round((100 * checked) / result.vessels.length) : 0;
@@ -92,8 +92,9 @@ export function Investigations({ onOverview }: { onOverview: () => void }) {
             </div>
             {/* Which warning signs were counted, and what information was missing. */}
             <div className="investigation-signs">
-              {risk?.indicators.filter(indicator => (indicator.count ?? 0) > 0).map(indicator => <small className="risk-reason" key={indicator.code}>{warningNames[indicator.code] ?? indicator.label}: {indicator.count}</small>)}
+              {risk?.indicators.filter(hasRiskEvidence).map(indicator => <small className="risk-reason" key={indicator.code}>{warningNames[indicator.code] ?? indicator.label}: {indicator.count_is_lower_bound ? "at least " : ""}{indicator.count ?? "exact count unavailable"}</small>)}
               {!!risk?.missing_count && !risk.error && <small className="risk-reason missing">{risk.missing_count} checks have missing information</small>}
+              {!!risk?.quality_notes?.length && <details className="row-risk-explanation"><summary>Source data issues</summary>{risk.quality_notes.map(note => <p className="small" key={note}>{note}</p>)}</details>}
               {risk?.error && <small className="risk-reason">{risk.error}</small>}
             </div>
             <button className="quiet" disabled={loading} onClick={() => void inspect(vessel.vessel_id)}>Full report</button>
