@@ -1,0 +1,647 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "GhostFleet Detection & AIS Matching",
+    "description": "12-hour team starter. Synthetic examples are fictional. AIS association is separate from authorization.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/detections": {
+      "post": {
+        "tags": [
+          "Detection"
+        ],
+        "summary": "Detect",
+        "operationId": "detect_detections_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_detect_detections_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/matches": {
+      "post": {
+        "tags": [
+          "AIS matching"
+        ],
+        "summary": "Matches",
+        "operationId": "matches_matches_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demo/matches": {
+      "get": {
+        "tags": [
+          "Fictional examples"
+        ],
+        "summary": "Demo Matches",
+        "operationId": "demo_matches_demo_matches_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AISCoverage": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source"
+          },
+          "data_mode": {
+            "type": "string",
+            "enum": [
+              "model_upload",
+              "synthetic",
+              "published_historical"
+            ],
+            "title": "Data Mode"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "bounds": {
+            "$ref": "#/components/schemas/Bounds"
+          },
+          "adequate_for_search": {
+            "type": "boolean",
+            "title": "Adequate For Search",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "data_mode",
+          "start",
+          "end",
+          "bounds"
+        ],
+        "title": "AISCoverage"
+      },
+      "AISPoint": {
+        "properties": {
+          "mmsi": {
+            "type": "string",
+            "pattern": "^[0-9]{9}$",
+            "title": "Mmsi"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "position": {
+            "$ref": "#/components/schemas/Position"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "mmsi",
+          "timestamp",
+          "position"
+        ],
+        "title": "AISPoint"
+      },
+      "Body_detect_detections_post": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Image"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image"
+        ],
+        "title": "Body_detect_detections_post"
+      },
+      "Bounds": {
+        "properties": {
+          "south": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "South"
+          },
+          "north": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "North"
+          },
+          "west": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "West"
+          },
+          "east": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "East"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "south",
+          "north",
+          "west",
+          "east"
+        ],
+        "title": "Bounds"
+      },
+      "Candidate": {
+        "properties": {
+          "mmsi": {
+            "type": "string",
+            "pattern": "^[0-9]{9}$",
+            "title": "Mmsi"
+          },
+          "estimated_position": {
+            "$ref": "#/components/schemas/Position"
+          },
+          "distance_m": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Distance M"
+          },
+          "max_supporting_time_gap_s": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Max Supporting Time Gap S"
+          },
+          "supporting_timestamps": {
+            "items": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "type": "array",
+            "title": "Supporting Timestamps"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "mmsi",
+          "estimated_position",
+          "distance_m",
+          "max_supporting_time_gap_s",
+          "supporting_timestamps"
+        ],
+        "title": "Candidate"
+      },
+      "DetectionResponse": {
+        "properties": {
+          "image_width": {
+            "type": "integer",
+            "title": "Image Width"
+          },
+          "image_height": {
+            "type": "integer",
+            "title": "Image Height"
+          },
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/Observation"
+            },
+            "type": "array",
+            "title": "Observations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "image_width",
+          "image_height",
+          "observations"
+        ],
+        "title": "DetectionResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MatchEvidence": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "title": "Method",
+            "default": "bracketed_linear_interpolation_haversine"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reason Codes"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "distance_gate_m": {
+            "type": "number",
+            "title": "Distance Gate M"
+          },
+          "time_gate_s": {
+            "type": "number",
+            "title": "Time Gate S"
+          },
+          "coverage_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Source"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason_codes",
+          "distance_gate_m",
+          "time_gate_s"
+        ],
+        "title": "MatchEvidence"
+      },
+      "MatchRequest": {
+        "properties": {
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/Observation"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Observations"
+          },
+          "ais_points": {
+            "items": {
+              "$ref": "#/components/schemas/AISPoint"
+            },
+            "type": "array",
+            "maxItems": 10000,
+            "title": "Ais Points"
+          },
+          "coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AISCoverage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "observations"
+        ],
+        "title": "MatchRequest"
+      },
+      "MatchResponse": {
+        "properties": {
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/Observation"
+            },
+            "type": "array",
+            "title": "Observations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "observations"
+        ],
+        "title": "MatchResponse"
+      },
+      "Observation": {
+        "properties": {
+          "observation_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Observation Id"
+          },
+          "scene_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Scene Id"
+          },
+          "data_mode": {
+            "type": "string",
+            "enum": [
+              "model_upload",
+              "synthetic",
+              "published_historical"
+            ],
+            "title": "Data Mode"
+          },
+          "captured_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Captured At"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bbox_px": {
+            "anyOf": [
+              {
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array",
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox Px"
+          },
+          "detection_confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detection Confidence"
+          },
+          "identity_status": {
+            "type": "string",
+            "enum": [
+              "matched",
+              "ambiguous",
+              "unmatched",
+              "insufficient_data"
+            ],
+            "title": "Identity Status",
+            "default": "insufficient_data"
+          },
+          "mmsi": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{9}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mmsi"
+          },
+          "imo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imo"
+          },
+          "match_evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MatchEvidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "observation_id",
+          "scene_id",
+          "data_mode"
+        ],
+        "title": "Observation"
+      },
+      "Position": {
+        "properties": {
+          "lat": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lon"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lat",
+          "lon"
+        ],
+        "title": "Position"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

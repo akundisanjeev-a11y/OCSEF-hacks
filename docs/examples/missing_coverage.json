@@ -1,0 +1,32 @@
+{
+  "observations": [
+    {
+      "observation_id": "fictional-missing-1",
+      "scene_id": "fictional-missing",
+      "data_mode": "synthetic",
+      "captured_at": "2026-01-01T10:00:00Z",
+      "position": {
+        "lat": 35.0,
+        "lon": 160.0
+      },
+      "bbox_px": null,
+      "detection_confidence": null,
+      "identity_status": "insufficient_data",
+      "mmsi": null,
+      "imo": null,
+      "match_evidence": {
+        "method": "bracketed_linear_interpolation_haversine",
+        "reason_codes": [
+          "missing_or_inadequate_ais_coverage"
+        ],
+        "candidates": [],
+        "distance_gate_m": 500.0,
+        "time_gate_s": 300.0,
+        "coverage_source": null
+      },
+      "sources": [
+        "fictional observation; not model-generated"
+      ]
+    }
+  ]
+}

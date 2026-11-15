@@ -1,0 +1,57 @@
+{
+  "observations": [
+    {
+      "observation_id": "fictional-ambiguous-1",
+      "scene_id": "fictional-ambiguous",
+      "data_mode": "synthetic",
+      "captured_at": "2026-01-01T10:00:00Z",
+      "position": {
+        "lat": -20.0,
+        "lon": 80.0
+      },
+      "bbox_px": null,
+      "detection_confidence": null,
+      "identity_status": "ambiguous",
+      "mmsi": null,
+      "imo": null,
+      "match_evidence": {
+        "method": "bracketed_linear_interpolation_haversine",
+        "reason_codes": [
+          "multiple_or_competing_candidates"
+        ],
+        "candidates": [
+          {
+            "mmsi": "999000001",
+            "estimated_position": {
+              "lat": -20.0,
+              "lon": 80.0
+            },
+            "distance_m": 0.0,
+            "max_supporting_time_gap_s": 0.0,
+            "supporting_timestamps": [
+              "2026-01-01T10:00:00Z"
+            ]
+          },
+          {
+            "mmsi": "999000002",
+            "estimated_position": {
+              "lat": -19.999,
+              "lon": 80.0
+            },
+            "distance_m": 111.19492664469462,
+            "max_supporting_time_gap_s": 0.0,
+            "supporting_timestamps": [
+              "2026-01-01T10:00:00Z"
+            ]
+          }
+        ],
+        "distance_gate_m": 500.0,
+        "time_gate_s": 300.0,
+        "coverage_source": "fictional complete fixture"
+      },
+      "sources": [
+        "fictional observation; not model-generated"
+      ]
+    }
+  ]
+}

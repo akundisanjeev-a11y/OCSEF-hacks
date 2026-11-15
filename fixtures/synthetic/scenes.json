@@ -1,0 +1,173 @@
+[
+  {
+    "scenario": "unique_match",
+    "expected_status": "matched",
+    "request": {
+      "observations": [
+        {
+          "observation_id": "fictional-match-1",
+          "scene_id": "fictional-match",
+          "data_mode": "synthetic",
+          "captured_at": "2026-01-01T10:00:00Z",
+          "position": {
+            "lat": 10.0,
+            "lon": 150.0
+          },
+          "sources": [
+            "fictional observation; not model-generated"
+          ]
+        }
+      ],
+      "ais_points": [
+        {
+          "mmsi": "999000001",
+          "timestamp": "2026-01-01T09:58:00Z",
+          "position": {
+            "lat": 9.999,
+            "lon": 150.0
+          }
+        },
+        {
+          "mmsi": "999000001",
+          "timestamp": "2026-01-01T10:02:00Z",
+          "position": {
+            "lat": 10.001,
+            "lon": 150.0
+          }
+        }
+      ],
+      "coverage": {
+        "source": "fictional complete fixture",
+        "data_mode": "synthetic",
+        "start": "2026-01-01T09:55:00Z",
+        "end": "2026-01-01T10:05:00Z",
+        "bounds": {
+          "south": 9.8,
+          "north": 10.2,
+          "west": 149.8,
+          "east": 150.3
+        },
+        "adequate_for_search": true
+      }
+    }
+  },
+  {
+    "scenario": "two_plausible_vessels",
+    "expected_status": "ambiguous",
+    "request": {
+      "observations": [
+        {
+          "observation_id": "fictional-ambiguous-1",
+          "scene_id": "fictional-ambiguous",
+          "data_mode": "synthetic",
+          "captured_at": "2026-01-01T10:00:00Z",
+          "position": {
+            "lat": -20.0,
+            "lon": 80.0
+          },
+          "sources": [
+            "fictional observation; not model-generated"
+          ]
+        }
+      ],
+      "ais_points": [
+        {
+          "mmsi": "999000001",
+          "timestamp": "2026-01-01T10:00:00Z",
+          "position": {
+            "lat": -20.0,
+            "lon": 80.0
+          }
+        },
+        {
+          "mmsi": "999000002",
+          "timestamp": "2026-01-01T10:00:00Z",
+          "position": {
+            "lat": -19.999,
+            "lon": 80.0
+          }
+        }
+      ],
+      "coverage": {
+        "source": "fictional complete fixture",
+        "data_mode": "synthetic",
+        "start": "2026-01-01T09:55:00Z",
+        "end": "2026-01-01T10:05:00Z",
+        "bounds": {
+          "south": -20.2,
+          "north": -19.8,
+          "west": 79.8,
+          "east": 80.3
+        },
+        "adequate_for_search": true
+      }
+    }
+  },
+  {
+    "scenario": "searched_but_unmatched",
+    "expected_status": "unmatched",
+    "request": {
+      "observations": [
+        {
+          "observation_id": "fictional-unmatched-1",
+          "scene_id": "fictional-unmatched",
+          "data_mode": "synthetic",
+          "captured_at": "2026-01-01T10:00:00Z",
+          "position": {
+            "lat": 45.0,
+            "lon": -30.0
+          },
+          "sources": [
+            "fictional observation; not model-generated"
+          ]
+        }
+      ],
+      "ais_points": [
+        {
+          "mmsi": "999000003",
+          "timestamp": "2026-01-01T10:00:00Z",
+          "position": {
+            "lat": 45.1,
+            "lon": -30.0
+          }
+        }
+      ],
+      "coverage": {
+        "source": "fictional complete fixture",
+        "data_mode": "synthetic",
+        "start": "2026-01-01T09:55:00Z",
+        "end": "2026-01-01T10:05:00Z",
+        "bounds": {
+          "south": 44.8,
+          "north": 45.2,
+          "west": -30.2,
+          "east": -29.7
+        },
+        "adequate_for_search": true
+      }
+    }
+  },
+  {
+    "scenario": "missing_coverage",
+    "expected_status": "insufficient_data",
+    "request": {
+      "observations": [
+        {
+          "observation_id": "fictional-missing-1",
+          "scene_id": "fictional-missing",
+          "data_mode": "synthetic",
+          "captured_at": "2026-01-01T10:00:00Z",
+          "position": {
+            "lat": 35.0,
+            "lon": 160.0
+          },
+          "sources": [
+            "fictional observation; not model-generated"
+          ]
+        }
+      ],
+      "ais_points": [],
+      "coverage": null
+    }
+  }
+]
