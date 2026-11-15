@@ -27,9 +27,9 @@ _cache: dict[str, tuple[float, dict]] = {}
 class AreaQuery(BaseModel):
     mode: Literal["synthetic", "gfw"] = "gfw"
     west: float = Field(ge=-180, le=180)
-    south: float = Field(ge=-85, le=85)
+    south: float = Field(ge=-90, le=90)
     east: float = Field(ge=-180, le=180)
-    north: float = Field(ge=-85, le=85)
+    north: float = Field(ge=-90, le=90)
     hours_ago: int = Field(default=100, ge=100, le=24 * 365)
     window_hours: int = Field(default=24, ge=1, le=168)
     layer: Literal["presence", "fishing", "sar"] = "presence"
@@ -48,8 +48,6 @@ class AreaQuery(BaseModel):
     def valid_area(self):
         if self.west >= self.east or self.south >= self.north:
             raise ValueError("Use an increasing bounding box; split selections crossing the date line")
-        if self.east - self.west > 40 or self.north - self.south > 30:
-            raise ValueError("Select an area no larger than 40° longitude by 30° latitude")
         if self.layer == "sar" and self.hours_ago < 124:
             raise ValueError("SAR requires a window ending at least 124 hours ago")
         if self.layer != 'presence' and (self.vessel_type is not None or self.speed is not None):
@@ -229,7 +227,9 @@ def report_rows(payload: dict, dataset: str) -> list[dict]:
 
 async def report(query: AreaQuery, start: str, end: str, *, vessels: bool = False) -> list[dict]:
     dataset = DATASETS[query.layer]
-    params = {"datasets[0]": dataset, "format": "JSON", "temporal-resolution": "HOURLY",
+    # The UI shows totals for the entire window, not hourly playback. Aggregate
+    # upstream to avoid transferring repeated hourly cell and vessel records.
+    params = {"datasets[0]": dataset, "format": "JSON", "temporal-resolution": "ENTIRE",
               "date-range": f"{start},{end}", "spatial-aggregation": "true" if vessels else "false"}
     if vessels:
         params["group-by"] = "VESSEL_ID"
