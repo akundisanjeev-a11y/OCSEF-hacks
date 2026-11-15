@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { type GeoJSONSource, type StyleSpecification } from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
+import type { GeoJSONSource, StyleSpecification } from "maplibre-gl";
+import "../mapWorker";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { FeatureCollection } from "geojson";
 import type { Case } from "../api/types";
 import { registration, registrationLabel, type Registration } from "../format";
 import { zonesGeoJson } from "../zones";
+import type { ActivityCell } from "../api/historical";
+import landOutlineUrl from "../assets/land-outline.geojson?url";
+import { applyBasemap, isImageryError, type Basemap } from "../mapBasemap";
+import { lengthScale, makeMapSymbol, shipColors, shipKind, shipPaths } from "../vesselSymbols";
 
 // The rectangle the user drags on the globe, as latitude/longitude edges in degrees.
 export interface Area {
@@ -30,6 +36,8 @@ interface Props {
   onSelect: (id: string | null) => void;
   area: Area | null;
   onAreaChange: (area: Area | null) => void;
+  activityCells?: ActivityCell[];
+  onActivitySelect?: (cell: ActivityCell) => void;
 }
 
 // The two map views: a 3D globe, or a flat Mercator map ("2D").
@@ -55,6 +63,7 @@ const STYLE: StyleSpecification = {
   },
   // Where the picture tiles come from.
   sources: {
+    "local-land": { type: "geojson", data: landOutlineUrl, attribution: "Outline: Natural Earth (public domain)" },
     // Satellite imagery.
     imagery: {
       type: "raster",
@@ -76,6 +85,8 @@ const STYLE: StyleSpecification = {
   // Stacking order, bottom to top: background, imagery (dimmed so markers stand out), then labels.
   layers: [
     { id: "background", type: "background", paint: { "background-color": "#0a1830" } },
+    { id: "local-land-fill", type: "fill", source: "local-land", paint: { "fill-color": "#243e50" } },
+    { id: "local-land-outline", type: "line", source: "local-land", paint: { "line-color": "#557687", "line-width": .7 } },
     {
       id: "imagery",
       type: "raster",
@@ -126,15 +137,24 @@ const areaGeoJson = (a: Area | null): FeatureCollection => ({
 
 // The globe component: draws the map, the vessel markers, the fishing zones and the selected area,
 // and lets the user drag a box to choose an area.
-export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange }: Props) {
+export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, activityCells, onActivitySelect }: Props) {
   // Handles to things React does not own: the map's HTML container, the map itself, and the marker objects.
   const containerRef = useRef<HTMLDivElement>(null);
   // Holds the MapLibre map so effects and handlers can reach it without re-rendering.
   const mapRef = useRef<maplibregl.Map | null>(null);
   // Holds the vessel markers currently on the map, so they can be removed and redrawn when the data changes.
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  // Always holds the latest "activity cell clicked" callback, so the map's click handler never goes stale.
+  const activityClick = useRef(onActivitySelect);
+  activityClick.current = onActivitySelect;
   // True once the map has finished loading and its layers exist.
   const [ready, setReady] = useState(false);
+  // Message shown if the map itself fails to start or load.
+  const [mapError, setMapError] = useState("");
+  // Which background is shown: satellite imagery, or the local land outline that needs no tile server.
+  const [basemap, setBasemap] = useState<Basemap>("imagery");
+  // Notice shown when the app had to fall back to the other background.
+  const [basemapWarning, setBasemapWarning] = useState("");
   // Globe (3D) or flat (2D) view.
   const [view, setView] = useState<View>("globe");
   // True while the user is in "draw a box" mode.
@@ -146,22 +166,61 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange }: Pr
   // selected-area layers once the map has loaded. Cleans the map up when the page is left.
   useEffect(() => {
     // Create the map inside our container, using the style and starting view above.
-    const map = new maplibregl.Map({
+    let map: maplibregl.Map;
+    try {
+      map = new maplibregl.Map({
       container: containerRef.current!,
       style: STYLE,
       center: HOME.center,
       zoom: HOME.zoom,
       attributionControl: { compact: true },
+      });
+    } catch (error) {
+      setMapError(error instanceof Error ? error.message : "Globe initialization failed");
+      return;
+    }
+    map.on("error", (event) => {
+      const message = event.error?.message ?? "A map resource could not load";
+      if (isImageryError("sourceId" in event ? event.sourceId : undefined, message)) {
+        applyBasemap(map, "outline");
+        setBasemap("outline");
+        setBasemapWarning("Satellite imagery is unavailable. Using the local outline map; area queries and vessel screening remain available.");
+      } else {
+        setMapError(message);
+      }
+    });
+    map.on("styleimagemissing", (event) => {
+      const image = makeMapSymbol(event.id);
+      if (image && !map.hasImage(event.id)) map.addImage(event.id, image, { pixelRatio: 2 });
     });
     // Zoom buttons (top left) and a distance scale bar (bottom right).
     map.addControl(new maplibregl.NavigationControl({ showZoom: true, visualizePitch: false }), "top-left");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric", maxWidth: 140 }), "bottom-right");
     // Layers can only be added after the map has loaded.
     map.on("load", () => {
-      // Teal outlines and tint for the illustrative fishing zones.
+      // Teal outlines and tint for the illustrative fishing zones (only on the fictional-cases map).
+      if (activityCells === undefined) {
       map.addSource("zones", { type: "geojson", data: zonesGeoJson });
       map.addLayer({ id: "zones-fill", type: "fill", source: "zones", paint: { "fill-color": "#2fd3c0", "fill-opacity": 0.1 } });
       map.addLayer({ id: "zones-line", type: "line", source: "zones", paint: { "line-color": "#2fd3c0", "line-width": 1.2 } });
+      }
+      // Layer for Global Fishing Watch activity cells; nearby cells merge into numbered clusters.
+      map.addSource("historical-activity", { type: "geojson", data: { type: "FeatureCollection", features: [] }, cluster: true, clusterRadius: 44, clusterMaxZoom: 9 });
+      map.addLayer({ id: "historical-activity", type: "symbol", source: "historical-activity", layout: {
+        "icon-image": ["case", ["has", "point_count"], ["concat", "fleet-cluster-", ["to-string", ["get", "point_count"]]], ["get", "symbol_id"]],
+        "icon-size": ["coalesce", ["get", "symbol_scale"], 1], "icon-allow-overlap": true,
+      } });
+      // Clicking a cluster zooms in to split it; clicking a single cell reports it to the page.
+      map.on("click", "historical-activity", (event) => {
+        const feature = event.features?.[0];
+        const cell = feature?.properties;
+        if (cell?.cluster_id !== undefined && feature?.geometry.type === "Point") {
+          const center = feature.geometry.coordinates as [number, number];
+          void (map.getSource("historical-activity") as GeoJSONSource).getClusterExpansionZoom(Number(cell.cluster_id)).then((zoom) => map.easeTo({ center, zoom }));
+          return;
+        }
+        if (cell) activityClick.current?.(cell as ActivityCell);
+      });
       // Blue dashed rectangle for the area the user selected (starts empty).
       map.addSource("area", { type: "geojson", data: areaGeoJson(null) });
       map.addLayer({ id: "area-fill", type: "fill", source: "area", paint: { "fill-color": "#4c8dff", "fill-opacity": 0.1 } });
@@ -182,6 +241,21 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange }: Pr
   }, []);
 
   // Switches between the globe and flat map when the 3D / 2D toggle changes.
+  useEffect(() => {
+    if (ready && mapRef.current) applyBasemap(mapRef.current, basemap);
+  }, [ready, basemap]);
+
+  useEffect(() => {
+    if (!ready || !mapRef.current) return;
+    const source = mapRef.current.getSource("historical-activity") as GeoJSONSource;
+    void source.setData({ type: "FeatureCollection", features: (activityCells ?? []).map((cell) => ({
+      type: "Feature", properties: { ...cell,
+        symbol_id: `fleet-cell-${shipKind(cell.vessel_type)}-${cell.vessel_count_lower_bound != null ? "lower" + cell.vessel_count_lower_bound : "unknown"}`,
+        symbol_scale: lengthScale(cell.mean_length_m),
+      }, geometry: { type: "Point", coordinates: [cell.lon, cell.lat] },
+    })) });
+  }, [ready, activityCells]);
+
   useEffect(() => {
     if (ready) mapRef.current!.setProjection({ type: view });
   }, [ready, view]);
@@ -223,8 +297,10 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange }: Pr
         "aria-label",
         g.cases.length > 1 ? `${g.cases.length} vessels at this location` : `Vessel ${g.cases[0].observation.observation_id}`,
       );
-      // The triangle shape of the marker.
-      el.innerHTML = '<svg viewBox="0 0 20 18" aria-hidden="true"><path d="M10 1 19 17H1Z"/></svg>';
+      // The marker's ship symbol: one shape per reported vessel type, or "mixed" when the vessels here differ.
+      const kinds = [...new Set(g.cases.map((c) => shipKind(c.vessel_assessment?.vessel_type)))];
+      const kind = kinds.length === 1 ? kinds[0] : "mixed";
+      el.innerHTML = `<svg viewBox="0 0 34 34" aria-hidden="true"><path d="${shipPaths[kind]}" style="fill:${shipColors[kind]}"/></svg>`;
       // A small number badge when several vessels share this exact spot.
       if (g.cases.length > 1) {
         const count = document.createElement("span");
@@ -342,6 +418,8 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange }: Pr
     <div className="map-wrap">
       {/* The element MapLibre draws the globe into. */}
       <div ref={containerRef} className="map" />
+      {mapError && <div className="map-status map-status-error" role="alert">Map issue: {mapError}. GFW authentication is separate.</div>}
+      {basemapWarning && !mapError && <div className="map-status" role="status">{basemapWarning}</div>}
       {/* Live rectangle shown while the user is dragging. */}
       {dragBox && (
         <div className="drag-box" style={{ left: dragBox.x, top: dragBox.y, width: dragBox.w, height: dragBox.h }} />
@@ -359,6 +437,7 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange }: Pr
 
       {/* Buttons in the top-right corner of the map. */}
       <div className="map-tools">
+        <label className="basemap-choice"><span className="sr-only">Basemap</span><select aria-label="Basemap" value={basemap} onChange={(event) => { setBasemap(event.target.value as Basemap); setBasemapWarning(""); }}><option value="imagery">Satellite imagery</option><option value="outline">Local outline (no tile server)</option></select></label>
         {/* 3D globe / 2D flat map switch. */}
         <div className="segmented" role="group" aria-label="Map view">
           <button type="button" className={view === "globe" ? "is-on" : undefined} onClick={() => setView("globe")} aria-pressed={view === "globe"}>
@@ -386,16 +465,16 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange }: Pr
       </div>
 
       {/* Key explaining the marker colours, the count badge and the fishing-zone outline. */}
-      <div className="map-legend">
+      {activityCells !== undefined ? <div className="map-legend"><span>Cluster numbers = activity cells · click to expand</span><span>Cell ≥N = reported vessel-count lower bound · ? = unavailable</span><span>Symbol = reported type; unknown/mixed where unresolved</span><span>Size uses reported length only when available; otherwise fixed. Not to map scale.</span><a href="https://globalfishingwatch.org" target="_blank" rel="noreferrer">Powered by Global Fishing Watch</a></div> : <div className="map-legend">
         {/* Blue: the radar detection matched an AIS signal. */}
         <span>
           <i className="legend-mark marker-registered" />
-          Registered (AIS matched)
+          AIS matched
         </span>
         {/* Orange: AIS coverage was adequate and no signal matched. */}
         <span>
           <i className="legend-mark marker-unregistered" />
-          Unregistered (no AIS match)
+          No AIS match
         </span>
         {/* Grey: ambiguous match or missing data. */}
         <span>
@@ -412,7 +491,7 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange }: Pr
           <i className="legend-zone" />
           Illustrative fishing zone
         </span>
-      </div>
+      </div>}
     </div>
   );
 }

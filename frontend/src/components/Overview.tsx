@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ApiError, type Api } from "../api/client";
+import { ApiError, sampleApi, type Api } from "../api/client";
+import { GfwOverview } from "./GfwOverview";
 import type { AuthorizationStatus, DataMode, IdentityStatus, ReviewLevel } from "../api/types";
 import { authorizationLabel, dataModeLabel, identityLabel, registration, reviewLabel } from "../format";
 import { errorMessage, useCase, useCases, type Load } from "../useCases";
@@ -63,9 +64,20 @@ interface Props {
   onOpenInvestigation: () => void;
 }
 
-// The Overview page: filters on the left, the 3D globe in the middle, the selected case on the right,
+// The Overview page. A menu at the top switches between real Global Fishing Watch historical data
+// and the fictional demo cases; each choice shows its own globe view below.
+export function Overview(props: Props) {
+  // Which data the page shows: Global Fishing Watch history or the fictional cases.
+  const [mode, setMode] = useState<"gfw" | "fictional">("gfw");
+  return <>
+    <div className="toolbar"><label className="inline-field"><span>Overview data</span><select value={mode} onChange={(e) => setMode(e.target.value as "gfw" | "fictional")}><option value="gfw">Global Fishing Watch · historical</option><option value="fictional">Fictional cases · five located near Ghana</option></select></label><span className="muted">{mode === "gfw" ? "Area selection queries GFW; a backend token is required." : "Fixed sample cases, not newly detected vessels."}</span></div>
+    {mode === "gfw" ? <GfwOverview /> : <DemoOverview {...props} api={sampleApi} />}
+  </>;
+}
+
+// The fictional-cases view: filters on the left, the 3D globe in the middle, the selected case on the right,
 // and the counts and vessel list below. Vessels only appear once the user drags a box on the globe.
-export function Overview({ api, selectedId, onSelect, onOpenInvestigation }: Props) {
+function DemoOverview({ api, selectedId, onSelect, onOpenInvestigation }: Props) {
   // Current value of every filter. "all" or "" means "do not filter on this".
   const [dataMode, setDataMode] = useState<DataMode | "all">("all");
   // Authorization filter: one decision, or all.
@@ -300,12 +312,12 @@ export function Overview({ api, selectedId, onSelect, onOpenInvestigation }: Pro
           {/* Ships that matched an AIS tracking signal. */}
           <div className="stat marker-registered">
             <strong>{area ? reg("registered") : "—"}</strong>
-            <span>Registered (AIS matched)</span>
+            <span>AIS matched</span>
           </div>
           {/* Ships with no matching AIS signal even though AIS coverage was adequate. */}
           <div className="stat marker-unregistered">
             <strong>{area ? reg("unregistered") : "—"}</strong>
-            <span>Unregistered (no AIS match)</span>
+            <span>No AIS match</span>
           </div>
           {/* Ambiguous matches and cases with missing data. */}
           <div className="stat marker-unresolved">
@@ -320,7 +332,7 @@ export function Overview({ api, selectedId, onSelect, onOpenInvestigation }: Pro
         </div>
         {/* Plain-language definitions so nobody mistakes "registered" for an official registry check. */}
         <p className="stat-note muted">
-          Registered means the radar detection matched an AIS track. Unregistered means AIS coverage was adequate and
+          AIS matched means a detection matched an AIS track. No AIS match means AIS coverage was adequate and
           no track matched. Unresolved covers ambiguous matches and missing data.
         </p>
       </section>

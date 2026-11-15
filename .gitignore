@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+data/
+.env
+.env.*
+!.env.example
+# Local ML data and artifacts stay outside source control.
+datasets/
+runs/
+weights/
+*.zip
+.pytest_cache/

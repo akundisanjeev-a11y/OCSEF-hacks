@@ -1,0 +1,48 @@
+{
+  "cases": [
+    {
+      "observation": {
+        "observation_id": "synthetic-01-0",
+        "scene_id": "synthetic-01",
+        "data_mode": "synthetic",
+        "captured_at": "2026-01-01T10:00:00Z",
+        "position": {"lat": 4.8, "lon": -1.5},
+        "bbox_px": [241, 106, 272, 121],
+        "detection_confidence": 0.91,
+        "identity_status": "matched",
+        "mmsi": "000000001",
+        "imo": null,
+        "match_evidence": {"candidate_distance_m": 85, "time_gap_seconds": 30, "matching_method": "static fictional fixture"},
+        "sources": ["fictional radar observation", "fictional AIS track"]
+      },
+      "authorization": {
+        "status": "unknown",
+        "reason_codes": ["missing_activity_evidence", "missing_permit_evidence", "missing_rule_evidence"],
+        "explanation": "Fictional identity is supplied, but observed activity and applicable permit and rule evidence are missing. Vessel presence alone does not establish fishing.",
+        "sources": ["fictional radar observation", "fictional AIS track"]
+      }
+    },
+    {
+      "observation": {
+        "observation_id": "synthetic-02-0",
+        "scene_id": "synthetic-02",
+        "data_mode": "synthetic",
+        "captured_at": null,
+        "position": null,
+        "bbox_px": [10, 20, 40, 50],
+        "detection_confidence": 0.8,
+        "identity_status": "insufficient_data",
+        "mmsi": null,
+        "imo": null,
+        "match_evidence": null,
+        "sources": ["fictional radar observation"]
+      },
+      "authorization": {
+        "status": "unknown",
+        "reason_codes": ["unresolved_identity", "missing_activity_evidence", "missing_position", "missing_capture_time", "missing_permit_evidence", "missing_rule_evidence"],
+        "explanation": "Identity, activity, place, time, permits and rules are unresolved. Authorization cannot be determined.",
+        "sources": ["fictional radar observation"]
+      }
+    }
+  ]
+}

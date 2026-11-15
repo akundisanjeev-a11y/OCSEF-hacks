@@ -1,0 +1,23 @@
+{
+  "data_mode": "synthetic",
+  "description": "Fictional vessel lookup examples only. These are not government records or real vessel identities.",
+  "sources": ["GhostFleet fictional vessel registry v1"],
+  "retrieved_at": "2026-01-01T00:00:00Z",
+  "records": [
+    {
+      "record_id": "DEMO-VESSEL-001", "name": "Demo Fishing Vessel", "mmsi": "000000001",
+      "registration_id": "DEMO-BOAT-001", "vessel_type": "fishing vessel",
+      "sources": ["fictional vessel record DEMO-VESSEL-001"],
+      "permits": [{"permit_id": "DEMO-PERMIT-001", "valid_from": "2026-01-01T00:00:00Z", "valid_until": "2027-01-01T00:00:00Z", "zone_id": "DEMO-OFFSHORE-A", "activity": "fishing", "sources": ["fictional DEMO-PERMIT-001"]}]
+    },
+    {
+      "record_id": "DEMO-VESSEL-002", "name": "Demo Cargo Carrier", "mmsi": "000000002",
+      "registration_id": "DEMO-BOAT-002", "vessel_type": "cargo carrier",
+      "sources": ["fictional vessel record DEMO-VESSEL-002"], "permits": []
+    }
+  ],
+  "rules": [
+    {"rule_id": "DEMO-RULE-A", "zone_id": "DEMO-OFFSHORE-A", "activity": "fishing", "valid_from": "2026-01-01T00:00:00Z", "valid_until": "2027-01-01T00:00:00Z", "condition": "permit_required", "sources": ["fictional demo rulebook / DEMO-RULE-A"]},
+    {"rule_id": "DEMO-RULE-B", "zone_id": "DEMO-OFFSHORE-B", "activity": "fishing", "valid_from": "2026-01-01T00:00:00Z", "valid_until": "2027-01-01T00:00:00Z", "condition": "activity_prohibited", "sources": ["fictional demo rulebook / DEMO-RULE-B"]}
+  ]
+}

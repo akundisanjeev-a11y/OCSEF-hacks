@@ -85,6 +85,7 @@ export function formatPosition(p: Position | null): string {
 // The simpler three-way grouping used for map colours and counts: blue, orange and grey vessels.
 export type Registration = "registered" | "unregistered" | "unresolved";
 
+// Legacy internal color keys describe AIS matching, not legal registration.
 // "Registered" here means the radar detection matched an AIS track.
 // "Unregistered" means AIS coverage was adequate but nothing matched; ambiguous or missing data stays "unresolved".
 export const registration = (s: IdentityStatus): Registration =>
@@ -92,7 +93,7 @@ export const registration = (s: IdentityStatus): Registration =>
 
 // Text for the three registration groups.
 export const registrationLabel: Record<Registration, string> = {
-  registered: "Registered",
-  unregistered: "Unregistered",
+  registered: "AIS matched",
+  unregistered: "No AIS match",
   unresolved: "Unresolved",
 };

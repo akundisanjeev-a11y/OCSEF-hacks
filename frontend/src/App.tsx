@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { liveApi, sampleApi } from "./api/client";
 import { CoastalImpact } from "./components/CoastalImpact";
-import { DetectionLab } from "./components/DetectionLab";
+import { HistoricalGlobe } from "./components/HistoricalGlobe";
+import { VesselCheck } from "./components/VesselCheck";
 import { Investigations } from "./components/Investigations";
 import { Overview } from "./components/Overview";
 
-// The four screens. Keys are the ids kept in state; values are the labels shown in the top bar.
+// The screens. Keys are the ids kept in state; values are the labels shown in the top bar.
 const tabs = {
   overview: "Overview",
-  detection: "Detection lab",
+  historical: "GFW historical",
+  lookup: "Check vessel ID",
   investigations: "Investigations",
   impact: "Coastal impact",
 } as const;
@@ -43,8 +45,8 @@ export function App() {
             </button>
           ))}
         </nav>
-        {/* Switch between the live backend and sample data. Changing it clears the selected case. */}
-        <label className="inline-field source">
+        {/* Switch between the case API and sample data, shown only on the two tabs that use it. Changing it clears the selected case. */}
+        {(tab === "investigations" || tab === "impact") && <label className="inline-field source">
           <span>Backend</span>
           <select
             value={source}
@@ -53,10 +55,10 @@ export function App() {
               setSelectedId(null);
             }}
           >
-            <option value="live">Live API</option>
+            <option value="live">Case API (demo seeded)</option>
             <option value="sample">Sample data (no backend)</option>
           </select>
-        </label>
+        </label>}
       </header>
 
       {/* The selected screen. key={source} makes each screen reload its data when the source changes. */}
@@ -71,8 +73,10 @@ export function App() {
             onOpenInvestigation={() => setTab("investigations")}
           />
         )}
-        {/* Upload a radar image and see the detected ships. */}
-        {tab === "detection" && <DetectionLab key={source} api={api} />}
+        {/* Globe of published Global Fishing Watch historical activity. */}
+        {tab === "historical" && <HistoricalGlobe />}
+        {/* Look up one vessel by its ID number. */}
+        {tab === "lookup" && <VesselCheck />}
         {/* Priority queue with the evidence trail for the selected case. */}
         {tab === "investigations" && (
           <Investigations key={source} api={api} selectedId={selectedId} onSelect={setSelectedId} />

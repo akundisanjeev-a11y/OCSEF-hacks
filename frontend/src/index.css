@@ -942,6 +942,11 @@ dl {
   margin-bottom: 14px;
 }
 
+/* Short hint text at the end of the toolbar (used by the Detection lab). */
+.toolbar-note {
+  margin-left: 8px;
+}
+
 /* Two-column layout: the image panel is wider than the side panel. */
 .split {
   display: grid;
@@ -1496,3 +1501,14 @@ input[type="search"] {
 .marker-tag span {
   font-weight: 600;
 }
+.lookup-fields { border: 0; margin: 0; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.lookup-fields label { display: grid; gap: 6px; }
+.lookup-fields input { width: 100%; min-width: 0; padding: 8px; border: 1px solid var(--border-strong); border-radius: 4px; }
+.lookup-fields p { margin: 0; }
+.vessel-check .block { overflow-wrap: anywhere; }
+.risk-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.risk-toolbar small { width: 100%; color: var(--muted); }
+.map-status { position: absolute; left: 14px; right: 14px; bottom: 80px; z-index: 3; padding: 8px 12px; border: 1px solid #436276; border-radius: 4px; background: #0b2233ed; color: #c9deea; font-size: 12px; pointer-events: none; }
+.map-status-error { color: #ffd1c8; border-color: #9c645b; }
+.basemap-choice select { max-width: 190px; }
+.ship-type-symbol { display: inline-block; vertical-align: middle; flex-shrink: 0; }

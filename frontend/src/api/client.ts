@@ -1,6 +1,7 @@
 import type { Case, CasesResponse, DataMode, DemoRunResponse, DetectionsResponse } from "./types";
 import sampleCases from "@fixtures/samples/cases.synthetic.json";
 import sampleDetections from "@fixtures/samples/detections.upload.json";
+import type { VesselCheckRequest, VesselCheckResponse } from "./types";
 
 // Where API requests go. "/api" is forwarded by the Vite dev server to FastAPI (see vite.config.ts),
 // so the browser never talks to the backend directly and no CORS setup is needed.
@@ -17,7 +18,7 @@ export class ApiError extends Error {
 }
 
 // Sends one request to the backend and returns its JSON, turning failures into readable ApiErrors.
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   // Network failure: the dev server itself is down or unreachable.
   try {
@@ -31,6 +32,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     try {
       const body = await res.json();
       if (typeof body?.detail === "string") detail = body.detail;
+      else if (Array.isArray(body?.detail)) detail = body.detail.map((e: { msg: string }) => e.msg).join("; ");
     } catch {
       // body was not JSON; keep statusText
     }
@@ -66,6 +68,13 @@ export const liveApi: Api = {
   },
 };
 
+// POST /vessels/check: asks the backend to look up one vessel by its ID numbers.
+export function checkVessel(input: VesselCheckRequest): Promise<VesselCheckResponse> {
+  return request("/vessels/check", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input),
+  });
+}
+
 // The saved sample data (cases and one example detection response) loaded from fixtures/samples/.
 const samples = {
   cases: sampleCases as CasesResponse,
@@ -76,7 +85,7 @@ const samples = {
 const delay = <T,>(value: T) => new Promise<T>((r) => setTimeout(() => r(value), 250));
 
 // A stand-in backend that answers from the saved samples. Lets the whole app run and be demoed with no server.
-export const sampleApi: Api = {
+export const sampleApi = {
   // Same optional data-mode filter as the real /cases route.
   listCases: (dataMode) =>
     delay({ cases: samples.cases.cases.filter((c) => !dataMode || c.observation.data_mode === dataMode) }),
@@ -90,4 +99,4 @@ export const sampleApi: Api = {
   runDemo: () => delay({ case_ids: samples.cases.cases.map((c) => c.observation.observation_id) }),
   // Always returns the same example detection, whatever image is uploaded.
   detect: () => delay(samples.detections),
-};
+} satisfies Api;
