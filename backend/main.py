@@ -38,6 +38,11 @@ def create_app(*, seed_fixtures: bool = True) -> FastAPI:
         load_demo_cases(store)
     app.state.case_service = store
 
+    @app.get("/health")
+    def health():
+        # Process readiness only; this does not assert upstream GFW access.
+        return {"status": "ok"}
+
     @app.post("/historical/area")
     async def historical_area(query: AreaQuery):
         return await query_area(query)
