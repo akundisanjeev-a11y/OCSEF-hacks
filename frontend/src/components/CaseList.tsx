@@ -1,5 +1,5 @@
 import type { Case } from "../api/types";
-import { formatTime, identityLabel, reviewLabel } from "../format";
+import { formatTime, identityLabel, registration, registrationLabel, reviewLabel } from "../format";
 import { StatusLabel } from "./StatusLabel";
 
 interface Props {
@@ -13,6 +13,7 @@ export function CaseList({ cases, selectedId, onSelect }: Props) {
     <table className="case-table">
       <thead>
         <tr>
+          <th>Vessel</th>
           <th>Authorization</th>
           <th>Observation</th>
           <th>AIS match</th>
@@ -39,6 +40,9 @@ export function CaseList({ cases, selectedId, onSelect }: Props) {
               tabIndex={0}
               aria-selected={id === selectedId}
             >
+              <td className={`reg marker-${registration(o.identity_status)}`}>
+                {registrationLabel[registration(o.identity_status)]}
+              </td>
               <td>
                 <StatusLabel status={c.authorization.status} />
               </td>

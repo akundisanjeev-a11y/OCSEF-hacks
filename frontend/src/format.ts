@@ -65,3 +65,15 @@ export function formatPosition(p: Position | null): string {
   const lon = `${Math.abs(p.lon).toFixed(4)}° ${p.lon >= 0 ? "E" : "W"}`;
   return `${lat}, ${lon}`;
 }
+
+export type Registration = "registered" | "unregistered" | "unresolved";
+
+// Legacy internal color keys describe AIS matching, not legal registration.
+export const registration = (s: IdentityStatus): Registration =>
+  s === "matched" ? "registered" : s === "unmatched" ? "unregistered" : "unresolved";
+
+export const registrationLabel: Record<Registration, string> = {
+  registered: "AIS matched",
+  unregistered: "No AIS match",
+  unresolved: "Unresolved",
+};
