@@ -199,7 +199,7 @@ def numeric(value) -> float | None:
 
 
 def cells_from_rows(rows, query):
-    cells = []
+    cells = {}
     for index, row in enumerate(rows):
         lat, lon = numeric(row.get("lat")), numeric(row.get("lon"))
         if lat is None or lon is None or not (-90 <= lat <= 90 and -180 <= lon <= 180):
@@ -209,9 +209,34 @@ def cells_from_rows(rows, query):
         value = numeric(row.get("detections" if query.layer == "sar" else "hours"))
         if value is None or value < 0:
             raise HTTPException(502, "Activity report contains an invalid activity value")
-        cells.append({"id": f"cell-{index}", "lat": lat, "lon": lon, "value": value,
-                      "date": str(row.get("date", "")), "vessel_type": row.get("vessel_type", row.get("geartype", "unknown"))})
-    return cells
+        key = (lat, lon)
+        cell = cells.setdefault(key, {"id": f"cell-{index}", "lat": lat, "lon": lon, "value": 0,
+            "date": str(row.get("date", "")), "vessel_type": "unknown", "vessel_count_lower_bound": None,
+            "mean_length_m": None, "source_rows": 0, "_types": set(), "_lengths": {}, "_all_lengths": True})
+        cell["value"] += value
+        cell["source_rows"] += 1
+        vessel_type = row.get("vessel_type", row.get("geartype"))
+        if vessel_type and str(vessel_type).lower() not in ("unknown", "other"):
+            cell["_types"].add(str(vessel_type))
+        count = numeric(row.get("vesselIDs"))
+        if count is not None and count >= 0 and count.is_integer():
+            # Across hours/flags the same vessel may recur. Summing would invent
+            # a unique-vessel count; the maximum is only a lower bound.
+            cell["vessel_count_lower_bound"] = max(cell["vessel_count_lower_bound"] or 0, int(count))
+        identity = row.get("vesselId", row.get("vessel_id"))
+        length = numeric(row.get("lengthM", row.get("length_m")))
+        if identity and length is not None and length > 0 and (count is None or count <= 1):
+            cell["_lengths"][identity] = length
+        else:
+            cell["_all_lengths"] = False
+    for cell in cells.values():
+        types = cell.pop("_types")
+        cell["vessel_type"] = next(iter(types)) if len(types) == 1 else "mixed" if types else "unknown"
+        lengths = cell.pop("_lengths")
+        all_lengths = cell.pop("_all_lengths")
+        if all_lengths and lengths:
+            cell["mean_length_m"] = sum(lengths.values()) / len(lengths)
+    return list(cells.values())
 
 
 def sample_area(query, start, end):
@@ -249,7 +274,11 @@ async def query_area(query: AreaQuery):
             if not vessel_id:
                 raise HTTPException(502, "Vessel report is missing vessel IDs")
             vessel = vessels.setdefault(vessel_id, {"vessel_id": vessel_id, "name": row.get("shipName", row.get("shipname", vessel_id)),
-                "mmsi": row.get("mmsi"), "vessel_type": row.get("vesselType", row.get("vessel_type", "unknown")), "hours": 0})
+                "mmsi": row.get("mmsi"), "vessel_type": row.get("vesselType", row.get("vessel_type", "unknown")), "hours": 0,
+                "length_m": None})
+            length = numeric(row.get("lengthM", row.get("length_m")))
+            if length is not None and length > 0:
+                vessel["length_m"] = length
             vessel["hours"] += numeric(row.get("hours")) or 0
         data = {"cells": cells, "vessels": list(vessels.values())}
     result = {**data, "mode": query.mode, "layer": query.layer, "start": start, "end": end, "land_check": land_check, "skipped": False,
@@ -306,6 +335,7 @@ def summarize_evidence(identity: dict, insights: dict):
     authorizations = authorizations if isinstance(authorizations, list) else []
     summary = {"name": first.get("shipname", "Not supplied"), "mmsi": first.get("ssvid"),
                "imo": first.get("imo"), "flag": first.get("flag"), "vessel_type": first.get("shiptype", first.get("geartype", "Not supplied")),
+               "length_m": next((numeric(record.get("lengthM")) for record in [first, *records] if numeric(record.get("lengthM")) is not None and numeric(record.get("lengthM")) > 0), None),
                "documentation": "public_registry_record_found" if records else "ais_identity_only" if reported else "no_identity_record",
                "public_authorization_records": authorizations,
                "identity_note": "AIS identity is self-reported. Registry identity periods and authorization scopes must be checked against the activity date."}

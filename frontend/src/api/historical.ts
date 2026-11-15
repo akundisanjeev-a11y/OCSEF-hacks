@@ -2,13 +2,13 @@ import { request } from "./client";
 
 export type Area = { west: number; south: number; east: number; north: number };
 export type HistoricalQuery = Area & { mode: "gfw" | "synthetic"; layer: "presence" | "fishing" | "sar"; hours_ago: number; window_hours: number; allow_land?: boolean };
-export type ActivityCell = { id: string; lat: number; lon: number; value: number; date: string; vessel_type: string };
-export type HistoricalVessel = { vessel_id: string; name: string; mmsi: string | null; vessel_type: string; hours: number };
+export type ActivityCell = { id: string; lat: number; lon: number; value: number; date: string; vessel_type: string; vessel_count_lower_bound?: number | null; mean_length_m?: number | null; source_rows?: number };
+export type HistoricalVessel = { vessel_id: string; name: string; mmsi: string | null; vessel_type: string; hours: number; length_m?: number | null };
 export type HistoricalAreaResult = { cells: ActivityCell[]; vessels: HistoricalVessel[]; mode: HistoricalQuery["mode"]; layer: HistoricalQuery["layer"]; start: string; end: string; dataset: string; notes: string[]; skipped?: boolean; land_check?: { status: string; land_fraction: number | null; skip: boolean; note: string; source: string } | null };
 export type HistoricalEvidence = {
   mode: HistoricalQuery["mode"]; vessel_id: string; start: string; end: string;
   authorization: { status: string; explanation: string };
-  summary: { name: string; mmsi: string | null; imo: string | null; flag: string | null; vessel_type: string; documentation: string; identity_note: string; public_authorization_records: unknown[] };
+  summary: { name: string; mmsi: string | null; imo: string | null; flag: string | null; vessel_type: string; documentation: string; identity_note: string; public_authorization_records: unknown[]; length_m?: number | null };
   indicators: { code: string; label: string; count: number | null; event_ids: string[] }[];
   warnings: string[]; sources: string[]; identity: Record<string, unknown>; insights: Record<string, unknown>;
 };

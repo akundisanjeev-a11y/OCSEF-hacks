@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchHistoricalArea, fetchHistoricalVessel, screenHistoricalRisks, type VesselRisk, type ActivityCell, type Area, type HistoricalAreaResult, type HistoricalEvidence, type HistoricalQuery, type HistoricalVessel } from "../api/historical";
 import { CaseMap } from "./CaseMap";
 import { formatTime } from "../format";
+import { ShipSymbol } from "./ShipSymbol";
 
 export function GfwOverview() {
   const [area, setArea] = useState<Area | null>(null);
@@ -75,7 +76,10 @@ export function GfwOverview() {
     setSelected(vessel); setEvidence(null); setDetailError(""); setDetailLoading(true);
     try {
       const data = await fetchHistoricalVessel(vessel.vessel_id, { mode: "gfw", hours_ago: hoursAgo, window_hours: windowHours, ...(result ? { start: result.start, end: result.end } : {}) });
-      if (detailVersion.current === version) setEvidence(data);
+      if (detailVersion.current === version) {
+        setEvidence(data);
+        if (data.summary.length_m) setResult((previous) => previous ? { ...previous, vessels: previous.vessels.map((row) => row.vessel_id === vessel.vessel_id ? { ...row, length_m: data.summary.length_m } : row) } : previous);
+      }
     } catch (e) { if (detailVersion.current === version) setDetailError(e instanceof Error ? e.message : String(e)); }
     finally { if (detailVersion.current === version) setDetailLoading(false); }
   }
@@ -97,10 +101,10 @@ export function GfwOverview() {
 
     <aside className="panel case-panel" aria-live="polite"><div className="panel-head"><h2>{selected?.name ?? "Vessel evidence"}</h2></div>
       {!selected && <p className="empty">Select a vessel from the area list to retrieve identity, public authorization records and risk indicators.</p>}
-      {cell && <div className="block"><h3>Selected activity cell</h3><p>{Number(cell.lat).toFixed(2)}, {Number(cell.lon).toFixed(2)} · {cell.value} {layer === "sar" ? "detections" : "hours"}</p><p>{cell.date}</p><small>Area vessels are not assigned to this individual cell.</small></div>}
+      {cell && <div className="block"><h3>Selected activity cell</h3><p>{Number(cell.lat).toFixed(2)}, {Number(cell.lon).toFixed(2)} · {cell.value} {layer === "sar" ? "detections" : "hours"}</p><p>{cell.date}</p><p>Reported vessels: {cell.vessel_count_lower_bound != null ? `at least ${cell.vessel_count_lower_bound}` : "count unavailable"}. Mean vessel length: {cell.mean_length_m ? `${cell.mean_length_m.toFixed(1)} m` : "unavailable"}.</p><small>Area vessels are not assigned to this individual cell. Repeated hourly records are combined; counts are never added across hours as if they were distinct boats.</small></div>}
       {detailLoading && <p className="empty">Retrieving vessel evidence…</p>}
       {detailError && <p className="notice error" role="alert">{detailError}</p>}
-      {evidence && <><div className="block"><h3>{evidence.summary.name}</h3><p>MMSI: {evidence.summary.mmsi ?? "Unavailable"}<br />IMO: {evidence.summary.imo ?? "Unavailable"}<br />Type: {evidence.summary.vessel_type}<br />Flag: {evidence.summary.flag ?? "Unavailable"}</p><p>Documentation: {evidence.summary.documentation.replaceAll("_", " ")}</p><p>Public authorization records: {evidence.summary.public_authorization_records.length}</p><p><strong>Authorization: {evidence.authorization.status}</strong></p><p>{evidence.authorization.explanation}</p></div>
+      {evidence && <><div className="block"><h3>{evidence.summary.name}</h3><p>MMSI: {evidence.summary.mmsi ?? "Unavailable"}<br />IMO: {evidence.summary.imo ?? "Unavailable"}<br />Type: {evidence.summary.vessel_type}<br />Reported length: {evidence.summary.length_m ? `${evidence.summary.length_m.toFixed(1)} m` : "Unknown"}<br />Flag: {evidence.summary.flag ?? "Unavailable"}</p><p>Documentation: {evidence.summary.documentation.replaceAll("_", " ")}</p><p>Public authorization records: {evidence.summary.public_authorization_records.length}</p><p><strong>Authorization: {evidence.authorization.status}</strong></p><p>{evidence.authorization.explanation}</p></div>
         <div className="block"><h3>Review indicators</h3>{evidence.indicators.map((indicator) => <p key={indicator.code}>{indicator.label}: <strong>{indicator.count === null ? "Unavailable" : indicator.count}</strong></p>)}{evidence.warnings.map((warning) => <p key={warning}>{warning}</p>)}<p className="muted">Missing or zero indicators do not establish authorization or low risk.</p></div>
         <details className="raw"><summary>Original identity and authorization evidence</summary><pre>{JSON.stringify(evidence.identity, null, 2)}</pre></details><details className="raw"><summary>Original risk evidence</summary><pre>{JSON.stringify(evidence.insights, null, 2)}</pre></details><p className="stat-note">{evidence.sources.join("; ")}</p></>}
     </aside>
@@ -122,7 +126,7 @@ export function GfwOverview() {
       {screenError && <p className="notice error" role="alert">{screenError}</p>}
       {!area && <p className="empty">Click Select area on the globe and draw a small rectangle. That selection now triggers a GFW query.</p>}
       {result && result.vessels.length === 0 && <p className="empty">{result.skipped ? "Area skipped because it exceeds the land threshold. No GFW reports were requested." : layer === "sar" ? "Unmatched SAR activity has no established vessel IDs." : "No vessel IDs returned for this area and window. This does not prove no boats were present."}</p>}
-      {!!result?.vessels.length && <><div className="table-scroll"><table className="case-table"><thead><tr><th>Vessel</th><th>MMSI</th><th>Type</th><th>Activity hours</th><th>Risk screening</th><th>Evidence</th></tr></thead><tbody>{visible.map((vessel) => <tr key={vessel.vessel_id} className={selected?.vessel_id === vessel.vessel_id ? "selected" : undefined}><td>{vessel.name}</td><td>{vessel.mmsi ?? "Unavailable"}</td><td>{vessel.vessel_type}</td><td>{vessel.hours.toFixed(2)}</td><td><strong>{riskLabel(risks[vessel.vessel_id])}</strong>{risks[vessel.vessel_id]?.indicators.filter((indicator) => indicator.count !== null && indicator.count > 0).map((indicator) => <div className="small" key={indicator.code}>{indicator.label}: {indicator.count}</div>)}{risks[vessel.vessel_id]?.error && <div className="small">{risks[vessel.vessel_id].error}</div>}</td><td><button type="button" onClick={() => void inspect(vessel)}>Inspect vessel</button></td></tr>)}</tbody></table></div><div className="risk-toolbar"><button disabled={page <= 0} onClick={() => setPage((previous) => previous - 1)}>Previous</button><span>{ordered.length} matching vessels · page {Math.min(page, pageCount - 1) + 1} / {pageCount}</span><button disabled={page >= pageCount - 1} onClick={() => setPage((previous) => previous + 1)}>Next</button></div></>}
+      {!!result?.vessels.length && <><div className="table-scroll"><table className="case-table"><thead><tr><th>Vessel</th><th>MMSI</th><th>Type</th><th>Reported length</th><th>Activity hours</th><th>Risk screening</th><th>Evidence</th></tr></thead><tbody>{visible.map((vessel) => <tr key={vessel.vessel_id} className={selected?.vessel_id === vessel.vessel_id ? "selected" : undefined}><td>{vessel.name}</td><td>{vessel.mmsi ?? "Unavailable"}</td><td><ShipSymbol type={vessel.vessel_type} /> {vessel.vessel_type}</td><td>{vessel.length_m ? `${vessel.length_m.toFixed(1)} m` : "Unknown"}</td><td>{vessel.hours.toFixed(2)}</td><td><strong>{riskLabel(risks[vessel.vessel_id])}</strong>{risks[vessel.vessel_id]?.indicators.filter((indicator) => indicator.count !== null && indicator.count > 0).map((indicator) => <div className="small" key={indicator.code}>{indicator.label}: {indicator.count}</div>)}{risks[vessel.vessel_id]?.error && <div className="small">{risks[vessel.vessel_id].error}</div>}</td><td><button type="button" onClick={() => void inspect(vessel)}>Inspect vessel</button></td></tr>)}</tbody></table></div><div className="risk-toolbar"><button disabled={page <= 0} onClick={() => setPage((previous) => previous - 1)}>Previous</button><span>{ordered.length} matching vessels · page {Math.min(page, pageCount - 1) + 1} / {pageCount}</span><button disabled={page >= pageCount - 1} onClick={() => setPage((previous) => previous + 1)}>Next</button></div></>}
     </section>
   </div>;
 }

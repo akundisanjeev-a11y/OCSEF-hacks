@@ -11,10 +11,38 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from backend.main import create_app
-from backend.services.historical import DATASETS, _cache, decode_response, gfw_request, summarize_evidence
+from backend.services.historical import AreaQuery, DATASETS, _cache, cells_from_rows, decode_response, gfw_request, summarize_evidence
 
 
 class HistoricalTests(unittest.TestCase):
+    def test_repeat_records_do_not_invent_unique_boats_or_average_lengths(self):
+        query = AreaQuery(west=-5, east=3, south=1, north=7)
+        cells = cells_from_rows([
+            {"lat": 4, "lon": -1, "hours": 1, "vesselIDs": 3, "vessel_type": "cargo"},
+            {"lat": 4, "lon": -1, "hours": 2, "vesselIDs": 4, "vessel_type": "fishing"},
+        ], query)
+        self.assertEqual(len(cells), 1)
+        self.assertEqual(cells[0]["value"], 3)
+        self.assertEqual(cells[0]["vessel_count_lower_bound"], 4)
+        self.assertEqual(cells[0]["vessel_type"], "mixed")
+        self.assertIsNone(cells[0]["mean_length_m"])
+
+    def test_missing_count_and_length_remain_unknown(self):
+        cells = cells_from_rows([{"lat": 4, "lon": -1, "hours": .5}], AreaQuery(west=-5, east=3, south=1, north=7))
+        self.assertIsNone(cells[0]["vessel_count_lower_bound"])
+        summary, _ = summarize_evidence({"selfReportedInfo": [{"shipname": "Test", "lengthM": 38}]}, {})
+        self.assertEqual(summary["length_m"], 38)
+        self.assertIsNone(summarize_evidence({}, {})[0]["length_m"])
+
+    def test_cell_mean_lengths_deduplicate_identities_and_require_complete_inputs(self):
+        query = AreaQuery(west=-5, east=3, south=1, north=7)
+        rows = [{"lat": 4, "lon": -1, "hours": .5, "vesselId": "v-1", "lengthM": 20},
+                {"lat": 4, "lon": -1, "hours": .5, "vesselId": "v-1", "lengthM": 20},
+                {"lat": 4, "lon": -1, "hours": .5, "vesselId": "v-2", "lengthM": 100}]
+        self.assertEqual(cells_from_rows(rows, query)[0]["mean_length_m"], 60)
+        rows.append({"lat": 4, "lon": -1, "hours": .5})
+        self.assertIsNone(cells_from_rows(rows, query)[0]["mean_length_m"])
+
     def setUp(self):
         self.client = TestClient(create_app(seed_fixtures=False))
         self.query = {"mode": "synthetic", "west": -5, "east": 3, "south": 1, "north": 7,

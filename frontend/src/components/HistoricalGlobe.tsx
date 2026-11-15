@@ -5,11 +5,13 @@ import type * as GeoJSON from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../mapWorker";
 import { request } from "../api/client";
+import { lengthScale, makeMapSymbol, shipKind } from "../vesselSymbols";
+import type { ActivityCell } from "../api/historical";
 
 
 type Area = { west: number; south: number; east: number; north: number };
 type Query = Area & { mode: "synthetic" | "gfw"; layer: "presence" | "fishing" | "sar"; hours_ago: number; window_hours: number };
-type Cell = { id: string; lat: number; lon: number; value: number; date: string; vessel_type: string };
+type Cell = ActivityCell;
 type Vessel = { vessel_id: string; name: string; mmsi: string | null; vessel_type: string; hours: number };
 type AreaResult = { cells: Cell[]; vessels: Vessel[]; mode: Query["mode"]; layer: Query["layer"]; start: string; end: string; notes: string[]; dataset: string };
 type Enrichment = { mode: Query["mode"]; vessel_id: string; start: string; end: string; identity: Record<string, unknown>; insights: Record<string, unknown>; authorization: { status: string; explanation: string }; sources: string[]; warnings: string[];
@@ -56,18 +58,27 @@ export function HistoricalGlobe() {
     map.current = instance;
     instance.addControl(new maplibregl.NavigationControl(), "top-right");
     instance.boxZoom.disable();
+    instance.on("styleimagemissing", (event) => {
+      const image = makeMapSymbol(event.id);
+      if (image && !instance.hasImage(event.id)) instance.addImage(event.id, image, { pixelRatio: 2 });
+    });
     instance.on("load", () => {
       instance.setProjection({ type: "globe" });
-      instance.addSource("activity", { type: "geojson", data: emptyGeoJSON() });
+      instance.addSource("activity", { type: "geojson", data: emptyGeoJSON(), cluster: true, clusterRadius: 44, clusterMaxZoom: 9 });
       instance.addSource("selection", { type: "geojson", data: emptyGeoJSON() });
       instance.addLayer({ id: "selection-fill", type: "fill", source: "selection", paint: { "fill-color": "#24d7c3", "fill-opacity": .1 } });
       instance.addLayer({ id: "selection-edge", type: "line", source: "selection", paint: { "line-color": "#24d7c3", "line-width": 2 } });
-      instance.addLayer({ id: "activity-dots", type: "circle", source: "activity", paint: {
-        "circle-radius": ["interpolate", ["linear"], ["get", "value"], 0, 4, 2, 7, 20, 12],
-        "circle-color": ["match", ["get", "vessel_type"], "cargo", "#63aaff", "carrier", "#c5a1ff", "#20dec3"],
-        "circle-opacity": .85, "circle-stroke-color": "#082633", "circle-stroke-width": 1,
+      instance.addLayer({ id: "activity-dots", type: "symbol", source: "activity", layout: {
+        "icon-image": ["case", ["has", "point_count"], ["concat", "fleet-cluster-", ["to-string", ["get", "point_count"]]], ["get", "symbol_id"]],
+        "icon-size": ["coalesce", ["get", "symbol_scale"], 1], "icon-allow-overlap": true,
       } });
       instance.on("click", "activity-dots", (event) => {
+        const feature = event.features?.[0];
+        if (feature?.properties.cluster_id !== undefined && feature.geometry.type === "Point") {
+          const center = feature.geometry.coordinates as [number, number];
+          void (instance.getSource("activity") as GeoJSONSource).getClusterExpansionZoom(Number(feature.properties.cluster_id)).then((zoom) => instance.easeTo({ center, zoom }));
+          return;
+        }
         const properties = event.features?.[0]?.properties;
         if (properties) setCell(properties as Cell);
       });
@@ -83,7 +94,10 @@ export function HistoricalGlobe() {
 
   useEffect(() => {
     if (!ready || !map.current) return;
-    const data: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: (result?.cells ?? []).map((point) => ({ type: "Feature", properties: point, geometry: { type: "Point", coordinates: [point.lon, point.lat] } })) };
+    const data: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: (result?.cells ?? []).map((point) => ({ type: "Feature", properties: { ...point,
+      symbol_id: `fleet-cell-${shipKind(point.vessel_type)}-${point.vessel_count_lower_bound != null ? "lower" + point.vessel_count_lower_bound : "unknown"}`,
+      symbol_scale: lengthScale(point.mean_length_m),
+    }, geometry: { type: "Point", coordinates: [point.lon, point.lat] } })) };
     (map.current.getSource("activity") as GeoJSONSource).setData(data);
   }, [ready, result]);
 

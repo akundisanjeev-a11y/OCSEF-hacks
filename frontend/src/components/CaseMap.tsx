@@ -10,6 +10,7 @@ import { zonesGeoJson } from "../zones";
 import type { ActivityCell } from "../api/historical";
 import landOutlineUrl from "../assets/land-outline.geojson?url";
 import { applyBasemap, isImageryError, type Basemap } from "../mapBasemap";
+import { lengthScale, makeMapSymbol, shipColors, shipKind, shipPaths } from "../vesselSymbols";
 
 export interface Area {
   west: number;
@@ -154,6 +155,10 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
         setMapError(message);
       }
     });
+    map.on("styleimagemissing", (event) => {
+      const image = makeMapSymbol(event.id);
+      if (image && !map.hasImage(event.id)) map.addImage(event.id, image, { pixelRatio: 2 });
+    });
     map.addControl(new maplibregl.NavigationControl({ showZoom: true, visualizePitch: false }), "top-left");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric", maxWidth: 140 }), "bottom-right");
     map.on("load", () => {
@@ -162,13 +167,19 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
       map.addLayer({ id: "zones-fill", type: "fill", source: "zones", paint: { "fill-color": "#2fd3c0", "fill-opacity": 0.1 } });
       map.addLayer({ id: "zones-line", type: "line", source: "zones", paint: { "line-color": "#2fd3c0", "line-width": 1.2 } });
       }
-      map.addSource("historical-activity", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      map.addLayer({ id: "historical-activity", type: "circle", source: "historical-activity", paint: {
-        "circle-radius": ["interpolate", ["linear"], ["get", "value"], 0, 4, 2, 7, 20, 12],
-        "circle-color": "#32dec4", "circle-stroke-width": 1, "circle-stroke-color": "#062732", "circle-opacity": .85,
+      map.addSource("historical-activity", { type: "geojson", data: { type: "FeatureCollection", features: [] }, cluster: true, clusterRadius: 44, clusterMaxZoom: 9 });
+      map.addLayer({ id: "historical-activity", type: "symbol", source: "historical-activity", layout: {
+        "icon-image": ["case", ["has", "point_count"], ["concat", "fleet-cluster-", ["to-string", ["get", "point_count"]]], ["get", "symbol_id"]],
+        "icon-size": ["coalesce", ["get", "symbol_scale"], 1], "icon-allow-overlap": true,
       } });
       map.on("click", "historical-activity", (event) => {
-        const cell = event.features?.[0]?.properties;
+        const feature = event.features?.[0];
+        const cell = feature?.properties;
+        if (cell?.cluster_id !== undefined && feature?.geometry.type === "Point") {
+          const center = feature.geometry.coordinates as [number, number];
+          void (map.getSource("historical-activity") as GeoJSONSource).getClusterExpansionZoom(Number(cell.cluster_id)).then((zoom) => map.easeTo({ center, zoom }));
+          return;
+        }
         if (cell) activityClick.current?.(cell as ActivityCell);
       });
       map.addSource("area", { type: "geojson", data: areaGeoJson(null) });
@@ -196,7 +207,10 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
     if (!ready || !mapRef.current) return;
     const source = mapRef.current.getSource("historical-activity") as GeoJSONSource;
     void source.setData({ type: "FeatureCollection", features: (activityCells ?? []).map((cell) => ({
-      type: "Feature", properties: cell, geometry: { type: "Point", coordinates: [cell.lon, cell.lat] },
+      type: "Feature", properties: { ...cell,
+        symbol_id: `fleet-cell-${shipKind(cell.vessel_type)}-${cell.vessel_count_lower_bound != null ? "lower" + cell.vessel_count_lower_bound : "unknown"}`,
+        symbol_scale: lengthScale(cell.mean_length_m),
+      }, geometry: { type: "Point", coordinates: [cell.lon, cell.lat] },
     })) });
   }, [ready, activityCells]);
 
@@ -232,7 +246,9 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
         "aria-label",
         g.cases.length > 1 ? `${g.cases.length} vessels at this location` : `Vessel ${g.cases[0].observation.observation_id}`,
       );
-      el.innerHTML = '<svg viewBox="0 0 20 18" aria-hidden="true"><path d="M10 1 19 17H1Z"/></svg>';
+      const kinds = [...new Set(g.cases.map((c) => shipKind(c.vessel_assessment?.vessel_type)))];
+      const kind = kinds.length === 1 ? kinds[0] : "mixed";
+      el.innerHTML = `<svg viewBox="0 0 34 34" aria-hidden="true"><path d="${shipPaths[kind]}" style="fill:${shipColors[kind]}"/></svg>`;
       if (g.cases.length > 1) {
         const count = document.createElement("span");
         count.className = "marker-count";
@@ -362,7 +378,7 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
         )}
       </div>
 
-      {activityCells !== undefined ? <div className="map-legend"><span>● Historical activity cells, not exact boat positions</span><span>Basemap imagery is not timestamped vessel evidence</span><a href="https://globalfishingwatch.org" target="_blank" rel="noreferrer">Powered by Global Fishing Watch</a></div> : <div className="map-legend">
+      {activityCells !== undefined ? <div className="map-legend"><span>Cluster numbers = activity cells · click to expand</span><span>Cell ≥N = reported vessel-count lower bound · ? = unavailable</span><span>Symbol = reported type; unknown/mixed where unresolved</span><span>Size uses reported length only when available; otherwise fixed. Not to map scale.</span><a href="https://globalfishingwatch.org" target="_blank" rel="noreferrer">Powered by Global Fishing Watch</a></div> : <div className="map-legend">
         <span>
           <i className="legend-mark marker-registered" />
           AIS matched

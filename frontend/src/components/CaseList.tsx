@@ -1,6 +1,7 @@
 import type { Case } from "../api/types";
 import { formatTime, identityLabel, registration, registrationLabel, reviewLabel } from "../format";
 import { StatusLabel } from "./StatusLabel";
+import { ShipSymbol } from "./ShipSymbol";
 
 interface Props {
   cases: Case[];
@@ -14,6 +15,7 @@ export function CaseList({ cases, selectedId, onSelect }: Props) {
       <thead>
         <tr>
           <th>Vessel</th>
+          <th>Reported type</th>
           <th>Authorization</th>
           <th>Observation</th>
           <th>AIS match</th>
@@ -43,6 +45,7 @@ export function CaseList({ cases, selectedId, onSelect }: Props) {
               <td className={`reg marker-${registration(o.identity_status)}`}>
                 {registrationLabel[registration(o.identity_status)]}
               </td>
+              <td><ShipSymbol type={c.vessel_assessment?.vessel_type} /> {c.vessel_assessment?.vessel_type?.replaceAll("_", " ") ?? "Unknown"}</td>
               <td>
                 <StatusLabel status={c.authorization.status} />
               </td>

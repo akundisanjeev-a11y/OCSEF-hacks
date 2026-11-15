@@ -1360,3 +1360,4 @@ input[type="search"] {
 .map-status { position: absolute; left: 14px; right: 14px; bottom: 80px; z-index: 3; padding: 8px 12px; border: 1px solid #436276; border-radius: 4px; background: #0b2233ed; color: #c9deea; font-size: 12px; pointer-events: none; }
 .map-status-error { color: #ffd1c8; border-color: #9c645b; }
 .basemap-choice select { max-width: 190px; }
+.ship-type-symbol { display: inline-block; vertical-align: middle; flex-shrink: 0; }

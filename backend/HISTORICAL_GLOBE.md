@@ -60,6 +60,28 @@ the outline from pinned local geography with `python training/prepare_globe_outl
 
 ## Data semantics
 
+### Symbols, numbers and size
+
+Vessel lists now distinguish fishing, cargo, carrier, tanker, passenger, tug/service,
+other, mixed and unknown types using reported classifications. Fictional case
+markers use their supplied tentative classifications, not inferred legal status.
+Map sprites are generated locally and do not depend on online font/glyph services.
+
+Repeated hourly/flag rows at the same activity-cell location are combined. A cell
+can display `≥N`, the maximum reported vessel count across its source rows, which
+is a lower bound rather than a falsely summed unique-vessel count. Missing counts
+display `?`. Spatial clusters display the number of activity cells and zoom apart
+when clicked; they are explicitly not labeled as unique boats.
+
+Map size no longer encodes activity hours. A bounded relative length scale is used
+only when the input identifies every contributing vessel and supplies its reported
+length; means deduplicate repeated vessel IDs. Otherwise a fixed symbol size is
+used. Current standard GFW gridded reports generally do not supply those lengths,
+so real map symbols will often use the fixed fallback. Reported vessel lengths
+can appear in full reports and populate the area table after inspection. No
+additional identity lookups are made merely to manufacture size metadata, and
+vessels from the area list are never assigned to arbitrary activity-cell positions.
+
 ### Risk-only screening
 
 Overview's **Screen vessel risks** button screens all area-associated vessels in
