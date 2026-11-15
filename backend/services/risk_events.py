@@ -88,8 +88,8 @@ def summarize_event(event, event_id, query):
             "scope_note": "This is a representative event point, not the complete track. Its location does not establish the location of every part of the event or explain the boat's intent."}
 
 
-async def load_risk_events(query: RiskEventRequest, client=None):
-    dataset = DATASETS[query.code]
+async def load_risk_events(query: RiskEventRequest, client=None, dataset: str | None = None):
+    dataset = dataset or DATASETS[query.code]
     async def one(event_id):
         key = (dataset, event_id)
         cached = _cache.get(key)

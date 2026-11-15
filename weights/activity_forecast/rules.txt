@@ -1,20 +1,53 @@
-Selected: seasonal_correction_tree
-Baseline = latest observed 7-day total.
-Seasonal estimate = same target dates last year, scaled by the current/past 28-day activity ratio (capped at 5).
-If annual history is missing or its average is zero, seasonal estimate = baseline.
-Scale = max(last-week hours, monthly-average hours * 7, 1 hour).
-Tree forecast = max(0, baseline + leaf correction * scale).
-Leaf corrections are weighted-median training outcomes, not manual constants.
+Five-degree seasonal correction tree; maximum depth 4; minimum leaf 500.
+Baseline = last observed 7-day total; publication lag = 4 days.
+Scale = max(baseline, 28-day daily mean * 7, 1).
+Forecast = max(0, baseline + learned leaf correction * scale).
+Annual estimate uses the same target days last year, scaled by the past-only 28-day ratio, capped at 5.
+No annual reference or zero prior-year mean: annual estimate falls back to baseline.
 
-|--- seasonal_change_fraction <= -0.2802
-|   |--- seasonal_change_fraction <= -0.7636
-|   |   |--- value: [-0.7764]
-|   |--- seasonal_change_fraction >  -0.7636
-|   |   |--- value: [-0.3045]
-|--- seasonal_change_fraction >  -0.2802
-|   |--- seasonal_change_fraction <= 0.2474
-|   |   |--- value: [-0.0062]
-|   |--- seasonal_change_fraction >  0.2474
-|   |   |--- value: [0.1534]
-
-Blend candidate: 0.64281257 * baseline + 0.27116485 * seasonal estimate
+|--- seasonal_change_fraction <= -0.276265
+|   |--- seasonal_change_fraction <= -0.747887
+|   |   |--- recent_three_day_change_fraction <= 0.098268
+|   |   |   |--- seasonal_change_fraction <= -0.893508
+|   |   |   |   |--- value: [-0.913194]
+|   |   |   |--- seasonal_change_fraction >  -0.893508
+|   |   |   |   |--- value: [-0.717466]
+|   |   |--- recent_three_day_change_fraction >  0.098268
+|   |   |   |--- recent_three_day_change_fraction <= 0.570193
+|   |   |   |   |--- value: [-0.316601]
+|   |   |   |--- recent_three_day_change_fraction >  0.570193
+|   |   |   |   |--- value: [0.401268]
+|   |--- seasonal_change_fraction >  -0.747887
+|   |   |--- recent_three_day_change_fraction <= 0.018164
+|   |   |   |--- seasonal_change_fraction <= -0.623848
+|   |   |   |   |--- value: [-0.590950]
+|   |   |   |--- seasonal_change_fraction >  -0.623848
+|   |   |   |   |--- value: [-0.323452]
+|   |   |--- recent_three_day_change_fraction >  0.018164
+|   |   |   |--- recent_three_day_change_fraction <= 0.743745
+|   |   |   |   |--- value: [-0.199204]
+|   |   |   |--- recent_three_day_change_fraction >  0.743745
+|   |   |   |   |--- value: [0.955166]
+|--- seasonal_change_fraction >  -0.276265
+|   |--- seasonal_change_fraction <= 0.020510
+|   |   |--- seasonal_change_fraction <= -0.166778
+|   |   |   |--- recent_three_day_change_fraction <= -0.336017
+|   |   |   |   |--- value: [-0.027582]
+|   |   |   |--- recent_three_day_change_fraction >  -0.336017
+|   |   |   |   |--- value: [-0.124534]
+|   |   |--- seasonal_change_fraction >  -0.166778
+|   |   |   |--- recent_three_day_change_fraction <= -0.165625
+|   |   |   |   |--- value: [0.095276]
+|   |   |   |--- recent_three_day_change_fraction >  -0.165625
+|   |   |   |   |--- value: [-0.031527]
+|   |--- seasonal_change_fraction >  0.020510
+|   |   |--- recent_three_day_change_fraction <= -0.238147
+|   |   |   |--- seasonal_change_fraction <= 2.590168
+|   |   |   |   |--- value: [0.191865]
+|   |   |   |--- seasonal_change_fraction >  2.590168
+|   |   |   |   |--- value: [0.368345]
+|   |   |--- recent_three_day_change_fraction >  -0.238147
+|   |   |   |--- seasonal_change_fraction <= 0.394997
+|   |   |   |   |--- value: [0.029133]
+|   |   |   |--- seasonal_change_fraction >  0.394997
+|   |   |   |   |--- value: [0.133292]

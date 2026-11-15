@@ -14,7 +14,7 @@ from training.activity_forecast.train import chronological_split, score_candidat
 
 
 def evaluate(output: Path):
-    bundle = joblib.load(output / 'model.joblib')  # Only trusted local bundles.
+    bundle = joblib.load(output / ('best_model.joblib' if (output/'best_model.joblib').exists() else 'model.joblib'))
     if bundle.get('schema_version') == 2:
         from training.activity_forecast.improve import evaluate_fresh
         return evaluate_fresh(output)

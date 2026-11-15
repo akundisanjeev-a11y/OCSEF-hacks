@@ -23,17 +23,17 @@ def test_bundled_files_work_in_an_empty_data_directory(tmp_path):
         for route in ['/activity-forecast', '/api/activity-forecast']:
             response = client.post(route, json={'latitude':27.5,'longitude':122.5})
             assert response.status_code == 200
-            assert response.json()['predicted_week_hours'] == pytest.approx(34722.984290720226)
+            assert response.json()['predicted_week_hours'] == pytest.approx(386414.9500615278)
             assert response.json()['data_mode'] == 'historical_demo'
             evidence = response.json()['reasoning_evidence']
             cell_history = service.daily.loc[service.daily.cell_id == response.json()['cell_id']].sort_values('date').tail(28)
             assert evidence['last_week_daily_mean'] == pytest.approx(cell_history.fishing_hours.tail(7).mean())
             assert evidence['recent_three_day_daily_mean'] == pytest.approx(cell_history.fishing_hours.tail(3).mean())
             assert evidence['month_daily_mean'] == pytest.approx(cell_history.fishing_hours.mean())
-            assert evidence['seasonal_reference_start'] == '2024-08-04'
+            assert evidence['seasonal_reference_start'] == '2024-11-05'
             assert evidence['prediction_change_hours'] == pytest.approx(response.json()['predicted_week_hours']-response.json()['repeat_last_week_hours'])
-            assert 'recent_three_day_change_fraction' not in evidence['used_signals']  # This returned tree path uses seasonality, not that signal.
-        assert client.get('/activity-forecast/info').json()['evaluation']['mae_reduction_percent'] == pytest.approx(6.78043254)
+            assert 'recent_three_day_change_fraction' in evidence['used_signals']
+        assert client.get('/activity-forecast/info').json()['evaluation']['mae_reduction_percent'] == pytest.approx(1.02331675)
         empty = client.post('/activity-forecast',json={'latitude':89,'longitude':0})
         assert empty.json()['status'] == 'insufficient_data'
         assert client.get('/cases').json() == {'cases': []}

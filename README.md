@@ -49,6 +49,24 @@ activity-square center. See the [GFW report contract](https://globalfishingwatch
 
 ## Your trained ML forecast
 
+The permanent checkpoint is now the five-degree **depth-four seasonal correction
+tree**. It reduced September-October test MAE by 4.07% versus the previous frozen
+checkpoint (1.02% versus persistence); August validation still lost to persistence.
+See [the full recorded comparison](docs/depth4-unseen-evaluation.md).
+
+## Area review priority
+
+Select an area in Overview, open **Investigations**, and click **Calculate
+priority**. Background assessment jobs combine only date-matched, supported
+GFW and forecast inputs. The panel shows contributions, excluded sources,
+progress/cancellation and missing-data bounds. The score is a human-review
+heuristic, not a finding of illegality or ecosystem damage. Historical coral
+and seagrass reference maps remain excluded from scoring.
+
+See [the API/frontend handoff and weights](docs/frontend-priority-engine-guide.md).
+
+### Forecast setup
+
 The forecast source, saved best model, evaluation metadata and a compact
 historical inference-data bundle are included on `main`. After installing
 `backend/requirements.txt`, run:
@@ -64,7 +82,7 @@ requests such as `/api/activity-forecast` onto those routes. The earlier direct
 backend `/api/activity-forecast` URL remains an alias.
 
 This ML component predicts **apparent fishing hours**, even though the website
-monitors many vessel types. Its bundled historical observations end July 31,
+monitors many vessel types. Its bundled historical observations end October 31,
 2025; it is not a live forecast or an authorization classifier.
 See the [frontend handoff](docs/frontend-activity-forecast-guide.md) and
 [ML guide](training/activity_forecast/README.md).

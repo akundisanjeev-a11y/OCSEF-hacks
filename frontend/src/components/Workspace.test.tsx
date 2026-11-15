@@ -57,6 +57,8 @@ test("shares real area and screening across tabs without querying again", async 
   expect(screen.queryByText("Query Gulf of Guinea area")).toBeNull();
   fireEvent.click(screen.getByText("Draw area"));
   fireEvent.click(await screen.findByText("Investigate selected boats"));
+  expect(screen.getByRole('heading', { name: 'Area review priority' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Calculate priority' })).toBeTruthy();
   fireEvent.click(screen.getByText("Screen vessel risks"));
   await screen.findByText("Flagged (1)");
   fireEvent.click(screen.getByRole("button", { name: "Overview" }));

@@ -29,7 +29,7 @@ export function HistoricalWorkspace({ children }: { children: ReactNode }) {
   const currentRisks = useRef<Record<string, VesselRisk>>({});
   const active = useRef<AbortController | null>(null);
   const version = useRef(0);
-  const areaKey = (data: HistoricalAreaResult | null) => data ? JSON.stringify([data.mode, data.layer, data.bounds, data.start, data.end, data.dataset, data.vessels.map(vessel => vessel.vessel_id)]) : "";
+  const areaKey = (data: HistoricalAreaResult | null) => data ? JSON.stringify([data.mode, data.layer, data.bounds, data.applied_filters, data.start, data.end, data.dataset, data.vessels.map(vessel => vessel.vessel_id)]) : "";
   const setResult = useCallback((next: HistoricalAreaResult | null) => {
     if (areaKey(current.current) !== areaKey(next)) {
       version.current++; active.current?.abort(); active.current = null;

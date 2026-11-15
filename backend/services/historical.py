@@ -246,8 +246,8 @@ def report_rows(payload: dict, dataset: str) -> list[dict]:
     return rows
 
 
-async def report(query: AreaQuery, start: str, end: str, *, vessels: bool = False) -> list[dict]:
-    dataset = DATASETS[query.layer]
+async def report(query: AreaQuery, start: str, end: str, *, vessels: bool = False, dataset: str | None = None, client=None) -> list[dict]:
+    dataset = dataset or DATASETS[query.layer]
     # The UI shows totals for the entire window, not hourly playback. Aggregate
     # upstream to avoid transferring repeated hourly cell and vessel records.
     params = {"datasets[0]": dataset, "format": "JSON", "temporal-resolution": "ENTIRE",
@@ -267,7 +267,7 @@ async def report(query: AreaQuery, start: str, end: str, *, vessels: bool = Fals
     geojson = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {}, "geometry": {"type": "Polygon", "coordinates": [ring]}}]}
     # GFW permits only one report concurrently for a user/token.
     async with _report_lock:
-        data = await gfw_request("4wings/report", params=params, body={"geojson": geojson})
+        data = await gfw_request("4wings/report", params=params, body={"geojson": geojson}, **({"client":client} if client is not None else {}))
     if data.get("nextOffset") or data.get("since"):
         raise HTTPException(502, "GFW returned a partial report. Narrow the area instead of treating it as complete.")
     return report_rows(data, dataset)
@@ -337,11 +337,12 @@ def sample_area(query, start, end):
 
 async def query_area(query: AreaQuery):
     start, end = period(query.hours_ago, query.window_hours)
+    applied_filters=query.model_dump(include={'flag','geartype','vessel_id','vessel_type','shiptype','speed','distance_from_port_km','sar_matched','neural_vessel_type'})
     land_check = await asyncio.to_thread(estimate_land, query.west, query.south, query.east, query.north) if query.mode == "gfw" else None
     if land_check and land_check["skip"] and not query.allow_land:
         return {"mode": query.mode, "layer": query.layer, "start": start, "end": end, "dataset": DATASETS[query.layer],
                 "cells": [], "vessels": [], "cell_resolution_degrees": .1, "land_check": land_check,
-                "bounds": {key: getattr(query, key) for key in ("west", "south", "east", "north")},
+                "bounds": {key: getattr(query, key) for key in ("west", "south", "east", "north")},"applied_filters":applied_filters,
                 "skipped": True, "notes": ["Skipped before calling GFW: conservative land coverage exceeds 75%. Select a water-focused area or explicitly override the estimate."]}
     if query.mode == "synthetic":
         data = sample_area(query, start, end)
@@ -366,7 +367,7 @@ async def query_area(query: AreaQuery):
             vessel["hours"] += numeric(row.get("hours")) or 0
         data = {"cells": cells, "vessels": list(vessels.values())}
     result = {**data, "mode": query.mode, "layer": query.layer, "start": start, "end": end, "land_check": land_check, "skipped": False,
-              "bounds": {key: getattr(query, key) for key in ("west", "south", "east", "north")},
+              "bounds": {key: getattr(query, key) for key in ("west", "south", "east", "north")},"applied_filters":applied_filters,
               "dataset": DATASETS[query.layer], "cell_resolution_degrees": .1,
               "notes": ["Dots represent 0.1° activity cells, not exact boat positions.",
                         "Vessels are associated with the selected area and period, not assigned to individual cells.",
@@ -378,7 +379,8 @@ async def query_area(query: AreaQuery):
     return result
 
 
-async def enrich_vessel(request: VesselEnrichment):
+async def enrich_vessel(request: VesselEnrichment, client=None, identity_dataset: str | None = None):
+    identity_dataset = identity_dataset or IDENTITY
     start, end = period(request.hours_ago, request.window_hours)
     if request.start is not None:
         start = request.start.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
@@ -393,10 +395,10 @@ async def enrich_vessel(request: VesselEnrichment):
             "registryInfo": [{"source": "fictional registry"}], "registryPublicAuthorizations": []}
         insights = {"apparentFishing": {"periodSelectedCounters": {"eventsInNoTakeMPAs": 1 if fishing else 0}}, "gaps": {"aisOff": ["fictional-gap"] if fishing else []}}
     else:
-        identity = await gfw_request("vessels/" + quote(request.vessel_id, safe=""), params={"dataset": IDENTITY, "registries-info-data": "ALL"})
+        identity = await gfw_request("vessels/" + quote(request.vessel_id, safe=""), params={"dataset": identity_dataset, "registries-info-data": "ALL"}, **({"client":client} if client is not None else {}))
         try:
-            insights = await gfw_request("insights/vessels", body={"vessels": [{"datasetId": IDENTITY, "vesselId": request.vessel_id}],
-                "startDate": start, "endDate": end, "includes": ["FISHING", "GAP", "COVERAGE", "VESSEL-IDENTITY-IUU-VESSEL-LIST"]})
+            insights = await gfw_request("insights/vessels", body={"vessels": [{"datasetId": identity_dataset, "vesselId": request.vessel_id}],
+                "startDate": start, "endDate": end, "includes": ["FISHING", "GAP", "COVERAGE", "VESSEL-IDENTITY-IUU-VESSEL-LIST"]}, **({"client":client} if client is not None else {}))
         except HTTPException as error:
             insights = {}
             warnings.append(f"Identity was retrieved, but risk insights are unavailable: {error.detail}")

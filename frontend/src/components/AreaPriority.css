@@ -1,0 +1,11 @@
+.area-priority { border-bottom: 1px solid var(--line); }
+.area-priority .priority-category { display: inline-block; padding: .2rem .65rem; border: 1px solid currentColor; border-radius: var(--r-1); font-weight: 650; }
+.area-priority .priority-minimal { color: var(--clear); }
+.area-priority .priority-low { color: var(--accent); }
+.area-priority .priority-medium { color: var(--review); }
+.area-priority .priority-high { color: var(--review); }
+.area-priority .priority-critical { color: var(--error); }
+.area-priority .priority-unknown { color: inherit; }
+.area-priority td { overflow-wrap: anywhere; }
+.area-priority summary { cursor: pointer; padding: .7rem 0; }
+@media print { .area-priority button { display: none; } }

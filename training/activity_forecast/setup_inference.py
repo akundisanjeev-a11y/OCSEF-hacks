@@ -37,4 +37,8 @@ def setup(archive=None, destination=None):
 
 
 if __name__ == '__main__':
-    print('Historical inference data ready:', setup())
+    import argparse
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--destination',type=Path)
+    args=parser.parse_args()
+    print('Historical inference data ready:', setup(destination=args.destination))

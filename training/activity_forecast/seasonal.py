@@ -87,13 +87,15 @@ def fit_blend(x, y):
     return weights
 
 
-def fit_candidates(rows):
+def fit_candidates(rows, max_depth=2, min_samples_leaf=500):
+    if not isinstance(max_depth, int) or not 1 <= max_depth <= 8 or min_samples_leaf < 1:
+        raise ValueError('Use a depth between 1 and 8 and a positive leaf size')
     baseline = rows[FEATURES[0]].to_numpy()*7
     target = rows.target_week_hours.to_numpy()
     scale = np.maximum.reduce([baseline, rows[FEATURES[2]].to_numpy()*7, np.ones(len(rows))])
     blend = fit_blend(np.column_stack([baseline, rows.seasonal_estimate_hours]), target)
-    tree = DecisionTreeRegressor(criterion='absolute_error', max_depth=2,
-                                min_samples_leaf=500, random_state=42)
+    tree = DecisionTreeRegressor(criterion='absolute_error', max_depth=max_depth,
+                                min_samples_leaf=min_samples_leaf, random_state=42)
     tree.fit(rows[RULE_FEATURES], (target-baseline)/scale, sample_weight=scale)
     return {'calibration_scale': fit_scale(baseline, target),
             'blend_weights': blend.tolist(), 'correction_tree': tree}

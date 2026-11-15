@@ -5,6 +5,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
+from dotenv import load_dotenv
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -22,6 +23,8 @@ from backend.services.risk_screening import RiskScreenRequest, RiskStreamRequest
 from backend.forecast_api import router as forecast_router
 from backend.services.vessel_search import VesselSearch, search_vessels
 from backend.services.risk_events import RiskEventRequest, load_risk_events
+from backend.priority_api import router as priority_router,PriorityJobs
+from backend.services.habitat_features import HabitatIndex
 
 FIXTURE_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic" / "static_cases.json"
 
@@ -41,12 +44,16 @@ def load_demo_cases(store: CaseService) -> list[str]:
 
 
 def create_app(*, seed_fixtures: bool = True, load_forecast: bool = True) -> FastAPI:
+    root=Path(__file__).resolve().parents[1]
+    load_dotenv(root/'.env',override=False)
+    def configured_path(name,default):
+        value=Path(os.getenv(name,str(default)))
+        return value if value.is_absolute() else root/value
     @asynccontextmanager
     async def lifespan(app):
         app.state.forecaster = None
         app.state.forecast_error = None
         if load_forecast:
-            root = Path(__file__).resolve().parents[1]
             try:
                 def load_model():
                     # Forecast dependencies are optional to the GFW query app.
@@ -54,8 +61,8 @@ def create_app(*, seed_fixtures: bool = True, load_forecast: bool = True) -> Fas
                     # the reload supervisor holding an unresponsive port.
                     from backend.services.activity_forecast import ActivityForecaster
                     return ActivityForecaster(
-                        Path(os.getenv('ACTIVITY_FORECAST_MODEL_PATH', root/'weights/activity_forecast/best_model.joblib')),
-                        Path(os.getenv('ACTIVITY_FORECAST_DATA_DIR', root/'datasets/activity_forecast/processed')),
+                        configured_path('ACTIVITY_FORECAST_MODEL_PATH',root/'weights/activity_forecast/best_model.joblib'),
+                        configured_path('ACTIVITY_FORECAST_DATA_DIR',root/'datasets/activity_forecast/processed'),
                     )
                 app.state.forecaster = await run_in_threadpool(load_model)
             except Exception:
@@ -64,9 +71,13 @@ def create_app(*, seed_fixtures: bool = True, load_forecast: bool = True) -> Fas
         async with httpx.AsyncClient(timeout=110, follow_redirects=False,
                                      limits=httpx.Limits(max_connections=8, max_keepalive_connections=4, keepalive_expiry=60)) as client:
             app.state.gfw_client = client
+            app.state.priority_jobs=PriorityJobs(app.state.forecaster,
+                HabitatIndex(configured_path('PRIORITY_HABITAT_INDEX',root/'datasets/priority_engine/habitats/habitats.sqlite')),client)
             try:
                 yield
             finally:
+                await app.state.priority_jobs.close()
+                app.state.priority_jobs=None
                 app.state.forecaster = None
                 app.state.gfw_client = None
 
@@ -74,6 +85,8 @@ def create_app(*, seed_fixtures: bool = True, load_forecast: bool = True) -> Fas
     app.include_router(forecast_router)
     # Compatibility for callers using the earlier direct-backend URL.
     app.include_router(forecast_router, prefix='/api', include_in_schema=False)
+    app.include_router(priority_router)
+    app.include_router(priority_router,prefix='/api',include_in_schema=False)
     store = CaseService()
     if seed_fixtures:
         load_demo_cases(store)
