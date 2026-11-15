@@ -42,16 +42,15 @@ describe("Overview GFW integration", () => {
     expect((await screen.findByRole("alert")).textContent).toContain("FastAPI is unresponsive");
     expect(fetchHistoricalArea).not.toHaveBeenCalled();
   });
-  it("screens risk without fetching full reports and then allows report selection", async () => {
-    vi.mocked(screenHistoricalRisks).mockResolvedValue({ results: [{ vessel_id: "test-vessel-1", state: "flagged", flag_count: 1, missing_count: 0, indicators: [{ code: "gap", label: "AIS gaps", count: 2, event_ids: [] }], cached: false }] });
-    render(<GfwOverview />);
+  it("directs risk screening to Investigations without starting checks in Overview", async () => {
+    const openInvestigations = vi.fn();
+    render(<GfwOverview onInvestigations={openInvestigations} />);
     fireEvent.click(screen.getByText("Draw test area"));
-    fireEvent.click(await screen.findByText("Screen vessel risks"));
-    expect(await screen.findByText("Flagged (1)")).toBeTruthy();
+    fireEvent.click(await screen.findByText("Investigate selected boats"));
+    expect(openInvestigations).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("button", { name: "Screen vessel risks" })).toBeNull();
+    expect(screenHistoricalRisks).not.toHaveBeenCalled();
     expect(fetchHistoricalVessel).not.toHaveBeenCalled();
-    expect(screenHistoricalRisks).toHaveBeenCalledWith(["test-vessel-1"], areaResult.start, areaResult.end, expect.any(AbortSignal));
-    fireEvent.click(screen.getByText("Inspect vessel"));
-    expect(await screen.findByText("Test vessel identity")).toBeTruthy();
   });
 
   it("explains a land skip rather than claiming no vessels exist", async () => {
@@ -94,9 +93,11 @@ describe("Overview GFW integration", () => {
     vi.mocked(fetchHistoricalArea).mockReturnValue(new Promise((done) => { resolve = done; }));
     render(<GfwOverview />);
     fireEvent.click(screen.getByText("Draw test area"));
+    await screen.findByRole("status", { name: "Loading area-associated vessels" });
     fireEvent.click(screen.getByText("Clear test area"));
     resolve(areaResult);
     await waitFor(() => expect(screen.queryByText("Test vessel")).toBeNull());
+    expect(screen.queryByRole("status", { name: "Loading area-associated vessels" })).toBeNull();
     expect(screen.getByText(/That selection now triggers a GFW query/)).toBeTruthy();
   });
 

@@ -27,16 +27,16 @@ export function ActivityFilterControls({ layer, onApply }: { layer: HistoricalQu
     if (layer === "sar") { filters.sar_matched = matched; }
     onApply(filters);
   }
-  return <details><summary>GFW activity filters</summary><form onSubmit={apply}>
-    {layer === "sar" && <><label className="filter"><span>AIS match</span><select value={matched} onChange={e => setMatched(e.target.value as typeof matched)}><option value="false">Unmatched only</option><option value="true">Matched only</option><option value="all">All detections</option></select></label>
-      <p className="muted">GFW currently rejects its documented neural-score thresholds. Use AIS-match filtering; this view does not infer fishing class from unmatched detections.</p></>}
-    <label className="filter"><span>Flag codes, comma separated (e.g. ESP,USA)</span><input disabled={identityUnavailable} value={flag} onChange={e => setFlag(e.target.value)} /></label>
-    <label className="filter"><span>GFW vessel ID (not MMSI)</span><input disabled={identityUnavailable} value={vessel} onChange={e => setVessel(e.target.value)} /></label>
-    {layer !== "presence" && <label className="filter"><span>Gear types, comma separated (e.g. trawlers)</span><input disabled={identityUnavailable} value={gear} onChange={e => setGear(e.target.value)} /></label>}
+  return <details><summary>Filter boats and activity</summary><form onSubmit={apply}>
+    {layer === "sar" && <><label className="filter"><span>Link to boat radio (AIS)</span><select value={matched} onChange={e => setMatched(e.target.value as typeof matched)}><option value="false">No known radio identity</option><option value="true">Linked to a radio identity</option><option value="all">All radar sightings</option></select></label>
+      <p className="muted">Satellite radar can see objects on the water without knowing which boat they are.</p></>}
+    <label className="filter"><span>Registration country codes (e.g. ESP,USA)</span><input disabled={identityUnavailable} value={flag} onChange={e => setFlag(e.target.value)} /></label>
+    <label className="filter"><span>GFW record ID from a boat report</span><input disabled={identityUnavailable} value={vessel} onChange={e => setVessel(e.target.value)} /></label>
+    {layer !== "presence" && <label className="filter"><span>Fishing method codes (e.g. trawlers)</span><input disabled={identityUnavailable} value={gear} onChange={e => setGear(e.target.value)} /></label>}
     {layer === "sar" && <label className="filter"><span>Matched ship type (e.g. cargo)</span><input disabled={identityUnavailable} value={type} onChange={e => setType(e.target.value)} /></label>}
     {layer === "presence" && <><label className="filter"><span>Vessel type (e.g. cargo)</span><input value={type} onChange={e => setType(e.target.value)} /></label><label className="filter"><span>Speed (knots)</span><select value={speed} onChange={e => setSpeed(e.target.value)}><option value="">Any speed</option>{["<2","2-4","4-6","6-10","10-15","15-25",">25"].map(v => <option key={v}>{v}</option>)}</select></label></>}
     {layer === "fishing" && <label className="filter"><span>Minimum port distance</span><select value={port} onChange={e => setPort(e.target.value)}><option value="">Provider default (no filter)</option>{[0,1,2,3,4,5].map(v => <option value={v} key={v}>{v} km</option>)}</select></label>}
-    {identityUnavailable && <p className="muted">Unmatched detections have no established AIS identity. Identity filters are disabled.</p>}
+    {identityUnavailable && <p className="muted">These sightings have no known boat identity, so we cannot filter them by country or boat ID.</p>}
     <button type="submit">Apply activity filters</button><button type="button" onClick={() => { setFlag(""); setGear(""); setVessel(""); setType(""); setSpeed(""); setPort(""); setMatched("false"); onApply({}); }}>Clear filters</button>
   </form></details>;
 }

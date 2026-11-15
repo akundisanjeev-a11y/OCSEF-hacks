@@ -1,85 +1,25 @@
 import { useState } from "react";
-import { liveApi, sampleApi } from "./api/client";
+import { HistoricalWorkspace } from "./HistoricalWorkspace";
+import { GfwOverview } from "./components/GfwOverview";
 import { CoastalImpact } from "./components/CoastalImpact";
-import { HistoricalGlobe } from "./components/HistoricalGlobe";
 import { VesselCheck } from "./components/VesselCheck";
 import { Investigations } from "./components/Investigations";
-import { Overview } from "./components/Overview";
 
-const tabs = {
-  overview: "Overview",
-  historical: "GFW historical",
-  lookup: "Check vessel ID",
-  investigations: "Investigations",
-  impact: "Coastal impact",
-} as const;
-
+const tabs = { overview: "Overview", lookup: "Check vessel ID", investigations: "Investigations", impact: "Coastal impact" } as const;
 type Tab = keyof typeof tabs;
-type Source = "live" | "sample";
 
 export function App() {
   const [tab, setTab] = useState<Tab>("overview");
-  const [source, setSource] = useState<Source>("live");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const api = source === "live" ? liveApi : sampleApi;
-
-  return (
-    <div className="app">
-      <header className="topbar">
-        <div className="brand">GHOSTFLEET</div>
-        <nav className="tabs" aria-label="Screens">
-          {(Object.keys(tabs) as Tab[]).map((t) => (
-            <button key={t} type="button" className={tab === t ? "active" : undefined} onClick={() => setTab(t)}>
-              {tabs[t]}
-            </button>
-          ))}
-        </nav>
-        {(tab === "investigations" || tab === "impact") && <label className="inline-field source">
-          <span>Backend</span>
-          <select
-            value={source}
-            onChange={(e) => {
-              setSource(e.target.value as Source);
-              setSelectedId(null);
-            }}
-          >
-            <option value="live">Case API (demo seeded)</option>
-            <option value="sample">Sample data (no backend)</option>
-          </select>
-        </label>}
-      </header>
-
-      <main className="content">
-        {tab === "overview" && (
-          <Overview
-            key={source}
-            api={api}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onOpenInvestigation={() => setTab("investigations")}
-          />
-        )}
-        {tab === "historical" && <HistoricalGlobe />}
-        {tab === "lookup" && <VesselCheck />}
-        {tab === "investigations" && (
-          <Investigations key={source} api={api} selectedId={selectedId} onSelect={setSelectedId} />
-        )}
-        {tab === "impact" && (
-          <CoastalImpact
-            key={source}
-            api={api}
-            onOpenCase={(id) => {
-              setSelectedId(id);
-              setTab("investigations");
-            }}
-          />
-        )}
-      </main>
-
-      <footer className="footnote">
-        Vessel presence alone does not establish fishing, and an unmatched AIS observation is not proof of illegal
-        fishing. Fictional records are labeled as fictional.
-      </footer>
-    </div>
-  );
+  return <HistoricalWorkspace><div className="app">
+    <header className="topbar"><div className="brand">GHOSTFLEET</div><nav className="tabs" aria-label="Screens">
+      {(Object.keys(tabs) as Tab[]).map(key => <button type="button" key={key} className={tab === key ? "active" : undefined} aria-current={tab === key ? "page" : undefined} onClick={() => setTab(key)}>{tabs[key]}</button>)}
+    </nav><span className="source-badge">Global Fishing Watch · historical</span></header>
+    <main className="content">
+      <div hidden={tab !== "overview"}><GfwOverview onInvestigations={() => setTab("investigations")} /></div>
+      {tab === "lookup" && <VesselCheck />}
+      {tab === "investigations" && <Investigations onOverview={() => setTab("overview")} />}
+      {tab === "impact" && <CoastalImpact onOverview={() => setTab("overview")} onInvestigations={() => setTab("investigations")} />}
+    </main>
+    <footer className="footnote">Powered by Global Fishing Watch. Historical observations and risk indicators support investigation; they do not establish illegal activity or fishing authorization.</footer>
+  </div></HistoricalWorkspace>;
 }

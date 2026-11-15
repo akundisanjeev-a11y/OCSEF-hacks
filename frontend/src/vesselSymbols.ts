@@ -1,6 +1,6 @@
 export type ShipKind = "fishing" | "cargo" | "carrier" | "tanker" | "passenger" | "tug" | "other" | "mixed" | "unknown";
 export const shipColors: Record<ShipKind, string> = { fishing: "#34dec2", cargo: "#69adff", carrier: "#bba0ff", tanker: "#f3b764", passenger: "#f08bb6", tug: "#e4db83", other: "#c1cbd3", mixed: "#f1f4f7", unknown: "#9baeba" };
-export const shipNames: Record<ShipKind, string> = { fishing: "Fishing", cargo: "Cargo", carrier: "Carrier", tanker: "Tanker", passenger: "Passenger", tug: "Tug/service", other: "Other", mixed: "Mixed types", unknown: "Type unknown" };
+export const shipNames: Record<ShipKind, string> = { fishing: "Fishing boat", cargo: "Cargo ship", carrier: "Carrier / transport ship", tanker: "Tanker", passenger: "Passenger ship", tug: "Tug / service boat", other: "Other boat", mixed: "Several boat types", unknown: "Boat type not reported" };
 export function shipKind(value?: string | null): ShipKind {
   const type = (value ?? "").toLowerCase();
   if (type === "mixed") return "mixed";
@@ -21,15 +21,25 @@ export function lengthScale(length?: number | null): number {
 }
 
 export const shipPaths: Record<ShipKind, string> = {
-  fishing: "M5 23H29L24 30H10ZM15 21V6L27 18H17V21ZM12 9H24V11H12Z",
-  cargo: "M3 23H31L26 30H8ZM6 12H13V21H6ZM15 12H22V21H15ZM24 16H29V21H24Z",
-  carrier: "M3 23H31L26 30H8ZM6 11H23V21H6ZM25 16H29V21H25ZM10 15H19V17H10Z",
-  tanker: "M3 23H31L26 30H8ZM7 12H12V21H7ZM14 12H19V21H14ZM21 12H26V21H21Z",
-  passenger: "M3 23H31L26 30H8ZM6 17H28V21H6ZM9 12H25V15H9ZM12 7H22V10H12Z",
-  tug: "M4 23H30L25 30H9ZM11 14H23V21H11ZM14 8H20V12H14Z",
-  other: "M4 23H30L25 30H9ZM11 13H23V21H11Z",
+  fishing: "M3 23H31L26 30H10ZM7 15H15V22H7ZM9 12H14V15H9ZM18 6H20V22H18ZM20 7L30 17L28 19L19 10Z",
+  cargo: "M2 23H32L27 30H8ZM4 13H12V21H4ZM14 13H22V21H14ZM14 5H22V11H14ZM24 15H29V21H24ZM25 11H29V15H25Z",
+  carrier: "M2 23H32L27 30H8ZM4 12H23V21H4ZM25 15H30V21H25ZM26 10H29V15H26Z",
+  tanker: "M2 23H32L27 30H8ZM5 17A4 4 0 018 13H20A4 4 0 0123 17V21H5ZM25 14H30V21H25ZM26 10H29V14H26Z",
+  passenger: "M2 23H32L27 30H8ZM5 17H29V21H5ZM8 11H26V15H8ZM12 6H23V9H12Z",
+  tug: "M4 23H31L26 30H10ZM10 13H23V21H10ZM14 8H21V13H14ZM7 19H10V22H7Z",
+  other: "M4 23H30L25 30H10ZM10 15H23V21H10ZM15 9H18V15H15Z",
   mixed: "M4 12H14V22H4ZM20 12H30V22H20ZM4 25H14V30H4ZM20 25H30V30H20Z",
   unknown: "M17 5L29 17L17 29L5 17ZM15 12H19V20H15ZM15 23H19V26H15Z",
+};
+
+export const shipDetails: Partial<Record<ShipKind, string>> = {
+  fishing: "M9 18H12M23 14V22M27 18V22",
+  cargo: "M8 15V19M18 15V19M18 7V9M26 18H28",
+  carrier: "M8 15H19M8 18H19M27 17H28",
+  tanker: "M10 15V19M16 15V19M27 17H28",
+  passenger: "M9 19H11M15 19H17M21 19H23M12 13H14M19 13H21",
+  tug: "M14 16H19M8 25H12",
+  other: "M13 18H19",
 };
 
 export function makeMapSymbol(id: string): ImageData | null {
