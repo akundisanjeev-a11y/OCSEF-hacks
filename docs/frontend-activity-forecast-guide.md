@@ -1,5 +1,14 @@
 # Frontend handoff: trained fishing-activity forecast
 
+Frontend integration is now implemented in Overview. Use **Open ML fishing
+forecast** in the left sidebar to reach the panel, then forecast the selected
+area's center or enter a point. **Try verified historical example** runs the
+documented example without needing a GFW token. A scored result draws its model
+cell in purple, separately from the GFW area selection, and shows the model's
+own historical dates. Insufficient data, failed requests and changed selections
+clear the old result. GFW area requests also perform a short backend readiness
+check so an unresponsive server produces an actionable message.
+
 The backend route, trained best model and required historical inference data
 are included on main. Your teammate only needs to build the frontend.
 The website monitors multiple vessel types; this particular model forecasts

@@ -43,3 +43,18 @@ def test_setup_rejects_unexpected_archive_paths(tmp_path):
     with pytest.raises(ValueError,match='Unexpected inference archive'):
         setup(archive=archive,destination=tmp_path/'output')
     assert not (tmp_path/'unsafe.txt').exists()
+
+
+def test_forecast_dependency_failure_does_not_disable_gfw_api(monkeypatch):
+    import builtins
+    original_import = builtins.__import__
+    def guarded_import(name, *args, **kwargs):
+        if name == 'backend.services.activity_forecast':
+            raise ModuleNotFoundError("No module named 'joblib'")
+        return original_import(name, *args, **kwargs)
+    monkeypatch.setattr(builtins, '__import__', guarded_import)
+    with TestClient(create_app(seed_fixtures=False)) as client:
+        assert client.get('/health').json() == {'status': 'ok'}
+        assert client.get('/cases').json() == {'cases': []}
+        assert client.get('/forecast/health').json()['forecast_ready'] is False
+        assert client.get('/activity-forecast/info').status_code == 503

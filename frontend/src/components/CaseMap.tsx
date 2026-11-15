@@ -34,6 +34,7 @@ interface Props {
   onAreaChange: (area: Area | null) => void;
   activityCells?: ActivityCell[];
   onActivitySelect?: (cell: ActivityCell) => void;
+  forecastBounds?: Area | null;
 }
 
 type View = "globe" | "mercator";
@@ -117,7 +118,7 @@ const areaGeoJson = (a: Area | null): FeatureCollection => ({
     : [],
 });
 
-export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, activityCells, onActivitySelect }: Props) {
+export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, activityCells, onActivitySelect, forecastBounds }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -190,6 +191,9 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
         source: "area",
         paint: { "line-color": "#8fbaff", "line-width": 1.8, "line-dasharray": [3, 2] },
       });
+      map.addSource("forecast-cell", { type: "geojson", data: areaGeoJson(null) });
+      map.addLayer({ id: "forecast-fill", type: "fill", source: "forecast-cell", paint: { "fill-color": "#b78bff", "fill-opacity": .13 } });
+      map.addLayer({ id: "forecast-outline", type: "line", source: "forecast-cell", paint: { "line-color": "#c29aff", "line-width": 3, "line-dasharray": [2, 2] } });
       setReady(true);
     });
     mapRef.current = map;
@@ -202,6 +206,13 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
   useEffect(() => {
     if (ready && mapRef.current) applyBasemap(mapRef.current, basemap);
   }, [ready, basemap]);
+
+  useEffect(() => {
+    if (!ready || !mapRef.current) return;
+    const map = mapRef.current;
+    void (map.getSource("forecast-cell") as GeoJSONSource).setData(areaGeoJson(forecastBounds ?? null));
+    if (forecastBounds) map.fitBounds([[forecastBounds.west, forecastBounds.south], [forecastBounds.east, forecastBounds.north]], { padding: 70, maxZoom: 6, duration: 700 });
+  }, [ready, forecastBounds]);
 
   useEffect(() => {
     if (!ready || !mapRef.current) return;

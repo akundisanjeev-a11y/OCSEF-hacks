@@ -2,6 +2,12 @@
 
 ## Historical globe
 
+Overview now includes an **ML fishing-activity forecast** panel. Select an area
+and follow **Open ML fishing forecast**, or try its verified historical example.
+The purple model-cell overlay and its displayed historical dates are separate
+from the GFW observation window. This predicts apparent fishing vessel-hours,
+not ship counts or illegality. See [forecast usage](docs/frontend-activity-forecast-guide.md).
+
 The default screen uses Josh's Overview globe and case dashboard from `joshua`.
 Overview now queries GFW directly when an area is selected, displays activity
 cells and area-associated vessels, and retrieves vessel identity/risk evidence.

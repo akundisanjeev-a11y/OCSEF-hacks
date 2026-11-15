@@ -11,7 +11,8 @@ const response = { data_mode: "historical_demo" as const, observation_cutoff:"20
   simulated_issue_date:"2025-08-03",target_start:"2025-08-04",target_end:"2025-08-10",
   cell_id:"test",bounds:{south:25,north:30,west:120,east:125},status:"scored" as const,
   predicted_week_hours:120,repeat_last_week_hours:100,selected_explanation:"Learned seasonal adjustment.",
-  data_quality_notes:[],source_dataset:"test",model_version:"saved" };
+  data_quality_notes:[],source_dataset:"test",model_version:"saved",
+  interpretation:"Apparent fishing activity, not illegality.", seasonal_reference_available:true, decision_path:[] };
 
 test("shows the existing model forecast with its own dates", async () => {
   vi.mocked(fetchForecast).mockResolvedValue(response);

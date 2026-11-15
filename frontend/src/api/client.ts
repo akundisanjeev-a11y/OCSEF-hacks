@@ -18,8 +18,9 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}${path}`, init);
-  } catch {
-    throw new ApiError("Could not reach the frontend dev server. Is npm run dev still running?", null);
+  } catch (error) {
+    if (init?.signal?.aborted) throw error;
+    throw new ApiError("Could not reach the API. Check that both Vite and FastAPI are running.", null);
   }
   if (!res.ok) {
     let detail = res.statusText;

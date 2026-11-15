@@ -1,13 +1,25 @@
 import { request } from "./client";
 import type { Area } from "./historical";
 
-type Period = { data_mode: "historical_demo"; observation_cutoff: string;
-  simulated_issue_date: string; target_start: string; target_end: string };
-export type ForecastResult = Period & { cell_id: string; bounds: Area } & (
+type ForecastPeriod = { data_mode: "historical_demo"; observation_cutoff: string; simulated_issue_date: string; target_start: string; target_end: string };
+export type ForecastInfo = ForecastPeriod & { status: "ready"; model_version: string; selected_method: string; grid_degrees: number; source_dataset: string; evaluation: { mae_hours: number; baseline_mae_hours: number; mae_reduction_percent: number | null; issue_start: string; issue_end: string } | null };
+export type ForecastResult = ForecastPeriod & { cell_id: string; bounds: Area } & (
   { status: "insufficient_data"; reason: string } |
-  { status: "scored"; predicted_week_hours: number; repeat_last_week_hours: number;
-    selected_explanation: string; data_quality_notes: string[]; source_dataset: string; model_version: string }
+  { status: "scored"; predicted_week_hours: number; repeat_last_week_hours: number; selected_explanation: string; interpretation: string; source_dataset: string; model_version: string; data_quality_notes: string[]; seasonal_reference_available: boolean; decision_path: { feature: string; observed: number; comparison: string; threshold: number }[] }
 );
-export const fetchForecast = (latitude: number, longitude: number, signal?: AbortSignal) =>
-  request<ForecastResult>("/activity-forecast", { method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ latitude, longitude }), signal });
+
+async function withDeadline<T>(path: string, init: RequestInit, signal?: AbortSignal): Promise<T> {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  signal?.addEventListener("abort", abort, { once: true });
+  const timer = setTimeout(abort, 15000);
+  try { return await request<T>(path, { ...init, signal: controller.signal }); }
+  catch (error) {
+    if (signal?.aborted) throw error;
+    if (controller.signal.aborted) throw new Error("Forecast backend did not respond. Check /forecast/health and restart FastAPI if needed.");
+    throw error;
+  } finally { clearTimeout(timer); signal?.removeEventListener("abort", abort); }
+}
+export const fetchForecastInfo = (signal?: AbortSignal) => withDeadline<ForecastInfo>("/activity-forecast/info", {}, signal);
+export const fetchForecast = (latitude: number, longitude: number, signal?: AbortSignal) => withDeadline<ForecastResult>("/activity-forecast", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ latitude, longitude }) }, signal);

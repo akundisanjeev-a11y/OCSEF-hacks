@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchHistoricalArea, fetchHistoricalVessel, screenHistoricalRisks, type VesselRisk, type ActivityCell, type Area, type HistoricalAreaResult, type HistoricalEvidence, type HistoricalQuery, type HistoricalVessel } from "../api/historical";
+import { checkBackendConnection, fetchHistoricalArea, fetchHistoricalVessel, screenHistoricalRisks, type VesselRisk, type ActivityCell, type Area, type HistoricalAreaResult, type HistoricalEvidence, type HistoricalQuery, type HistoricalVessel } from "../api/historical";
 import { CaseMap } from "./CaseMap";
 import { formatTime } from "../format";
 import { ShipSymbol } from "./ShipSymbol";
-import { FishingForecast } from "./FishingForecast";
+import { ForecastPanel } from "./ForecastPanel";
 import { ActivityFilterControls } from "./ActivityFilterControls";
 import type { ActivityFilters } from "../api/historical";
 
 export function GfwOverview() {
   const [area, setArea] = useState<Area | null>(null);
+  const [forecastBounds, setForecastBounds] = useState<Area | null>(null);
   const [layer, setLayer] = useState<HistoricalQuery["layer"]>("presence");
   const [filters, setFilters] = useState<ActivityFilters>({});
   const [hoursAgo, setHoursAgo] = useState(100);
@@ -41,8 +42,11 @@ export function GfwOverview() {
     setResult(null); setEvidence(null); setSelected(null); setCell(null); setError(""); setDetailError(""); setDetailLoading(false);
     if (!area) { setLoading(false); return; }
     setLoading(true);
-    fetchHistoricalArea({ ...area, ...filters, mode: "gfw", layer, hours_ago: hoursAgo, window_hours: windowHours, ...(allowLand ? { allow_land: true } : {}) })
-      .then((data) => { if (active) setResult(data); })
+    checkBackendConnection().then(() => {
+      if (!active) return null;
+      return fetchHistoricalArea({ ...area, ...filters, mode: "gfw", layer, hours_ago: hoursAgo, window_hours: windowHours, ...(allowLand ? { allow_land: true } : {}) });
+    })
+      .then((data) => { if (active && data) setResult(data); })
       .catch((e) => { if (active) setError(e instanceof Error ? e.message : String(e)); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -91,8 +95,8 @@ export function GfwOverview() {
   return <div className="dash gfw-overview">
     <aside className="panel filters"><div className="panel-head"><h2>GFW historical query</h2></div><div className="filter-body">
       <p className="muted">Selecting an area queries observed GFW history. Your separate ML forecast is available below. No fictional vessels are substituted.</p>
+      <a href="#forecast-panel">Open ML fishing forecast ↓</a>
       <ActivityFilterControls key={layer} layer={layer} onApply={setFilters} />
-      <FishingForecast latitude={cell?.lat ?? (area ? (area.south + area.north)/2 : null)} longitude={cell?.lon ?? (area ? (area.west + area.east)/2 : null)} />
       <label className="filter"><span>Activity layer</span><select value={layer} onChange={(e) => { const next = e.target.value as HistoricalQuery["layer"]; setLayer(next); setFilters({}); if (next === "sar") setHoursAgo((previous) => Math.max(124, previous)); }}><option value="presence">AIS vessel presence</option><option value="fishing">Apparent fishing</option><option value="sar">SAR vessel detections</option></select></label>
       <label className="filter"><span>Window ends (hours ago)</span><input type="number" min={layer === "sar" ? 124 : 100} max={8760} value={hoursAgo} onChange={(e) => setHoursAgo(Number(e.target.value))} /></label>
       <label className="filter"><span>Window duration</span><select value={windowHours} onChange={(e) => setWindowHours(Number(e.target.value))}><option value={1}>1 hour</option><option value={24}>24 hours</option><option value={168}>7 days</option></select></label>
@@ -103,7 +107,7 @@ export function GfwOverview() {
       <details><summary>Area coordinates</summary>{(["west", "south", "east", "north"] as const).map((key) => <label className="filter" key={key}><span>{key}</span><input type="number" step="0.1" value={area?.[key] ?? ""} onChange={(e) => setArea((previous) => ({ ...(previous ?? { west: -5, south: 1, east: 3, north: 7 }), [key]: Number(e.target.value) }))} /></label>)}</details>
     </div></aside>
 
-    <section className="panel map-panel"><CaseMap groups={[]} selectedId={null} onSelect={ignoreCaseSelect} area={area} onAreaChange={setArea} activityCells={result?.cells ?? []} onActivitySelect={setCell} /></section>
+    <section className="panel map-panel"><CaseMap groups={[]} selectedId={null} onSelect={ignoreCaseSelect} area={area} onAreaChange={setArea} activityCells={result?.cells ?? []} onActivitySelect={setCell} forecastBounds={forecastBounds} /></section>
 
     <aside className="panel case-panel" aria-live="polite"><div className="panel-head"><h2>{selected?.name ?? "Vessel evidence"}</h2></div>
       {!selected && <p className="empty">Select a vessel from the area list to retrieve identity, public authorization records and risk indicators.</p>}
@@ -134,5 +138,6 @@ export function GfwOverview() {
       {result && result.vessels.length === 0 && <p className="empty">{result.skipped ? "Area skipped because it exceeds the land threshold. No GFW reports were requested." : layer === "sar" ? "SAR cells are not assigned vessel IDs by this area view. Unmatched detections have no established identity." : "No vessel IDs returned for this area and window. This does not prove no boats were present."}</p>}
       {!!result?.vessels.length && <><div className="table-scroll"><table className="case-table"><thead><tr><th>Vessel</th><th>MMSI</th><th>Type</th><th>Reported length</th><th>Activity hours</th><th>Risk screening</th><th>Evidence</th></tr></thead><tbody>{visible.map((vessel) => <tr key={vessel.vessel_id} className={selected?.vessel_id === vessel.vessel_id ? "selected" : undefined}><td>{vessel.name}</td><td>{vessel.mmsi ?? "Unavailable"}</td><td><ShipSymbol type={vessel.vessel_type} /> {vessel.vessel_type}</td><td>{vessel.length_m ? `${vessel.length_m.toFixed(1)} m` : "Unknown"}</td><td>{vessel.hours.toFixed(2)}</td><td><strong>{riskLabel(risks[vessel.vessel_id])}</strong>{risks[vessel.vessel_id]?.indicators.filter((indicator) => indicator.count !== null && indicator.count > 0).map((indicator) => <div className="small" key={indicator.code}>{indicator.label}: {indicator.count}</div>)}{risks[vessel.vessel_id]?.error && <div className="small">{risks[vessel.vessel_id].error}</div>}</td><td><button type="button" onClick={() => void inspect(vessel)}>Inspect vessel</button></td></tr>)}</tbody></table></div><div className="risk-toolbar"><button disabled={page <= 0} onClick={() => setPage((previous) => previous - 1)}>Previous</button><span>{ordered.length} matching vessels · page {Math.min(page, pageCount - 1) + 1} / {pageCount}</span><button disabled={page >= pageCount - 1} onClick={() => setPage((previous) => previous + 1)}>Next</button></div></>}
     </section>
+    <ForecastPanel area={area} onBoundsChange={setForecastBounds} />
   </div>;
 }

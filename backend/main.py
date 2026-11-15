@@ -18,7 +18,6 @@ from backend.services.vessel_lookup import VesselCheckRequest, VesselCheckRespon
 from backend.services.historical import AreaQuery, VesselEnrichment, query_area, enrich_vessel
 from backend.services.risk_screening import RiskScreenRequest, screen_risks
 from backend.forecast_api import router as forecast_router
-from backend.services.activity_forecast import ActivityForecaster
 
 FIXTURE_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic" / "static_cases.json"
 
@@ -45,14 +44,19 @@ def create_app(*, seed_fixtures: bool = True, load_forecast: bool = True) -> Fas
         if load_forecast:
             root = Path(__file__).resolve().parents[1]
             try:
-                app.state.forecaster = await run_in_threadpool(
-                    ActivityForecaster,
-                    Path(os.getenv('ACTIVITY_FORECAST_MODEL_PATH', root/'weights/activity_forecast/best_model.joblib')),
-                    Path(os.getenv('ACTIVITY_FORECAST_DATA_DIR', root/'datasets/activity_forecast/processed')),
-                )
+                def load_model():
+                    # Forecast dependencies are optional to the GFW query app.
+                    # A missing ML package must not crash module import and leave
+                    # the reload supervisor holding an unresponsive port.
+                    from backend.services.activity_forecast import ActivityForecaster
+                    return ActivityForecaster(
+                        Path(os.getenv('ACTIVITY_FORECAST_MODEL_PATH', root/'weights/activity_forecast/best_model.joblib')),
+                        Path(os.getenv('ACTIVITY_FORECAST_DATA_DIR', root/'datasets/activity_forecast/processed')),
+                    )
+                app.state.forecaster = await run_in_threadpool(load_model)
             except Exception:
                 logging.getLogger(__name__).exception('Activity forecast unavailable')
-                app.state.forecast_error = 'Run python -m training.activity_forecast.setup_inference and check the saved model, then restart.'
+                app.state.forecast_error = 'Install backend/requirements.txt in the project virtual environment, run python -m training.activity_forecast.setup_inference, then restart FastAPI.'
         yield
         app.state.forecaster = None
 
