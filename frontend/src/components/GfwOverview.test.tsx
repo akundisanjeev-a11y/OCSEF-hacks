@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { fetchHistoricalArea, fetchHistoricalVessel, screenHistoricalRisks, type HistoricalAreaResult, type HistoricalEvidence } from "../api/historical";
+import { checkBackendConnection, fetchHistoricalArea, fetchHistoricalVessel, screenHistoricalRisks, type HistoricalAreaResult, type HistoricalEvidence } from "../api/historical";
 import { GfwOverview } from "./GfwOverview";
 
-vi.mock("../api/historical", () => ({ fetchHistoricalArea: vi.fn(), fetchHistoricalVessel: vi.fn(), screenHistoricalRisks: vi.fn() }));
+vi.mock("../api/historical", () => ({ checkBackendConnection: vi.fn(), fetchHistoricalArea: vi.fn(), fetchHistoricalVessel: vi.fn(), screenHistoricalRisks: vi.fn() }));
+vi.mock("./ForecastPanel", () => ({ ForecastPanel: () => <div>Forecast panel</div> }));
 vi.mock("./CaseMap", () => ({ CaseMap: ({ onAreaChange }: { onAreaChange: (area: unknown) => void }) => <>
   <button onClick={() => onAreaChange({ west: -5, east: 3, south: 1, north: 7 })}>Draw test area</button>
   <button onClick={() => onAreaChange(null)}>Clear test area</button>
@@ -27,22 +28,29 @@ const evidence: HistoricalEvidence = {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(checkBackendConnection).mockResolvedValue(undefined);
   vi.mocked(fetchHistoricalArea).mockResolvedValue(areaResult);
   vi.mocked(fetchHistoricalVessel).mockResolvedValue(evidence);
 });
 afterEach(cleanup);
 
 describe("Overview GFW integration", () => {
-  it("screens risk without fetching full reports and then allows report selection", async () => {
-    vi.mocked(screenHistoricalRisks).mockResolvedValue({ results: [{ vessel_id: "test-vessel-1", state: "flagged", flag_count: 1, missing_count: 0, indicators: [{ code: "gap", label: "AIS gaps", count: 2, event_ids: [] }], cached: false }] });
+  it("reports an unresponsive backend before attempting provider reports", async () => {
+    vi.mocked(checkBackendConnection).mockRejectedValue(new Error("FastAPI is unresponsive. Restart the backend."));
     render(<GfwOverview />);
     fireEvent.click(screen.getByText("Draw test area"));
-    fireEvent.click(await screen.findByText("Screen vessel risks"));
-    expect(await screen.findByText("Flagged (1)")).toBeTruthy();
+    expect((await screen.findByRole("alert")).textContent).toContain("FastAPI is unresponsive");
+    expect(fetchHistoricalArea).not.toHaveBeenCalled();
+  });
+  it("directs risk screening to Investigations without starting checks in Overview", async () => {
+    const openInvestigations = vi.fn();
+    render(<GfwOverview onInvestigations={openInvestigations} />);
+    fireEvent.click(screen.getByText("Draw test area"));
+    fireEvent.click(await screen.findByText("Investigate selected boats"));
+    expect(openInvestigations).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("button", { name: "Screen vessel risks" })).toBeNull();
+    expect(screenHistoricalRisks).not.toHaveBeenCalled();
     expect(fetchHistoricalVessel).not.toHaveBeenCalled();
-    expect(screenHistoricalRisks).toHaveBeenCalledWith(["test-vessel-1"], areaResult.start, areaResult.end, expect.any(AbortSignal));
-    fireEvent.click(screen.getByText("Inspect vessel"));
-    expect(await screen.findByText("Test vessel identity")).toBeTruthy();
   });
 
   it("explains a land skip rather than claiming no vessels exist", async () => {
@@ -85,9 +93,11 @@ describe("Overview GFW integration", () => {
     vi.mocked(fetchHistoricalArea).mockReturnValue(new Promise((done) => { resolve = done; }));
     render(<GfwOverview />);
     fireEvent.click(screen.getByText("Draw test area"));
+    await screen.findByRole("status", { name: "Loading area-associated vessels" });
     fireEvent.click(screen.getByText("Clear test area"));
     resolve(areaResult);
     await waitFor(() => expect(screen.queryByText("Test vessel")).toBeNull());
+    expect(screen.queryByRole("status", { name: "Loading area-associated vessels" })).toBeNull();
     expect(screen.getByText(/That selection now triggers a GFW query/)).toBeTruthy();
   });
 

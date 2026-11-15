@@ -1,5 +1,7 @@
 """Insights-only screening: no full identity report requests."""
 import asyncio
+from collections import deque
+import math
 import time
 from datetime import timezone
 
@@ -10,6 +12,8 @@ from backend.services.historical import IDENTITY, gfw_request, summarize_evidenc
 
 _semaphore = asyncio.Semaphore(4)
 _cache = {}
+_inflight = {}
+INCLUDES = ["FISHING", "GAP", "VESSEL-IDENTITY-IUU-VESSEL-LIST"]
 
 
 class RiskScreenRequest(BaseModel):
@@ -28,8 +32,16 @@ class RiskScreenRequest(BaseModel):
         return self
 
 
+class RiskStreamRequest(RiskScreenRequest):
+    vessel_ids: list[str] = Field(min_length=1, max_length=5000)
+
+
 def classify(insights):
     _, indicators = summarize_evidence({}, insights)
+    for indicator in indicators:
+        value = indicator["count"]
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+            indicator["count"] = None
     known = [i for i in indicators if isinstance(i["count"], (int, float)) and i["count"] >= 0]
     flags = [i for i in known if i["count"] > 0]
     state = "flagged" if flags else "no_flags" if len(known) == len(indicators) else "unknown"
@@ -40,33 +52,97 @@ def classify(insights):
             "note": "Risk indicators are leads for review, not findings of illegality or proof of authorization."}
 
 
-async def screen_risks(query: RiskScreenRequest):
+def risk_period(query):
     start = query.start.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
     end = query.end.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
-    halted = asyncio.Event()
-    async def one(vessel_id):
-        key = (vessel_id, start, end)
-        cached = _cache.get(key)
-        if cached and time.monotonic() - cached[0] < 900:
-            return {**cached[1], "cached": True}
-        async with _semaphore:
-            if halted.is_set():
-                return {"vessel_id": vessel_id, "state": "unknown", "indicators": [], "flag_count": 0, "missing_count": 4,
-                        "error": "Screening paused after an upstream access or rate-limit error", "error_status": 429, "cached": False}
-            try:
-                insights = await gfw_request("insights/vessels", body={
-                    "vessels": [{"datasetId": IDENTITY, "vesselId": vessel_id}], "startDate": start, "endDate": end,
-                    "includes": ["FISHING", "GAP", "VESSEL-IDENTITY-IUU-VESSEL-LIST"],
-                })
-                result = {"vessel_id": vessel_id, **classify(insights), "cached": False}
-                if len(_cache) >= 5000:
-                    _cache.pop(next(iter(_cache)))
-                _cache[key] = (time.monotonic(), result)
-                return result
-            except HTTPException as error:
-                if error.status_code in (401, 403, 429, 503):
-                    halted.set()
-                return {"vessel_id": vessel_id, "state": "unknown", "indicators": [], "flag_count": 0,
-                        "missing_count": 4, "error": str(error.detail), "error_status": error.status_code, "cached": False}
-    results = await asyncio.gather(*(one(vessel_id) for vessel_id in query.vessel_ids))
-    return {"results": results, "start": start, "end": end}
+    return start, end
+
+
+def cached_risk(key):
+    cached = _cache.get(key)
+    if cached and time.monotonic() - cached[0] < (60 if cached[1]["state"] == "unknown" else 900):
+        return {**cached[1], "cached": True}
+    return None
+
+
+def failed_risk(vessel_id, error, status):
+    return {"vessel_id": vessel_id, "state": "unknown", "indicators": [], "flag_count": 0,
+            "missing_count": 4, "error": error, "error_status": status, "cached": False}
+
+
+async def fetch_one(vessel_id, start, end, client):
+    async with _semaphore:
+        try:
+            insights = await gfw_request("insights/vessels", body={
+                "vessels": [{"datasetId": IDENTITY, "vesselId": vessel_id}], "startDate": start, "endDate": end,
+                "includes": INCLUDES,
+            }, **({"client": client} if client is not None else {}))
+            result = {"vessel_id": vessel_id, **classify(insights), "cached": False}
+            # Screening needs counts, not potentially huge event-ID arrays.
+            # The on-demand full report still retrieves the original evidence.
+            result["indicators"] = [{**row, "event_ids": []} for row in result["indicators"]]
+            if len(_cache) >= 5000:
+                _cache.pop(next(iter(_cache)))
+            _cache[(vessel_id, start, end)] = (time.monotonic(), result)
+            return result
+        except HTTPException as error:
+            return failed_risk(vessel_id, str(error.detail), error.status_code)
+
+
+async def screen_one(vessel_id, start, end, client=None):
+    key = (vessel_id, start, end)
+    cached = cached_risk(key)
+    if cached:
+        return cached
+    task = _inflight.get(key)
+    if task is None:
+        task = asyncio.create_task(fetch_one(vessel_id, start, end, client))
+        _inflight[key] = task
+        task.add_done_callback(lambda _: _inflight.pop(key, None))
+    # Shared in-flight work may finish and populate the cache after Stop. Only
+    # four requests are scheduled at a time; no further boats start afterwards.
+    return await asyncio.shield(task)
+
+
+async def iter_risks(query: RiskScreenRequest, client=None):
+    start, end = risk_period(query)
+    remaining = deque(query.vessel_ids)
+    running = set()
+    completed, consecutive_failures = 0, 0
+    paused = False
+    began = time.monotonic()
+    yield {"type": "start", "total": len(query.vessel_ids), "start": start, "end": end}
+    try:
+        while remaining or running:
+            while remaining and len(running) < 4 and not paused:
+                vessel_id = remaining.popleft()
+                running.add(asyncio.create_task(screen_one(vessel_id, start, end, client)))
+            if not running:
+                break
+            done, running = await asyncio.wait(running, timeout=10, return_when=asyncio.FIRST_COMPLETED)
+            if not done:
+                yield {"type": "heartbeat"}
+            for task in done:
+                result = task.result()
+                completed += 1
+                consecutive_failures = consecutive_failures + 1 if result.get("error_status") == 502 else 0
+                if result.get("error_status") in (401, 403, 429, 503) or consecutive_failures >= 3:
+                    paused = True
+                yield {"type": "result", "result": result}
+        yield {"type": "complete", "checked": completed, "total": len(query.vessel_ids), "paused": paused,
+               "remaining": len(remaining), "elapsed_ms": round((time.monotonic() - began) * 1000)}
+    finally:
+        for task in running:
+            task.cancel()
+        await asyncio.gather(*running, return_exceptions=True)
+
+
+async def screen_risks(query: RiskScreenRequest, client=None):
+    results = {}
+    async for event in iter_risks(query, client):
+        if event["type"] == "result":
+            result = event["result"]
+            results[result["vessel_id"]] = result
+    start, end = risk_period(query)
+    return {"results": [results.get(vessel_id) or failed_risk(vessel_id, "Screening paused after an upstream error", 429)
+                        for vessel_id in query.vessel_ids], "start": start, "end": end}

@@ -1,0 +1,109 @@
+{
+  "checkpoint": "best_model.joblib",
+  "saved_at_utc": "2026-11-15T01:52:26.928660+00:00",
+  "model_sha256": "a85e3e788c8d5d61d8a738a85e3ca4e274e62e027b11d39ec4c8c622e45cb424",
+  "model_version": "world-seasonal-20261115T013747Z",
+  "designation": "User-designated best prototype checkpoint; family originally selected using validation.",
+  "selection_freeze": {
+    "candidate_names": [
+      "repeat_last_week",
+      "trained_calibration",
+      "seasonal_blend",
+      "seasonal_correction_tree"
+    ],
+    "selected_method": "seasonal_correction_tree",
+    "selection_scope": "validation only",
+    "validation": {
+      "repeat_last_week": {
+        "rows": 19119,
+        "cells": 1077,
+        "issue_start": "2025-04-27",
+        "issue_end": "2025-05-15",
+        "mae_hours": 1169.8600988546295,
+        "rmse_hours": 13739.049247348923,
+        "baseline_mae_hours": 1169.8600988546295,
+        "baseline_rmse_hours": 13739.049247348923,
+        "mae_reduction_percent": 0.0,
+        "beats_baseline": false,
+        "fraction_of_cells_with_lower_mae": 0.0,
+        "note": "Hours are summed across vessels; this is not classification accuracy."
+      },
+      "trained_calibration": {
+        "rows": 19119,
+        "cells": 1077,
+        "issue_start": "2025-04-27",
+        "issue_end": "2025-05-15",
+        "mae_hours": 1129.8781768890422,
+        "rmse_hours": 13157.04353674931,
+        "baseline_mae_hours": 1169.8600988546295,
+        "baseline_rmse_hours": 13739.049247348923,
+        "mae_reduction_percent": 3.4176669504953914,
+        "beats_baseline": true,
+        "fraction_of_cells_with_lower_mae": 0.6638811513463324,
+        "note": "Hours are summed across vessels; this is not classification accuracy."
+      },
+      "seasonal_blend": {
+        "rows": 19119,
+        "cells": 1077,
+        "issue_start": "2025-04-27",
+        "issue_end": "2025-05-15",
+        "mae_hours": 988.814073632395,
+        "rmse_hours": 10915.60135387678,
+        "baseline_mae_hours": 1169.8600988546295,
+        "baseline_rmse_hours": 13739.049247348923,
+        "mae_reduction_percent": 15.475869755664853,
+        "beats_baseline": true,
+        "fraction_of_cells_with_lower_mae": 0.6072423398328691,
+        "note": "Hours are summed across vessels; this is not classification accuracy."
+      },
+      "seasonal_correction_tree": {
+        "rows": 19119,
+        "cells": 1077,
+        "issue_start": "2025-04-27",
+        "issue_end": "2025-05-15",
+        "mae_hours": 936.184175058665,
+        "rmse_hours": 10233.825260851663,
+        "baseline_mae_hours": 1169.8600988546295,
+        "baseline_rmse_hours": 13739.049247348923,
+        "mae_reduction_percent": 19.97468962525936,
+        "beats_baseline": true,
+        "fraction_of_cells_with_lower_mae": 0.5060352831940576,
+        "note": "Hours are summed across vessels; this is not classification accuracy."
+      }
+    },
+    "fresh_issue_start": "2025-07-05",
+    "fresh_issue_end": "2025-07-24",
+    "refit_label_cutoff_exclusive": "2025-07-04",
+    "fixed_tree_depth": 2,
+    "fixed_min_samples_leaf": 500,
+    "growth_ratio_cap": 5,
+    "refit_rows": 143588,
+    "test_policy": "No fresh-test values used to choose model, thresholds or examples; report failure as well as success.",
+    "frozen_model_sha256": "a85e3e788c8d5d61d8a738a85e3ca4e274e62e027b11d39ec4c8c622e45cb424",
+    "frozen_at_utc": "2026-11-15T01:37:47.606762+00:00"
+  },
+  "evaluation": {
+    "model_version": "world-seasonal-20261115T013747Z",
+    "model_sha256": "a85e3e788c8d5d61d8a738a85e3ca4e274e62e027b11d39ec4c8c622e45cb424",
+    "selected_method": "seasonal_correction_tree",
+    "fresh_test": {
+      "rows": 20487,
+      "cells": 1100,
+      "issue_start": "2025-07-05",
+      "issue_end": "2025-07-24",
+      "mae_hours": 418.25554455437236,
+      "rmse_hours": 1821.985075389087,
+      "baseline_mae_hours": 448.6778430224045,
+      "baseline_rmse_hours": 2140.828733772868,
+      "mae_reduction_percent": 6.7804325399935115,
+      "beats_baseline": true,
+      "fraction_of_cells_with_lower_mae": 0.5536363636363636,
+      "note": "Hours are summed across vessels; this is not classification accuracy."
+    },
+    "protocol": "July targets were not inspected to choose or change this model; do not tune against this report.",
+    "limitations": "Retrospective revised GFW measurements, assumed 3-day publishing lag, overlapping weekly targets; no guarantee of future or per-area improvement.",
+    "fresh_csv_sha256": "0e058059a6a9a86026d6e8d5626f7fcd850dd6c4fea7c16229153780f7674edb",
+    "source_checksum_recorded_at_utc": "2026-11-15T01:50:02.486925+00:00",
+    "source_checksum_note": "Checksum attached after initial evaluation; model and recorded metrics unchanged."
+  }
+}

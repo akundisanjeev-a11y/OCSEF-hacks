@@ -4,9 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GhostFleet</title>
+    <style>
+      html { background: #070f1c; color: #e4ebf5; }
+      body { margin: 0; }
+      .boot-shell { padding: 24px; font: 14px system-ui, sans-serif; }
+      .boot-brand { letter-spacing: .22em; margin-bottom: 24px; }
+      .boot-map { height: 65vh; border-radius: 8px; background: linear-gradient(100deg,#101f35 20%,#243952 45%,#101f35 70%); background-size: 250% 100%; animation: boot-shimmer 1.6s ease-in-out infinite; }
+      .boot-status { padding-top: 16px; color: #a4bad9; }
+      @keyframes boot-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+      @media (prefers-reduced-motion: reduce) { .boot-map { animation: none; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="boot-shell" role="status" aria-label="Loading GhostFleet"><div class="boot-brand">GHOSTFLEET</div><div class="boot-map" aria-hidden="true"></div><div class="boot-status">Starting GhostFleet…</div></div></div>
+    <noscript>Enable JavaScript to use the interactive globe.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

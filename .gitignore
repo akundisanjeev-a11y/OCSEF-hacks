@@ -6,8 +6,18 @@ data/
 .env.*
 !.env.example
 # Local ML data and artifacts stay outside source control.
-datasets/
+datasets/*
+!datasets/activity_forecast/
+datasets/activity_forecast/*
+!datasets/activity_forecast/README.md
+!datasets/activity_forecast/inference_history.zip
 runs/
-weights/
+weights/*
+!weights/activity_forecast/
+weights/activity_forecast/*
+!weights/activity_forecast/best_model.joblib
+!weights/activity_forecast/best_model_metadata.json
+!weights/activity_forecast/rules.txt
 *.zip
+!datasets/activity_forecast/inference_history.zip
 .pytest_cache/

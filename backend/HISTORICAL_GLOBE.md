@@ -30,11 +30,43 @@ npm run dev
 ```
 
 Keep the token out of Git, frontend environment variables, browser storage and
-screenshots. The backend reads it from the environment, not from a committed file.
-Restart FastAPI after setting it. Each teammate should configure their own token.
+screenshots. The backend checks environment variables first, then the repository
+or backend .env. It supports GFW_API_TOKEN, GFW_TOKEN, GFW_API_KEY and
+GLOBAL_FISHING_WATCH_API_KEY, plus an existing bare JWT file. It never rewrites
+these files. Restart FastAPI after changing environment configuration.
 The frontend uses the existing `/api` proxy. No token is sent to the frontend.
 
 ## User workflow
+
+### Observations and your saved ML forecast
+
+Overview includes **GFW activity filters**: flag and vessel ID; fishing gear and
+port distance; AIS presence vessel type and speed; SAR AIS-match state and matched
+identity filters. They apply to both cell and area-associated-vessel reports.
+Incompatible filters are rejected, and arbitrary filter expressions are not
+accepted. Provider filters are separate from the saved model's historical inputs.
+
+Live checks confirmed presence cargo/speed and fishing gear/port-distance filters.
+Completed empty reports sometimes return a resolved dataset key with null; these
+now become empty results instead of a parsing error. Empty does not mean no boats
+or adequate AIS coverage.
+
+GFW currently rejects its documented neural_vessel_type numeric comparisons
+because its queried field is text. The UI discloses this limitation and does not
+offer a working-looking neural score filter. Such requests return a clear
+validation error; SAR AIS-match filtering remains available.
+
+The **Your ML: fishing activity forecast** panel uses the existing saved decision
+tree. Select an activity cell, or use the rectangle's centre, and press **Get
+historical fishing forecast**. It scores that point's complete five-degree model
+cell, not the exact rectangle, and shows forecast dates, source cutoff, expected
+hours, last-week baseline and learned explanation. No new model is trained.
+
+The bundled model data ends July 31, 2025, forecasting August 4-10, 2025. These
+dates differ from the GFW observation window and remain visible. This model
+predicts apparent fishing hours only, even when the GFW layer includes all vessel
+types. Neither output is a determination of illegal activity. Use the ML setup
+command in the repository README if /forecast/health reports unavailable.
 
 1. Choose **Fictional walkthrough** or **Global Fishing Watch** explicitly.
 2. Choose AIS presence, apparent fishing, or unmatched SAR.

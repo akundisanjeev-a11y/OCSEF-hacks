@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import * as maplibregl from "maplibre-gl";
 import type { GeoJSONSource, StyleSpecification } from "maplibre-gl";
 import "../mapWorker";
@@ -7,10 +8,15 @@ import type { FeatureCollection } from "geojson";
 import type { Case } from "../api/types";
 import { registration, registrationLabel, type Registration } from "../format";
 import { zonesGeoJson } from "../zones";
-import type { ActivityCell } from "../api/historical";
+import type { ActivityCell, HistoricalQuery } from "../api/historical";
 import landOutlineUrl from "../assets/land-outline.geojson?url";
 import { applyBasemap, isImageryError, type Basemap } from "../mapBasemap";
-import { lengthScale, makeMapSymbol, shipColors, shipKind, shipPaths } from "../vesselSymbols";
+import { makeMapSymbol, shipColors, shipKind, shipPaths } from "../vesselSymbols";
+import { validSelection, SELECTION_LIMIT_MESSAGE } from "../selection";
+import { Info } from "./Info";
+import { LoadingStatus } from "./Loading";
+import { activityFeatures, activityLayerNames, activityUnits } from "../activityMap";
+import { forecastFeatures, type ForecastComparison, type ActivityArrow } from "../forecastMap";
 
 // The rectangle the user drags on the globe, as latitude/longitude edges in degrees.
 export interface Area {
@@ -38,6 +44,13 @@ interface Props {
   onAreaChange: (area: Area | null) => void;
   activityCells?: ActivityCell[];
   onActivitySelect?: (cell: ActivityCell) => void;
+  forecastBounds?: Area | null;
+  onSelectingChange?: (active: boolean) => void;
+  noticeTarget?: HTMLElement | null;
+  activityLayer?: HistoricalQuery["layer"];
+  forecastComparison?: ForecastComparison | null;
+  onForecastArrowSelect?: (arrow: ActivityArrow) => void;
+  selectedForecastArrow?: ActivityArrow | null;
 }
 
 // The two map views: a 3D globe, or a flat Mercator map ("2D").
@@ -84,16 +97,17 @@ const STYLE: StyleSpecification = {
   },
   // Stacking order, bottom to top: background, imagery (dimmed so markers stand out), then labels.
   layers: [
-    { id: "background", type: "background", paint: { "background-color": "#0a1830" } },
-    { id: "local-land-fill", type: "fill", source: "local-land", paint: { "fill-color": "#243e50" } },
-    { id: "local-land-outline", type: "line", source: "local-land", paint: { "line-color": "#557687", "line-width": .7 } },
+    { id: "background", type: "background", paint: { "background-color": "#0b254b" } },
+    { id: "local-land-fill", type: "fill", source: "local-land", paint: { "fill-color": "#294a78" } },
+    { id: "local-land-outline", type: "line", source: "local-land", paint: { "line-color": "#3f6291", "line-width": .7 } },
     {
       id: "imagery",
       type: "raster",
       source: "imagery",
+      layout: { visibility: "none" },
       paint: { "raster-brightness-max": 0.6, "raster-saturation": -0.3, "raster-contrast": 0.1 },
     },
-    { id: "places", type: "raster", source: "places", paint: { "raster-opacity": 0.9 } },
+    { id: "places", type: "raster", source: "places", layout: { visibility: "none" }, paint: { "raster-opacity": 0.9 } },
   ],
 };
 
@@ -135,10 +149,7 @@ const areaGeoJson = (a: Area | null): FeatureCollection => ({
     : [],
 });
 
-// The globe component: draws the map, the vessel markers, the fishing zones and the selected area,
-// and lets the user drag a box to choose an area.
-export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, activityCells, onActivitySelect }: Props) {
-  // Handles to things React does not own: the map's HTML container, the map itself, and the marker objects.
+export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, activityCells, onActivitySelect, forecastBounds, onSelectingChange, noticeTarget, activityLayer = "presence", forecastComparison, onForecastArrowSelect, selectedForecastArrow }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Holds the MapLibre map so effects and handlers can reach it without re-rendering.
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -147,20 +158,21 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
   // Always holds the latest "activity cell clicked" callback, so the map's click handler never goes stale.
   const activityClick = useRef(onActivitySelect);
   activityClick.current = onActivitySelect;
-  // True once the map has finished loading and its layers exist.
+  const forecastClick = useRef(onForecastArrowSelect);
+  forecastClick.current = onForecastArrowSelect;
   const [ready, setReady] = useState(false);
-  // Message shown if the map itself fails to start or load.
+  const [tilesLoading, setTilesLoading] = useState(false);
   const [mapError, setMapError] = useState("");
-  // Which background is shown: satellite imagery, or the local land outline that needs no tile server.
-  const [basemap, setBasemap] = useState<Basemap>("imagery");
-  // Notice shown when the app had to fall back to the other background.
+  const [basemap, setBasemap] = useState<Basemap>("outline");
+  const [mapZoom, setMapZoom] = useState(HOME.zoom);
   const [basemapWarning, setBasemapWarning] = useState("");
   // Globe (3D) or flat (2D) view.
   const [view, setView] = useState<View>("globe");
   // True while the user is in "draw a box" mode.
   const [selecting, setSelecting] = useState(false);
-  // The rectangle currently being dragged, in screen pixels, so it can be drawn as feedback.
-  const [dragBox, setDragBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [selectionError, setSelectionError] = useState("");
+  const [dragBox, setDragBox] = useState<{ x: number; y: number; w: number; h: number; invalid: boolean } | null>(null);
+  useEffect(() => { onSelectingChange?.(selecting); }, [selecting, onSelectingChange]);
 
   // Runs once: creates the map, adds the zoom and scale controls, and adds the fishing-zone and
   // selected-area layers once the map has loaded. Cleans the map up when the page is left.
@@ -189,6 +201,9 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
         setMapError(message);
       }
     });
+    map.on("dataloading", () => setTilesLoading(true));
+    map.on("idle", () => setTilesLoading(false));
+    map.on("zoomend", () => setMapZoom(map.getZoom()));
     map.on("styleimagemissing", (event) => {
       const image = makeMapSymbol(event.id);
       if (image && !map.hasImage(event.id)) map.addImage(event.id, image, { pixelRatio: 2 });
@@ -204,24 +219,30 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
       map.addLayer({ id: "zones-fill", type: "fill", source: "zones", paint: { "fill-color": "#2fd3c0", "fill-opacity": 0.1 } });
       map.addLayer({ id: "zones-line", type: "line", source: "zones", paint: { "line-color": "#2fd3c0", "line-width": 1.2 } });
       }
-      // Layer for Global Fishing Watch activity cells; nearby cells merge into numbered clusters.
-      map.addSource("historical-activity", { type: "geojson", data: { type: "FeatureCollection", features: [] }, cluster: true, clusterRadius: 44, clusterMaxZoom: 9 });
-      map.addLayer({ id: "historical-activity", type: "symbol", source: "historical-activity", layout: {
-        "icon-image": ["case", ["has", "point_count"], ["concat", "fleet-cluster-", ["to-string", ["get", "point_count"]]], ["get", "symbol_id"]],
-        "icon-size": ["coalesce", ["get", "symbol_scale"], 1], "icon-allow-overlap": true,
+      map.addSource("historical-activity", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addSource("activity-squares", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({ id: "activity-heat", type: "heatmap", source: "historical-activity", maxzoom: 8, paint: {
+        "heatmap-weight": ["get", "intensity"],
+        "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 0, .8, 7, 1.5],
+        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 8, 4, 20, 7, 30],
+        "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"], 0, "rgba(10,45,72,0)", .15, "#16475c", .35, "#176d79", .6, "#22a99a", .8, "#39d9ad", 1, "#92ffbf"],
+        "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 5, .9, 7, 0],
       } });
-      // Clicking a cluster zooms in to split it; clicking a single cell reports it to the page.
-      map.on("click", "historical-activity", (event) => {
-        const feature = event.features?.[0];
-        const cell = feature?.properties;
-        if (cell?.cluster_id !== undefined && feature?.geometry.type === "Point") {
-          const center = feature.geometry.coordinates as [number, number];
-          void (map.getSource("historical-activity") as GeoJSONSource).getClusterExpansionZoom(Number(cell.cluster_id)).then((zoom) => map.easeTo({ center, zoom }));
-          return;
-        }
+      map.addLayer({ id: "activity-squares-fill", type: "fill", source: "activity-squares", minzoom: 5, paint: {
+        "fill-color": ["interpolate", ["linear"], ["get", "intensity"], 0, "#18516a", .3, "#197b83", .65, "#2fcaa4", 1, "#9affc4"],
+        "fill-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0, 7, .75, 11, .9],
+      } });
+      map.addLayer({ id: "activity-squares-outline", type: "line", source: "activity-squares", minzoom: 6, paint: { "line-color": "#0d4567", "line-width": .7, "line-opacity": ["interpolate", ["linear"], ["zoom"], 6, 0, 8, .8] } });
+      map.on("click", "activity-squares-fill", (event) => {
+        if (map.getZoom() < 6) return;
+        const cell = event.features?.[0]?.properties;
         if (cell) activityClick.current?.(cell as ActivityCell);
       });
-      // Blue dashed rectangle for the area the user selected (starts empty).
+      map.on("click", "activity-heat", (event) => {
+        if (map.getZoom() >= 6) return;
+        const feature = event.features?.[0];
+        if (feature?.geometry.type === "Point") map.easeTo({ center: feature.geometry.coordinates as [number, number], zoom: 7 });
+      });
       map.addSource("area", { type: "geojson", data: areaGeoJson(null) });
       map.addLayer({ id: "area-fill", type: "fill", source: "area", paint: { "fill-color": "#4c8dff", "fill-opacity": 0.1 } });
       map.addLayer({
@@ -230,11 +251,29 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
         source: "area",
         paint: { "line-color": "#8fbaff", "line-width": 1.8, "line-dasharray": [3, 2] },
       });
+      map.addSource("forecast-cell", { type: "geojson", data: areaGeoJson(null) });
+      map.addLayer({ id: "forecast-fill", type: "fill", source: "forecast-cell", paint: { "fill-color": "#b78bff", "fill-opacity": .13 } });
+      map.addLayer({ id: "forecast-outline", type: "line", source: "forecast-cell", paint: { "line-color": "#c29aff", "line-width": 3, "line-dasharray": [2, 2] } });
+      map.addSource("forecast-neighbors", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addSource("forecast-arrows", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addSource("forecast-arrowheads", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addSource("forecast-target", { type: "geojson", data: areaGeoJson(null) });
+      map.addLayer({ id: "forecast-neighbors-fill", type: "fill", source: "forecast-neighbors", paint: { "fill-color": "#9d79e5", "fill-opacity": .06 } });
+      map.addLayer({ id: "forecast-neighbors-line", type: "line", source: "forecast-neighbors", paint: { "line-color": "#ad8de3", "line-width": 1, "line-opacity": .65 } });
+      map.addLayer({ id: "forecast-arrow-shadow", type: "line", source: "forecast-arrows", paint: { "line-color": "#0b203b", "line-width": 7 } });
+      map.addLayer({ id: "forecast-arrow-line", type: "line", source: "forecast-arrows", paint: { "line-color": "#ffda87", "line-width": 3 } });
+      map.addLayer({ id: "forecast-arrow-head", type: "fill", source: "forecast-arrowheads", paint: { "fill-color": "#ffda87", "fill-outline-color": "#bd9444" } });
+      map.addLayer({ id: "forecast-target-outline", type: "line", source: "forecast-target", paint: { "line-color": "#ffda87", "line-width": 3 } });
+      map.addLayer({ id: "forecast-arrow-hit", type: "line", source: "forecast-arrows", paint: { "line-color": "#ffda87", "line-opacity": .01, "line-width": 16 } });
+      map.on("click", "forecast-arrow-hit", event => { const properties = event.features?.[0]?.properties; if (properties) forecastClick.current?.(properties as ActivityArrow); });
+      map.on("click", "forecast-arrow-head", event => { const properties = event.features?.[0]?.properties; if (properties) forecastClick.current?.(properties as ActivityArrow); });
       setReady(true);
     });
     mapRef.current = map;
-    // Cleanup: remove the map so it does not leak when the user switches tabs.
+    const resize = new ResizeObserver(() => map.resize());
+    resize.observe(containerRef.current!);
     return () => {
+      resize.disconnect();
       map.remove();
       mapRef.current = null;
     };
@@ -247,13 +286,32 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
 
   useEffect(() => {
     if (!ready || !mapRef.current) return;
-    const source = mapRef.current.getSource("historical-activity") as GeoJSONSource;
-    void source.setData({ type: "FeatureCollection", features: (activityCells ?? []).map((cell) => ({
-      type: "Feature", properties: { ...cell,
-        symbol_id: `fleet-cell-${shipKind(cell.vessel_type)}-${cell.vessel_count_lower_bound != null ? "lower" + cell.vessel_count_lower_bound : "unknown"}`,
-        symbol_scale: lengthScale(cell.mean_length_m),
-      }, geometry: { type: "Point", coordinates: [cell.lon, cell.lat] },
-    })) });
+    const map = mapRef.current;
+    void (map.getSource("forecast-cell") as GeoJSONSource).setData(areaGeoJson(forecastBounds ?? null));
+    if (forecastBounds && !selecting) map.fitBounds([[forecastBounds.west, forecastBounds.south], [forecastBounds.east, forecastBounds.north]], { padding: 70, maxZoom: 6, duration: 700 });
+  }, [ready, forecastBounds]);
+
+  useEffect(() => {
+    if (!ready || !mapRef.current) return;
+    const map = mapRef.current, data = forecastFeatures(forecastComparison ?? null);
+    void (map.getSource("forecast-neighbors") as GeoJSONSource).setData(data.cells);
+    void (map.getSource("forecast-arrows") as GeoJSONSource).setData(data.arrows);
+    void (map.getSource("forecast-arrowheads") as GeoJSONSource).setData(data.heads);
+    const cells = forecastComparison?.cells ?? [];
+    if (cells.length > 1 && !selecting) map.fitBounds([[Math.min(...cells.map(cell => cell.bounds.west)), Math.min(...cells.map(cell => cell.bounds.south))], [Math.max(...cells.map(cell => cell.bounds.east)), Math.max(...cells.map(cell => cell.bounds.north))]], { padding: 70, maxZoom: 6, duration: 700 });
+  }, [ready, forecastComparison]);
+
+  useEffect(() => {
+    if (!ready || !mapRef.current) return;
+    const target = forecastComparison?.cells.find(cell => cell.cell_id === selectedForecastArrow?.to_id);
+    void (mapRef.current.getSource("forecast-target") as GeoJSONSource).setData(areaGeoJson(target?.bounds ?? null));
+  }, [ready, forecastComparison, selectedForecastArrow]);
+
+  useEffect(() => {
+    if (!ready || !mapRef.current) return;
+    const data = activityFeatures(activityCells ?? []);
+    void (mapRef.current.getSource("historical-activity") as GeoJSONSource).setData(data.points);
+    void (mapRef.current.getSource("activity-squares") as GeoJSONSource).setData(data.squares);
   }, [ready, activityCells]);
 
   useEffect(() => {
@@ -344,7 +402,8 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
     if (!map || !selecting) return;
     // The map's drawing area, where the mouse events for the drag are listened for.
     const canvas = map.getCanvasContainer();
-    // Stop the map from panning or rotating so the drag draws a box, and show a crosshair cursor.
+    const scrollZoomWasEnabled = map.scrollZoom.isEnabled();
+    map.scrollZoom.disable();
     map.dragPan.disable();
     map.dragRotate.disable();
     canvas.style.cursor = "crosshair";
@@ -353,12 +412,19 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
 
     // Converts a mouse event to a pixel position relative to the map.
     const point = (e: MouseEvent) => {
-      const r = canvas.getBoundingClientRect();
-      return new maplibregl.Point(e.clientX - r.left, e.clientY - r.top);
+      // The inner canvas wrapper can have zero layout height because MapLibre
+      // absolutely positions its canvas. Clamp to the actual map viewport.
+      const r = map.getContainer().getBoundingClientRect();
+      return new maplibregl.Point(Math.max(0, Math.min(r.width, e.clientX - r.left)), Math.max(0, Math.min(r.height, e.clientY - r.top)));
+    };
+    const bounds = (a: maplibregl.Point, b: maplibregl.Point): Area => {
+      const from = map.unproject(a), to = map.unproject(b);
+      return { west: Math.min(from.lng, to.lng), east: Math.max(from.lng, to.lng), south: Math.min(from.lat, to.lat), north: Math.max(from.lat, to.lat) };
     };
     // Mouse pressed: remember the start corner and begin listening for movement and release.
     const down = (e: MouseEvent) => {
       if (e.button !== 0) return;
+      setSelectionError("");
       start = point(e);
       window.addEventListener("mousemove", move);
       window.addEventListener("mouseup", up, { once: true });
@@ -368,7 +434,7 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
       if (!start) return;
       // Where the mouse is now, in pixels on the map.
       const p = point(e);
-      setDragBox({ x: Math.min(start.x, p.x), y: Math.min(start.y, p.y), w: Math.abs(p.x - start.x), h: Math.abs(p.y - start.y) });
+      setDragBox({ x: Math.min(start.x, p.x), y: Math.min(start.y, p.y), w: Math.abs(p.x - start.x), h: Math.abs(p.y - start.y), invalid: !validSelection(bounds(start, p)) });
     };
     // Mouse released: turn the dragged rectangle into a latitude/longitude area.
     const up = (e: MouseEvent) => {
@@ -378,31 +444,26 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
       const end = point(e);
       // Ignore tiny drags (accidental clicks).
       if (start && Math.abs(end.x - start.x) > 4 && Math.abs(end.y - start.y) > 4) {
-        // unproject converts a screen pixel on the globe to a real longitude/latitude.
-        const a = map.unproject(start);
-        // The opposite corner of the box, as longitude and latitude.
-        const b = map.unproject(end);
-        // Skip the result if a corner was off the globe (space), where there are no valid coordinates.
-        if ([a.lng, a.lat, b.lng, b.lat].every(Number.isFinite)) {
-          onAreaChange({
-            west: Math.min(a.lng, b.lng),
-            east: Math.max(a.lng, b.lng),
-            south: Math.min(a.lat, b.lat),
-            north: Math.max(a.lat, b.lat),
-          });
-        }
+        const selectedBounds = bounds(start, end);
+        if (validSelection(selectedBounds)) onAreaChange(selectedBounds);
+        else setSelectionError(SELECTION_LIMIT_MESSAGE);
       }
       // One box per click of "Select area": leave draw mode.
       start = null;
       setSelecting(false);
     };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { setSelecting(false); setDragBox(null); } };
 
     canvas.addEventListener("mousedown", down);
-    // Cleanup when draw mode ends: remove listeners and give the map its normal dragging back.
+    window.addEventListener("keydown", escape);
     return () => {
       canvas.removeEventListener("mousedown", down);
       window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      window.removeEventListener("keydown", escape);
+      setDragBox(null);
       canvas.style.cursor = "";
+      if (scrollZoomWasEnabled) map.scrollZoom.enable();
       map.dragPan.enable();
       map.dragRotate.enable();
     };
@@ -414,31 +475,26 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
     mapRef.current?.flyTo({ ...HOME, duration: 900 });
   }
 
+  const notices = <div className="map-notices" aria-live="polite">
+        {selectionError && <div className="notice error" role="alert">{selectionError} <button type="button" onClick={() => setSelectionError("")}>Dismiss</button></div>}
+        {mapError && <div className="notice error" role="alert">Map issue: {mapError}. GFW authentication is separate.</div>}
+        {basemapWarning && !mapError && <div className="notice" role="status">{basemapWarning}</div>}
+      </div>;
   return (
-    <div className="map-wrap">
-      {/* The element MapLibre draws the globe into. */}
+    <>
+      {noticeTarget ? createPortal(notices, noticeTarget) : notices}
+    <div className="map-wrap" aria-busy={!mapError && (!ready || tilesLoading)}>
       <div ref={containerRef} className="map" />
-      {mapError && <div className="map-status map-status-error" role="alert">Map issue: {mapError}. GFW authentication is separate.</div>}
-      {basemapWarning && !mapError && <div className="map-status" role="status">{basemapWarning}</div>}
-      {/* Live rectangle shown while the user is dragging. */}
+      {!ready && !mapError && <div className="map-loading-shell"><div className="skeleton skeleton-globe" aria-hidden="true" /><LoadingStatus label="Loading the globe…" detail="Preparing the map and geographic layers." /></div>}
+      {ready && tilesLoading && !mapError && <div className="map-tile-loading"><LoadingStatus label="Updating map layers…" /></div>}
       {dragBox && (
-        <div className="drag-box" style={{ left: dragBox.x, top: dragBox.y, width: dragBox.w, height: dragBox.h }} />
+        <div className={`drag-box${dragBox.invalid ? " too-large" : ""}`} style={{ left: dragBox.x, top: dragBox.y, width: dragBox.w, height: dragBox.h }} />
       )}
 
-      {/* Instruction shown until the user picks an area. */}
-      {!area && !selecting && (
-        <div className="map-prompt">
-          <strong>No area selected</strong>
-          <span>Turn the globe to a region, click Select area, then drag a box to load the vessels inside it.</span>
-        </div>
-      )}
-      {/* Reminder shown in draw mode before the drag begins. */}
-      {selecting && !dragBox && <div className="map-prompt">Drag a box over the area you want to inspect.</div>}
 
       {/* Buttons in the top-right corner of the map. */}
       <div className="map-tools">
-        <label className="basemap-choice"><span className="sr-only">Basemap</span><select aria-label="Basemap" value={basemap} onChange={(event) => { setBasemap(event.target.value as Basemap); setBasemapWarning(""); }}><option value="imagery">Satellite imagery</option><option value="outline">Local outline (no tile server)</option></select></label>
-        {/* 3D globe / 2D flat map switch. */}
+        <label className="basemap-choice"><span className="sr-only">Basemap</span><select aria-label="Basemap" value={basemap} onChange={(event) => { setBasemap(event.target.value as Basemap); setBasemapWarning(""); }}><option value="outline">Simple ocean map</option><option value="imagery">Satellite photos</option></select></label>
         <div className="segmented" role="group" aria-label="Map view">
           <button type="button" className={view === "globe" ? "is-on" : undefined} onClick={() => setView("globe")} aria-pressed={view === "globe"}>
             3D
@@ -450,8 +506,9 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
         {/* Turns draw-a-box mode on or off; the label changes with the situation. */}
         <button
           type="button"
+          disabled={!ready}
           className={selecting ? "is-on" : "primary"}
-          onClick={() => setSelecting((s) => !s)}
+          onClick={() => { setSelectionError(""); setSelecting((s) => !s); }}
           aria-pressed={selecting}
         >
           {selecting ? "Cancel selection" : area ? "Select new area" : "Select area"}
@@ -463,10 +520,14 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
           </button>
         )}
       </div>
+      {selecting && <div className="selection-hint" role="status">{dragBox?.invalid ? "Too large — narrow your selection" : "Drag to select · maximum 40° × 30° · Esc to cancel"}</div>}
 
-      {/* Key explaining the marker colours, the count badge and the fishing-zone outline. */}
-      {activityCells !== undefined ? <div className="map-legend"><span>Cluster numbers = activity cells · click to expand</span><span>Cell ≥N = reported vessel-count lower bound · ? = unavailable</span><span>Symbol = reported type; unknown/mixed where unresolved</span><span>Size uses reported length only when available; otherwise fixed. Not to map scale.</span><a href="https://globalfishingwatch.org" target="_blank" rel="noreferrer">Powered by Global Fishing Watch</a></div> : <div className="map-legend">
-        {/* Blue: the radar detection matched an AIS signal. */}
+      {activityCells !== undefined ? !selecting && <div className="activity-legend">
+        <strong>{activityLayerNames[activityLayer]}</strong><div className="heat-scale" aria-hidden="true" /><div className="heat-scale-labels"><span>Less activity</span><span>More activity</span></div>
+        <span className="activity-legend-hint">{activityCells.length ? mapZoom < 6 ? "Zoom in to explore activity squares" : "Click a colored square for details" : "Select an area to load activity"}</span>
+        {forecastComparison && <div className="forecast-map-key"><strong>Purple: historical forecast squares</strong><span>Gold arrows → higher predicted activity</span><span>Not boat travel directions</span><small>{forecastComparison.cells[0]?.target_start} through {forecastComparison.cells[0]?.target_end}</small></div>}
+        <Info label="Reading this map"><p>Brighter green means more {activityUnits[activityLayer]} in the selected time period. Colors compare activity within your selected area; they do not show danger or illegal behavior. Dark or empty areas can mean missing data.</p><p>Zooming in reveals small activity squares, each about 11 km north to south. Squares show approximate areas around reported grid points, not individual boat locations. Several boats can use the same square. The boat list covers the whole area you selected.</p><p>To show each boat in its correct place, we need separate position records with a boat ID, coordinates and observation time. The current GFW area reports do not provide that combination.</p><a href="https://globalfishingwatch.org" target="_blank" rel="noreferrer">Data from Global Fishing Watch</a></Info>
+      </div> : <div className="map-legend">
         <span>
           <i className="legend-mark marker-registered" />
           AIS matched
@@ -493,5 +554,6 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
         </span>
       </div>}
     </div>
+    </>
   );
 }

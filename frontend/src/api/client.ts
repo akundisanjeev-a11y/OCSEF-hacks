@@ -23,8 +23,9 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   // Network failure: the dev server itself is down or unreachable.
   try {
     res = await fetch(`${API_BASE_URL}${path}`, init);
-  } catch {
-    throw new ApiError("Could not reach the frontend dev server. Is npm run dev still running?", null);
+  } catch (error) {
+    if (init?.signal?.aborted) throw error;
+    throw new ApiError("Could not reach the API. Check that both Vite and FastAPI are running.", null);
   }
   // HTTP error: use FastAPI's {"detail": "..."} message when there is one, otherwise the status text.
   if (!res.ok) {
@@ -32,6 +33,7 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     try {
       const body = await res.json();
       if (typeof body?.detail === "string") detail = body.detail;
+      else if (typeof body?.detail?.message === "string") detail = body.detail.message;
       else if (Array.isArray(body?.detail)) detail = body.detail.map((e: { msg: string }) => e.msg).join("; ");
     } catch {
       // body was not JSON; keep statusText

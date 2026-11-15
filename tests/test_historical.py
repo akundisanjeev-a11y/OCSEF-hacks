@@ -84,7 +84,7 @@ class HistoricalTests(unittest.TestCase):
             self.assertEqual(self.scan(**changes).status_code, 422)
 
     def test_live_without_token_does_not_substitute_sample(self):
-        with patch.dict("os.environ", {}, clear=True):
+        with patch('backend.services.historical.get_gfw_token', return_value=''):
             response = self.scan(mode="gfw")
         self.assertEqual(response.status_code, 503)
         self.assertIn("GFW_API_TOKEN", response.json()["detail"])
