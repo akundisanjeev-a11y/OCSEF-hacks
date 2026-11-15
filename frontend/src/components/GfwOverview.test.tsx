@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { fetchHistoricalArea, fetchHistoricalVessel, screenHistoricalRisks, type HistoricalAreaResult, type HistoricalEvidence } from "../api/historical";
+import { checkBackendConnection, fetchHistoricalArea, fetchHistoricalVessel, screenHistoricalRisks, type HistoricalAreaResult, type HistoricalEvidence } from "../api/historical";
 import { GfwOverview } from "./GfwOverview";
 
-vi.mock("../api/historical", () => ({ fetchHistoricalArea: vi.fn(), fetchHistoricalVessel: vi.fn(), screenHistoricalRisks: vi.fn() }));
+vi.mock("../api/historical", () => ({ checkBackendConnection: vi.fn(), fetchHistoricalArea: vi.fn(), fetchHistoricalVessel: vi.fn(), screenHistoricalRisks: vi.fn() }));
+vi.mock("./ForecastPanel", () => ({ ForecastPanel: () => <div>Forecast panel</div> }));
 vi.mock("./CaseMap", () => ({ CaseMap: ({ onAreaChange }: { onAreaChange: (area: unknown) => void }) => <>
   <button onClick={() => onAreaChange({ west: -5, east: 3, south: 1, north: 7 })}>Draw test area</button>
   <button onClick={() => onAreaChange(null)}>Clear test area</button>
@@ -27,12 +28,20 @@ const evidence: HistoricalEvidence = {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(checkBackendConnection).mockResolvedValue(undefined);
   vi.mocked(fetchHistoricalArea).mockResolvedValue(areaResult);
   vi.mocked(fetchHistoricalVessel).mockResolvedValue(evidence);
 });
 afterEach(cleanup);
 
 describe("Overview GFW integration", () => {
+  it("reports an unresponsive backend before attempting provider reports", async () => {
+    vi.mocked(checkBackendConnection).mockRejectedValue(new Error("FastAPI is unresponsive. Restart the backend."));
+    render(<GfwOverview />);
+    fireEvent.click(screen.getByText("Draw test area"));
+    expect((await screen.findByRole("alert")).textContent).toContain("FastAPI is unresponsive");
+    expect(fetchHistoricalArea).not.toHaveBeenCalled();
+  });
   it("screens risk without fetching full reports and then allows report selection", async () => {
     vi.mocked(screenHistoricalRisks).mockResolvedValue({ results: [{ vessel_id: "test-vessel-1", state: "flagged", flag_count: 1, missing_count: 0, indicators: [{ code: "gap", label: "AIS gaps", count: 2, event_ids: [] }], cached: false }] });
     render(<GfwOverview />);

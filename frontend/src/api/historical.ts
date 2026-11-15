@@ -14,6 +14,15 @@ export type HistoricalEvidence = {
 };
 const post = (body: unknown) => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 export const fetchHistoricalArea = (query: HistoricalQuery) => request<HistoricalAreaResult>("/historical/area", post(query));
+export async function checkBackendConnection(): Promise<void> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    await request("/health", { signal: controller.signal });
+  } catch {
+    throw new Error("FastAPI is unavailable or unresponsive on port 8000. Stop the old backend with Ctrl+C in its terminal, then restart it from the project virtual environment. The globe can load even while the backend is down.");
+  } finally { clearTimeout(timer); }
+}
 export const fetchHistoricalVessel = (vessel_id: string, query: Pick<HistoricalQuery, "mode" | "hours_ago" | "window_hours"> & { start?: string; end?: string }) => request<HistoricalEvidence>("/historical/vessel", post({ vessel_id, ...query }));
 
 export type VesselRisk = { vessel_id: string; state: "flagged" | "no_flags" | "unknown"; flag_count: number; missing_count: number; indicators: HistoricalEvidence["indicators"]; error?: string; error_status?: number; cached: boolean };
