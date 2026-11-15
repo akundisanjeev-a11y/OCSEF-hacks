@@ -160,7 +160,12 @@ Missing risk fields display Unavailable, never an invented zero or low-risk scor
 ## API and operational behavior
 
 - `POST /historical/area`: `mode`, `west`, `south`, `east`, `north`, `hours_ago`,
-  `window_hours`, `layer`. Maximum area is 40° by 30°; split date-line crossings.
+  `window_hours`, `layer`. No application area-size cap; coordinates must be valid
+  and increasing (split date-line crossings). Reports request `ENTIRE` time-window
+  totals at the same 0.1° spatial resolution to reduce repeated hourly rows.
+  Provider timeouts, report size safeguards, and the optional 75% land check still
+  apply. The forecast covers the selected center's model square and neighbors,
+  not every model square throughout a large rectangle.
 - `POST /historical/vessel`: `mode`, `vessel_id`, `hours_ago`, `window_hours`.
 - GFW calls use a fixed HTTPS gateway, bounded streaming response sizes, a timeout,
   JSON or a single bounded JSON ZIP report, and no token-bearing redirects.

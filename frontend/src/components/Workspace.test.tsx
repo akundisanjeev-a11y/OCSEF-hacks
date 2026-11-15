@@ -12,6 +12,25 @@ const report: HistoricalEvidence = { mode: "gfw", vessel_id: "real-id", start: a
 beforeEach(() => { vi.resetAllMocks(); vi.mocked(checkBackendConnection).mockResolvedValue(undefined); vi.mocked(fetchHistoricalArea).mockResolvedValue(area); vi.mocked(fetchHistoricalVessel).mockResolvedValue(report); });
 afterEach(cleanup);
 
+test("header Filters expands, retains settings when closed, and closes for area selection", async () => {
+  const view = render(<App />);
+  const menu = view.container.querySelector('.header-filters .filters-menu') as HTMLDetailsElement;
+  expect(menu).toBeTruthy();
+  expect(menu.open).toBe(false);
+  fireEvent.click(menu.querySelector('summary')!);
+  expect(menu.open).toBe(true);
+  fireEvent.change(screen.getByLabelText('Window duration'), { target: { value: '168' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Close filters' }));
+  expect(menu.open).toBe(false);
+  fireEvent.click(menu.querySelector('summary')!);
+  expect((screen.getByLabelText('Window duration') as HTMLSelectElement).value).toBe('168');
+  fireEvent.click(screen.getByText('Start drawing'));
+  expect(menu.open).toBe(false);
+  fireEvent.click(screen.getByText('Draw area'));
+  await screen.findByText('Inspect vessel');
+  expect(fetchHistoricalArea).toHaveBeenCalledWith(expect.objectContaining({ window_hours: 168 }));
+});
+
 test("opens report drawer, hides controls, and hides empty evidence when drawing", async () => {
   render(<App />);
   const evidence = screen.getByRole("button", { name: "Evidence ‹" });
@@ -40,9 +59,7 @@ test("shares real area and screening across tabs without querying again", async 
   fireEvent.click(await screen.findByText("Investigate selected boats"));
   fireEvent.click(screen.getByText("Screen vessel risks"));
   await screen.findByText("Flagged (1)");
-  fireEvent.click(screen.getByRole("button", { name: "Coastal impact" }));
-  expect(await screen.findByText("Vessels with risk flags")).toBeTruthy();
-  expect(screen.getByText("2 apparent fishing vessel-hours")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Overview" }));
   fireEvent.click(screen.getByRole("button", { name: "Investigations" }));
   expect(screen.getByText("Flagged (1)")).toBeTruthy();
   fireEvent.click(screen.getByText("Full report"));

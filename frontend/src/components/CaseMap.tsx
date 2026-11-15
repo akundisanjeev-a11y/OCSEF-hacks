@@ -456,7 +456,7 @@ export function CaseMap({ groups, selectedId, onSelect, area, onAreaChange, acti
           </button>
         )}
       </div>
-      {selecting && <div className="selection-hint" role="status">{dragBox?.invalid ? "Too large — narrow your selection" : "Drag to select · maximum 40° × 30° · Esc to cancel"}</div>}
+      {selecting && <div className="selection-hint" role="status">{dragBox?.invalid ? "Select a valid map rectangle" : "Drag to select an area · Esc to cancel"}</div>}
 
       {activityCells !== undefined ? !selecting && <div className="activity-legend">
         <strong>{activityLayerNames[activityLayer]}</strong><div className="heat-scale" aria-hidden="true" /><div className="heat-scale-labels"><span>Less activity</span><span>More activity</span></div>

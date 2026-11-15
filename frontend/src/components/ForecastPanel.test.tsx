@@ -12,6 +12,11 @@ const prediction: ForecastResult = { ...period, status: "scored", cell_id: "lat2
   selected_explanation: "A learned correction was applied.", interpretation: "Not proof of harm.", source_dataset: "test", model_version: "test-v1", data_quality_notes: [], seasonal_reference_available: true, decision_path: [] };
 beforeEach(() => { vi.resetAllMocks(); vi.mocked(fetchForecastInfo).mockResolvedValue(info); vi.mocked(fetchForecast).mockResolvedValue(prediction); });
 afterEach(cleanup);
+function startForecast() {
+  fireEvent.change(screen.getByLabelText("Forecast latitude"), { target: { value: "27.5" } });
+  fireEvent.change(screen.getByLabelText("Forecast longitude"), { target: { value: "122.5" } });
+  fireEvent.click(screen.getByText("Get fishing forecast"));
+}
 
 describe("historical model globe panel", () => {
   it("requests the area's center and draws the returned model cell, not the exact rectangle", async () => {
@@ -23,12 +28,24 @@ describe("historical model globe panel", () => {
     expect(onBoundsChange).toHaveBeenLastCalledWith(prediction.bounds);
     expect(screen.getByText(/forecast 2025-08-04 through 2025-08-10/)).toBeTruthy();
     expect(screen.getByText("+15.7%")).toBeTruthy();
+    expect(screen.queryByText("Try verified historical example")).toBeNull();
+    expect(screen.getByText(/Observed through/).closest('details')?.open).toBe(false);
+  });
+
+  it("accepts a large selection but keeps forecast coverage tied to the returned model cell", async () => {
+    const onBoundsChange = vi.fn();
+    render(<ForecastPanel area={{ west: 80, east: 165, south: -5, north: 60 }} onBoundsChange={onBoundsChange} />);
+    fireEvent.click(screen.getByText("Get fishing forecast"));
+    await screen.findByText("34,723");
+    expect(fetchForecast).toHaveBeenCalledWith(27.5, 122.5, expect.any(AbortSignal));
+    expect(onBoundsChange).toHaveBeenLastCalledWith(prediction.bounds);
+    expect(screen.getByText(/does not represent a precise forecast for the drawn rectangle/)).toBeTruthy();
   });
 
   it("renders valid zero predictions and avoids percentage division by zero", async () => {
     vi.mocked(fetchForecast).mockResolvedValue({ ...prediction, status: "scored", predicted_week_hours: 0, repeat_last_week_hours: 0 });
     render(<ForecastPanel area={null} onBoundsChange={vi.fn()} />);
-    fireEvent.click(screen.getByText("Try verified historical example"));
+    startForecast();
     expect(await screen.findByText("Unavailable")).toBeTruthy();
     expect(screen.getAllByText("0").length).toBe(2);
   });
@@ -36,7 +53,7 @@ describe("historical model globe panel", () => {
   it("clears old numbers and overlay when the location changes or history is insufficient", async () => {
     const onBoundsChange = vi.fn();
     render(<ForecastPanel area={null} onBoundsChange={onBoundsChange} />);
-    fireEvent.click(screen.getByText("Try verified historical example"));
+    startForecast();
     await screen.findByText("34,723");
     fireEvent.change(screen.getByLabelText("Forecast latitude"), { target: { value: "89" } });
     expect(screen.queryByText("34,723")).toBeNull();
@@ -51,7 +68,7 @@ describe("historical model globe panel", () => {
     vi.mocked(fetchForecast).mockReturnValue(new Promise((done) => { resolve = done; }));
     const callback = vi.fn();
     const view = render(<ForecastPanel area={null} onBoundsChange={callback} />);
-    fireEvent.click(screen.getByText("Try verified historical example"));
+    startForecast();
     view.rerender(<ForecastPanel area={{ west: 0, east: 1, south: 0, north: 1 }} onBoundsChange={callback} />);
     resolve(prediction);
     await waitFor(() => expect(screen.queryByText("34,723")).toBeNull());
@@ -62,7 +79,7 @@ describe("historical model globe panel", () => {
     vi.mocked(fetchForecast).mockImplementation(async (lat, lon) => ({ ...prediction, status: "scored", cell_id: `${lat}-${lon}`, bounds: { west: lon - 2.5, east: lon + 2.5, south: lat - 2.5, north: lat + 2.5 }, predicted_week_hours: lat * 10 + lon }));
     const onComparison = vi.fn();
     render(<ForecastPanel area={null} onBoundsChange={vi.fn()} onComparisonChange={onComparison} />);
-    fireEvent.click(screen.getByText("Try verified historical example"));
+    startForecast();
     await waitFor(() => expect(onComparison).toHaveBeenLastCalledWith(expect.objectContaining({ attempted: 9, unavailable: 0 })));
     const comparison = onComparison.mock.calls.at(-1)![0] as ForecastComparison;
     expect(comparison.cells).toHaveLength(9);
@@ -75,7 +92,7 @@ describe("historical model globe panel", () => {
     vi.mocked(fetchForecast).mockResolvedValueOnce(prediction).mockImplementation(() => new Promise(resolve => pending.push(resolve)));
     const onComparison = vi.fn();
     render(<ForecastPanel area={null} onBoundsChange={vi.fn()} onComparisonChange={onComparison} />);
-    fireEvent.click(screen.getByText("Try verified historical example"));
+    startForecast();
     await screen.findByText("Comparing nearby areas…");
     fireEvent.change(screen.getByLabelText("Forecast latitude"), { target: { value: "0" } });
     await act(async () => pending.forEach(resolve => resolve(prediction)));

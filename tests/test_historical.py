@@ -79,9 +79,34 @@ class HistoricalTests(unittest.TestCase):
         self.assertEqual(result["cells"][0]["value"], 1)
 
     def test_rejects_bad_areas_and_recent_windows(self):
-        for changes in [{"hours_ago": 1}, {"window_hours": 0}, {"west": 4}, {"east": 80},
-                        {"north": 86}, {"layer": "invalid"}, {"west": 179, "east": -179}]:
+        for changes in [{"hours_ago": 1}, {"window_hours": 0}, {"west": 4}, {"east": 181},
+                        {"north": 91}, {"layer": "invalid"}, {"west": 179, "east": -179}]:
             self.assertEqual(self.scan(**changes).status_code, 422)
+
+    def test_global_selection_is_accepted_without_inventing_positions(self):
+        response = self.scan(west=-180, east=180, south=-90, north=90)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()['cells']), 32)
+        self.assertEqual(len(response.json()['vessels']), 2)
+        self.assertNotIn('lat', response.json()['vessels'][0])
+
+    def test_large_live_area_preserves_all_cells_boats_and_window_totals(self):
+        dataset = DATASETS['presence']
+        rows = [{'lat': -19 + i // 800, 'lon': -49 + (i % 800) * .09, 'hours': .5} for i in range(40000)]
+        boats = [{'vesselId': f'boat-{i}', 'hours': 2} for i in range(6000)]
+        upstream = AsyncMock(side_effect=[{'entries': [{dataset: rows}]}, {'entries': [{dataset: boats}]}])
+        with patch('backend.services.historical.estimate_land', return_value={'skip': False}), patch('backend.services.historical.gfw_request', upstream):
+            response = self.scan(mode='gfw', west=-50, east=30, south=-20, north=40)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data['cells']), 40000)
+        self.assertEqual(sum(cell['value'] for cell in data['cells']), 20000)
+        self.assertEqual(len(data['vessels']), 6000)
+        self.assertEqual(len({boat['vessel_id'] for boat in data['vessels']}), 6000)
+        for call in upstream.await_args_list:
+            self.assertEqual(call.kwargs['params']['temporal-resolution'], 'ENTIRE')
+            ring = call.kwargs['body']['geojson']['features'][0]['geometry']['coordinates'][0]
+            self.assertEqual(ring, [[-50,-20],[30,-20],[30,40],[-50,40],[-50,-20]])
 
     def test_live_without_token_does_not_substitute_sample(self):
         with patch('backend.services.historical.get_gfw_token', return_value=''):

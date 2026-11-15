@@ -39,17 +39,17 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-test("an oversized drag turns red and alerts without querying an area", async () => {
+test("a large drag selects the entire rectangle without a size alert", async () => {
   const onAreaChange = vi.fn();
   const view = render(<CaseMap groups={[]} selectedId={null} onSelect={() => {}} area={null} onAreaChange={onAreaChange} activityCells={[]} />);
   await waitFor(() => expect(screen.getByRole("button", { name: "Select area" })).toBeTruthy());
   fireEvent.click(screen.getByRole("button", { name: "Select area" }));
   fireEvent.mouseDown(view.container.querySelector(".maplibregl-canvas-container")!, { clientX: 10, clientY: 10, button: 0 });
   fireEvent.mouseMove(window, { clientX: 450, clientY: 120 });
-  expect(view.container.querySelector(".drag-box.too-large")).toBeTruthy();
+  expect(view.container.querySelector(".drag-box.too-large")).toBeNull();
   fireEvent.mouseUp(window, { clientX: 450, clientY: 120 });
-  expect(screen.getByRole("alert").textContent).toContain("Area too large");
-  expect(onAreaChange).not.toHaveBeenCalled();
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(onAreaChange).toHaveBeenCalledWith({ west: -48, east: 40, south: 16, north: 38 });
   expect(view.container.querySelector(".drag-box")).toBeNull();
 });
 

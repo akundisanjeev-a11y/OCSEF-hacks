@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { checkBackendConnection, fetchHistoricalArea, fetchHistoricalVessel, type ActivityCell, type Area, type HistoricalAreaResult, type HistoricalEvidence, type HistoricalQuery, type HistoricalVessel } from "../api/historical";
 import { CaseMap } from "./CaseMap";
 import { formatTime } from "../format";
@@ -16,7 +17,9 @@ import { LoadingStatus, Skeleton } from "./Loading";
 import { activityUnits } from "../activityMap";
 import { shipKind, shipNames } from "../vesselSymbols";
 
-export function GfwOverview({ onInvestigations }: { onInvestigations?: () => void } = {}) {
+export function GfwOverview({ onInvestigations, filtersTarget }: { onInvestigations?: () => void; filtersTarget?: HTMLElement | null } = {}) {
+  const filtersMenu = useRef<HTMLDetailsElement | null>(null);
+  const renderFilters = (content: ReactNode) => filtersTarget ? createPortal(content, filtersTarget) : content;
   const workspace = useHistoricalWorkspace();
   const publishResult = workspace?.setResult;
   const [leftOpen, setLeftOpen] = useState(true);
@@ -50,6 +53,7 @@ export function GfwOverview({ onInvestigations }: { onInvestigations?: () => voi
   const ignoreCaseSelect = useCallback(() => {}, []);
   useEffect(() => { publishResult?.(result); }, [result, publishResult]);
   const handleSelecting = useCallback((active: boolean) => {
+    if (active && filtersMenu.current) filtersMenu.current.open = false;
     if (active && !selected) setRightOpen(false);
   }, [selected]);
 
@@ -122,8 +126,8 @@ export function GfwOverview({ onInvestigations }: { onInvestigations?: () => voi
     </aside></div>
     </div>
 
-    <section className="panel stats"><div className="panel-head"><h2>Your selected area · past activity</h2></div><div className="stat-row"><div className="stat"><strong>{result ? result.cells.length : "—"}</strong><Info label="Activity squares"><p>Activity squares (also called activity cells) are small map areas, not exact boat locations. They combine activity during your chosen time. One square can contain several boats, or the same boat at different times.</p></Info></div><div className="stat"><strong>{result ? result.vessels.length : "—"}</strong><Info label="Boats in this area"><p>Area-associated vessels means boat identities reported somewhere in your selected area during your chosen time. The list does not locate each boat inside an individual activity square. Radar sightings without a known identity are not listed as identified boats.</p></Info></div></div>{result && <p className="stat-note">{formatTime(result.start)} → {formatTime(result.end)} · {result.dataset}</p>}
-      {result?.land_check && <p className="stat-note">{result.land_check.land_fraction !== null ? `Conservative land estimate: ${(result.land_check.land_fraction * 100).toFixed(1)}%. ` : ""}{result.skipped ? "Skipped before GFW queries: over 75% land. Choose a water-focused area or override the estimate. " : ""}{result.land_check.note}</p>}
+    <section className="panel stats"><div className="panel-head"><h2>Your selected area · past activity</h2></div><div className="stat-row"><div className="stat"><strong>{result ? result.cells.length : "—"}</strong><Info label="Activity squares"><p>Activity squares (also called activity cells) are small map areas, not exact boat locations. They combine activity during your chosen time. One square can contain several boats, or the same boat at different times.</p></Info></div><div className="stat"><strong>{result ? result.vessels.length : "—"}</strong><Info label="Boats in this area"><p>Area-associated vessels means boat identities reported somewhere in your selected area during your chosen time. The list does not locate each boat inside an individual activity square. Radar sightings without a known identity are not listed as identified boats.</p></Info></div></div>{result && <Info label="Activity dates and source"><p className="stat-note">{formatTime(result.start)} → {formatTime(result.end)} · {result.dataset}</p></Info>}
+      {result?.land_check && <Info label="Land estimate and coverage"><p className="stat-note">{result.land_check.land_fraction !== null ? `Conservative land estimate: ${(result.land_check.land_fraction * 100).toFixed(1)}%. ` : ""}{result.skipped ? "Skipped before GFW queries: over 75% land. Choose a water-focused area or override the estimate. " : ""}{result.land_check.note}</p></Info>}
     </section>
 
     <section className="panel list-panel" aria-live="polite" aria-busy={loading}><div className="panel-head"><h2>Boats in your selected area</h2>{loading && <span className="loading-spinner" aria-hidden="true" />}</div>
@@ -134,9 +138,10 @@ export function GfwOverview({ onInvestigations }: { onInvestigations?: () => voi
       {result && result.vessels.length === 0 && <p className="empty">{result.skipped ? "Area skipped because it exceeds the land threshold. No GFW reports were requested." : layer === "sar" ? "SAR cells are not assigned vessel IDs by this area view. Unmatched detections have no established identity." : "No vessel IDs returned for this area and window. This does not prove no boats were present."}</p>}
       {!!result?.vessels.length && <><div className="table-scroll"><table className="case-table"><thead><tr><th>Vessel</th><th>MMSI</th><th>Type</th><th>Reported length</th><th>Time seen (hours)</th><th>Evidence</th></tr></thead><tbody>{visible.map((vessel) => <tr key={vessel.vessel_id} className={selected?.vessel_id === vessel.vessel_id ? "selected" : undefined}><td>{vessel.name}</td><td>{vessel.mmsi ?? "Unavailable"}</td><td><ShipSymbol type={vessel.vessel_type} /> {shipNames[shipKind(vessel.vessel_type)]}</td><td>{vessel.length_m ? `${vessel.length_m.toFixed(1)} m` : "Unknown"}</td><td>{vessel.hours.toFixed(2)}</td><td><button type="button" onClick={() => void inspect(vessel)}>Inspect vessel</button></td></tr>)}</tbody></table></div><div className="risk-toolbar"><button disabled={page <= 0} onClick={() => setPage((previous) => previous - 1)}>Previous</button><span>{ordered.length} matching vessels · page {Math.min(page, pageCount - 1) + 1} / {pageCount}</span><button disabled={page >= pageCount - 1} onClick={() => setPage((previous) => previous + 1)}>Next</button></div></>}
     </section>
-    <aside id="area-controls" className="panel area-controls"><div className="panel-head"><h2>Area controls</h2></div><div className="filter-body">
+    {renderFilters(<details className="filters-menu" ref={filtersMenu} onKeyDown={event => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}>
+    <summary aria-controls="area-controls">Filters</summary>
+    <aside id="area-controls" className="panel area-controls"><div className="panel-head"><h2>Filters</h2><button type="button" aria-label="Close filters" onClick={() => { if (filtersMenu.current) { filtersMenu.current.open = false; filtersMenu.current.querySelector("summary")?.focus(); } }}>Close</button></div><div className="filter-body">
       <Info label="Getting started"><p>Choose Select area, then draw a box over the water. Green areas show where boats were active during your chosen time. Zoom in to explore smaller activity squares, then open a boat's report from the list below.</p><p>These are past observations, not live tracking. Boat-radio data is at least 100 hours old; satellite radar data is at least 124 hours old.</p></Info>
-      <button type="button" onClick={() => { setLeftOpen(true); setRightOpen(false); document.querySelector(".globe-stage")?.scrollIntoView?.({ behavior: "smooth", block: "start" }); }}>Open ML fishing forecast</button>
       <ActivityFilterControls key={layer} layer={layer} onApply={setFilters} />
       <label className="filter"><span>Activity layer</span><select value={layer} onChange={(e) => { const next = e.target.value as HistoricalQuery["layer"]; setLayer(next); setFilters({}); if (next === "sar") setHoursAgo((previous) => Math.max(124, previous)); }}><option value="presence">All boat activity</option><option value="fishing">Possible fishing activity</option><option value="sar">Satellite radar sightings</option></select></label>
       <Info label="Where the data comes from"><p>AIS is a radio system boats use to broadcast their identity and location. GFW uses those signals to estimate boat activity and possible fishing. SAR is satellite radar, which can spot objects on the water even without a boat's radio signal. A radar sighting does not always identify the boat.</p></Info>
@@ -146,6 +151,6 @@ export function GfwOverview({ onInvestigations }: { onInvestigations?: () => voi
       <label className="filter"><span><input type="checkbox" checked={allowLand} onChange={(e) => setAllowLand(e.target.checked)} /> Override land estimate (small/unmapped waterways)</span></label>
       <button type="button" disabled={!area || loading} onClick={() => setRetry((previous) => previous + 1)}>Refresh selected area</button>
       <details><summary>Area coordinates</summary>{(["west", "south", "east", "north"] as const).map((key) => <label className="filter" key={key}><span>{key}</span><input type="number" step="0.1" value={area?.[key] ?? ""} onChange={(e) => setArea((previous) => ({ ...(previous ?? { west: -5, south: 1, east: 3, north: 7 }), [key]: Number(e.target.value) }))} /></label>)}</details>
-    </div></aside>
+    </div></aside></details>)}
   </div>;
 }
